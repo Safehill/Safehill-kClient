@@ -1,23 +1,22 @@
 package crypto
 
+import crypto.models.SHKeyPair
+import crypto.models.SHSymmetricKey
+import crypto.models.SHSymmetricKeySize
 import org.junit.jupiter.api.Test
-import java.security.MessageDigest
-import java.util.Base64
+import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 
-class CryptoTests {
+class CipherTests {
 
     val STATIC_IV = Base64.getDecoder().decode("/5RWVwIP//+i///Z")
-
-    val testSampleEncryptionKey: () -> ByteArray
-        get() = { MessageDigest.getInstance("SHA-256").digest("pass".toByteArray()) }
 
     @Test
     fun testEncryptDecryptSharedSecretStaticIV() {
         val stringToEncrypt = "Text to encrypt"
-        val encryptionKey = testSampleEncryptionKey()
+        val encryptionKey = SHSymmetricKey().secretKeySpec.encoded
 
         // Encrypt
         val cipherText = SHCypher.encrypt(stringToEncrypt.toByteArray(), encryptionKey, STATIC_IV)
@@ -37,7 +36,7 @@ class CryptoTests {
     fun testEncryptDecryptSharedSecret() {
         val base64Encoder = Base64.getEncoder()
         val stringToEncrypt = "Text to encrypt"
-        val encryptionKey = testSampleEncryptionKey()
+        val encryptionKey = SHSymmetricKey().secretKeySpec.encoded
 
         // Generate IV
         val iv = SHCypher.generateRandomIV()
@@ -92,5 +91,46 @@ class CryptoTests {
         val decrypted = SHCypher.decrypt(cipherText, encryptionKey, iv)
         val decryptedValue = String(decrypted)
         assertEquals(decryptedValue, clearString)
+    }
+
+    @Test
+    fun testSimpleEncryptDecryptWithPublicKeySignature() {
+        val string = "This is a test"
+        val data = string.toByteArray()
+        val senderSignatureKeys = SHKeyPair.generate()
+        val receiverEncryptionKeys = SHKeyPair.generate()
+        val ephemeralSecret = SHKeyPair.generate()
+
+        val encrypted = SHCypher.encrypt(data, receiverEncryptionKeys.public, ephemeralSecret, senderSignatureKeys)
+        val decrypted = SHCypher.decrypt(encrypted, receiverEncryptionKeys, senderSignatureKeys.public)
+
+        assertEquals(String(data), String(decrypted))
+    }
+
+    @Test
+    fun testEncryptDecryptWithPublicKeySignature() {
+        val string = "This is a test"
+        val data = string.toByteArray()
+
+        val senderSignatureKeys = SHKeyPair.generate()
+        val receiverEncryptionKeys = SHKeyPair.generate()
+
+        val ephemeralSecret = SHKeyPair.generate()
+        val sharedIV = SHCypher.generateRandomIV()
+
+        val secret = SHSymmetricKey(SHSymmetricKeySize.BITS_256).secretKeySpec
+        val encryptedDataWithSecret = SHCypher.encrypt(data, secret.encoded, sharedIV)
+        val encryptedSecretUsingReceiverPublicKey = SHCypher.encrypt(secret.encoded, receiverEncryptionKeys.public, ephemeralSecret, senderSignatureKeys)
+
+        /*
+         SENDER shares `encryptedDataWithSecret` and `encryptedSecretUsingReceiverPublicKey` with RECEIVER.
+         RECEIVER decrypts `encryptedSecretUsingReceiverPublicKey` to retrieve `decryptedSecret`, which can be used to decrypt `encryptedDataWithSecret`
+         */
+        val decryptedSecretBytes = SHCypher.decrypt(encryptedSecretUsingReceiverPublicKey, receiverEncryptionKeys, senderSignatureKeys.public)
+        val decryptedSecret = SHSymmetricKey(decryptedSecretBytes).secretKeySpec
+        val decryptedData = SHCypher.decrypt(encryptedDataWithSecret, decryptedSecret.encoded, sharedIV)
+        val decryptedString = String(decryptedData)
+
+        assertEquals(string, decryptedString)
     }
 }

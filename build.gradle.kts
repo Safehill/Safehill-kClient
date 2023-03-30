@@ -11,6 +11,7 @@ repositories {
 }
 
 dependencies {
+    implementation("at.favre.lib:hkdf:2.0.0")
     testImplementation(kotlin("test"))
     implementation(kotlin("stdlib"))
 }
