@@ -5,15 +5,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6f553440-09e3-46db-90c0-2bc3d019b885" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/kotlin/crypto/models/SHKeyPair.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/kotlin/crypto/models/SHShareablePayload.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/kotlin/crypto/models/SHSignature.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/kotlin/crypto/models/SHSymmetricKey.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/kotlin/crypto/KeyEncodingTests.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/kotlin/crypto/models/SHCryptoUser.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle.kts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/crypto/SHCypher.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/crypto/SHCypher.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/kotlin/crypto/CryptoTests.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/crypto/CipherTests.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/crypto/models/SHShareablePayload.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/crypto/models/SHShareablePayload.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/kotlin/crypto/CipherTests.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/crypto/CipherTests.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -95,8 +94,8 @@
       <recent name="crypto" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.CipherTests.testDecryptSwiftGeneratedSharedSecret">
-    <configuration name="CipherTests.testDecryptSwiftGeneratedSharedSecret" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+  <component name="RunManager" selected="Gradle.Safehill-kCrypto">
+    <configuration name="CipherTests" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -109,7 +108,7 @@
           <list>
             <option value=":test" />
             <option value="--tests" />
-            <option value="&quot;crypto.CipherTests.testDecryptSwiftGeneratedSharedSecret&quot;" />
+            <option value="&quot;crypto.CipherTests&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -119,7 +118,7 @@
       <DebugAllEnabled>false</DebugAllEnabled>
       <method v="2" />
     </configuration>
-    <configuration name="CipherTests.testEncryptDecryptWithPublicKeySignature" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="Safehill-kCrypto" type="GradleRunConfiguration" factoryName="Gradle" nameIsGenerated="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -129,95 +128,22 @@
           <list />
         </option>
         <option name="taskNames">
-          <list>
-            <option value=":test" />
-            <option value="--tests" />
-            <option value="&quot;crypto.CipherTests.testEncryptDecryptWithPublicKeySignature&quot;" />
-          </list>
-        </option>
-        <option name="vmOptions" />
-      </ExternalSystemSettings>
-      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
-      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
-      <DebugAllEnabled>false</DebugAllEnabled>
-      <method v="2" />
-    </configuration>
-    <configuration name="KeyEncodingTests.testPemGeneratedKeys" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
-      <ExternalSystemSettings>
-        <option name="executionName" />
-        <option name="externalProjectPath" value="$PROJECT_DIR$" />
-        <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" value="" />
-        <option name="taskDescriptions">
           <list />
         </option>
-        <option name="taskNames">
-          <list>
-            <option value=":test" />
-            <option value="--tests" />
-            <option value="&quot;crypto.KeyEncodingTests.testPemGeneratedKeys&quot;" />
-          </list>
-        </option>
         <option name="vmOptions" />
       </ExternalSystemSettings>
-      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
       <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
       <DebugAllEnabled>false</DebugAllEnabled>
       <method v="2" />
     </configuration>
-    <configuration name="KeyEncodingTests.testSwiftGeneratedKeys" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
-      <ExternalSystemSettings>
-        <option name="executionName" />
-        <option name="externalProjectPath" value="$PROJECT_DIR$" />
-        <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" value="" />
-        <option name="taskDescriptions">
-          <list />
-        </option>
-        <option name="taskNames">
-          <list>
-            <option value=":test" />
-            <option value="--tests" />
-            <option value="&quot;crypto.KeyEncodingTests.testSwiftGeneratedKeys&quot;" />
-          </list>
-        </option>
-        <option name="vmOptions" />
-      </ExternalSystemSettings>
-      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
-      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
-      <DebugAllEnabled>false</DebugAllEnabled>
-      <method v="2" />
-    </configuration>
-    <configuration name="KeyEncodingTests.testSwiftGeneratedSignatureKey" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
-      <ExternalSystemSettings>
-        <option name="executionName" />
-        <option name="externalProjectPath" value="$PROJECT_DIR$" />
-        <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" value="" />
-        <option name="taskDescriptions">
-          <list />
-        </option>
-        <option name="taskNames">
-          <list>
-            <option value=":test" />
-            <option value="--tests" />
-            <option value="&quot;crypto.KeyEncodingTests.testSwiftGeneratedSignatureKey&quot;" />
-          </list>
-        </option>
-        <option name="vmOptions" />
-      </ExternalSystemSettings>
-      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
-      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
-      <DebugAllEnabled>false</DebugAllEnabled>
-      <method v="2" />
-    </configuration>
+    <list>
+      <item itemvalue="Gradle.Safehill-kCrypto" />
+      <item itemvalue="Gradle.CipherTests" />
+    </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Gradle.CipherTests.testDecryptSwiftGeneratedSharedSecret" />
-        <item itemvalue="Gradle.KeyEncodingTests.testPemGeneratedKeys" />
-        <item itemvalue="Gradle.CipherTests.testEncryptDecryptWithPublicKeySignature" />
-        <item itemvalue="Gradle.KeyEncodingTests.testSwiftGeneratedKeys" />
-        <item itemvalue="Gradle.KeyEncodingTests.testSwiftGeneratedSignatureKey" />
+        <item itemvalue="Gradle.CipherTests" />
       </list>
     </recent_temporary>
   </component>

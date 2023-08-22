@@ -3,8 +3,8 @@ plugins {
     application
 }
 
-group = "org.example"
-version = "1.0-SNAPSHOT"
+group = "com.safehill"
+version = "0.1"
 
 repositories {
     mavenCentral()

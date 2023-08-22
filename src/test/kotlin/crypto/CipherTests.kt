@@ -11,24 +11,22 @@ import kotlin.test.assertNotNull
 
 class CipherTests {
 
-    val STATIC_IV = Base64.getDecoder().decode("/5RWVwIP//+i///Z")
-
     @Test
     fun testEncryptDecryptSharedSecretStaticIV() {
         val stringToEncrypt = "Text to encrypt"
         val encryptionKey = SHSymmetricKey().secretKeySpec.encoded
 
         // Encrypt
-        val cipherText = SHCypher.encrypt(stringToEncrypt.toByteArray(), encryptionKey, STATIC_IV)
+        val cipherText = SHCypher.encrypt(stringToEncrypt.toByteArray(), encryptionKey)
         assertNotNull(cipherText)
 
         // Base64 Encoded CipherText
-        val cipherText2 = SHCypher.encrypt(stringToEncrypt.toByteArray(), encryptionKey, STATIC_IV)
+        val cipherText2 = SHCypher.encrypt(stringToEncrypt.toByteArray(), encryptionKey)
         assertNotNull(cipherText2)
         assertEquals(Base64.getEncoder().encodeToString(cipherText), Base64.getEncoder().encodeToString(cipherText2))
 
         // Decrypt
-        val decrypted = SHCypher.decrypt(cipherText, encryptionKey, STATIC_IV)
+        val decrypted = SHCypher.decrypt(cipherText, encryptionKey)
         assertEquals(stringToEncrypt, String(decrypted))
     }
 

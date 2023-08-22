@@ -21,7 +21,9 @@ class SHCypher {
 
     companion object {
 
-        // Hard-coded PROTOCOL SALT
+        // TODO: Edit this. Should this be common across all clients, or unique per user?
+        val STATIC_IV: ByteArray = Base64.getDecoder().decode("/5RWVwIP//+i///Z")
+        // TODO: Hard-coded PROTOCOL SALT ??
         val PROTOCOL_SALT: ByteArray = Base64.getDecoder().decode("/5RWVwIP//+i///Z")
 
         val GCM_IV_LENGTH = 12
@@ -34,7 +36,7 @@ class SHCypher {
             return iv
         }
 
-        fun encrypt(message: ByteArray, key: ByteArray, iv: ByteArray): ByteArray {
+        fun encrypt(message: ByteArray, key: ByteArray, iv: ByteArray? = null): ByteArray {
             // Get Cipher Instance
             val cipher = Cipher.getInstance("AES_256/GCM/NoPadding")
 
@@ -42,7 +44,7 @@ class SHCypher {
             val keySpec = SecretKeySpec(key, "AES")
 
             // Create GCMParameterSpec
-            val gcmParameterSpec = GCMParameterSpec(GCM_TAG_LENGTH * 8, iv)
+            val gcmParameterSpec = GCMParameterSpec(GCM_TAG_LENGTH * 8, iv ?: STATIC_IV)
             // Initialize Cipher for ENCRYPT_MODE
             cipher.init(Cipher.ENCRYPT_MODE, keySpec, gcmParameterSpec)
 
@@ -54,7 +56,7 @@ class SHCypher {
             return cipherText
         }
 
-        fun decrypt(cipherText: ByteArray, key: ByteArray, iv: ByteArray): ByteArray {
+        fun decrypt(cipherText: ByteArray, key: ByteArray, iv: ByteArray? = null): ByteArray {
             // Get Cipher Instance
             val cipher = Cipher.getInstance("AES_256/GCM/NoPadding")
 
@@ -62,7 +64,7 @@ class SHCypher {
             val keySpec = SecretKeySpec(key, "AES")
 
             // Create GCMParameterSpec
-            val gcmParameterSpec = GCMParameterSpec(GCM_TAG_LENGTH * 8, iv)
+            val gcmParameterSpec = GCMParameterSpec(GCM_TAG_LENGTH * 8, iv ?: STATIC_IV)
             // Initialize Cipher for DECRYPT_MODE
             cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmParameterSpec)
 
@@ -94,7 +96,7 @@ class SHCypher {
             val pseudoRandomKey = hkdf.extract(PROTOCOL_SALT, sharedSecretFromKeyAgreement)
             val derivedSymmetricKey = hkdf.expand(pseudoRandomKey, sharedInfo, 32)
 
-            val cypher = encrypt(message, derivedSymmetricKey, PROTOCOL_SALT)
+            val cypher = encrypt(message, derivedSymmetricKey)
 
             // Signs the message
             val signature = SHSignature.sign(
@@ -102,7 +104,7 @@ class SHCypher {
                 senderSignatureKey
             )
 
-            return SHShareablePayload(ephemeralKey.public.encoded, cypher, signature, "")
+            return SHShareablePayload(ephemeralKey.public.encoded, cypher, signature, null)
         }
 
         fun decrypt(
@@ -131,7 +133,7 @@ class SHCypher {
             val pseudoRandomKey = hkdf.extract(PROTOCOL_SALT, sharedSecret)
             val derivedSymmetricKey = hkdf.expand(pseudoRandomKey, sharedInfo, 32)
 
-            return decrypt(sealedMessage.ciphertext, derivedSymmetricKey, PROTOCOL_SALT)
+            return decrypt(sealedMessage.ciphertext, derivedSymmetricKey)
         }
     }
 }
