@@ -1,4 +1,4 @@
-package crypto.models
+package com.safehill.kcrypto.models
 
 import java.security.*
 import java.security.spec.ECGenParameterSpec

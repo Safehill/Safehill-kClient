@@ -1,6 +1,6 @@
-package crypto.models
+package com.safehill.kcrypto.models
 
-import crypto.SHCypher
+import com.safehill.kcrypto.SHCypher
 import java.security.KeyPair
 import java.security.MessageDigest
 import java.security.PublicKey
@@ -14,7 +14,8 @@ interface SHCryptoUser {
     val publicSignatureData: ByteArray
 }
 
-class SHRemoteCryptoUser(override val publicKeyData: ByteArray, override val publicSignatureData: ByteArray) : SHCryptoUser {
+class SHRemoteCryptoUser(override val publicKeyData: ByteArray, override val publicSignatureData: ByteArray) :
+    SHCryptoUser {
 
     override val publicKey: PublicKey
         get()  {

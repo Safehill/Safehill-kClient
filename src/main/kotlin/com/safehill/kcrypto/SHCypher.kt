@@ -1,10 +1,10 @@
-package crypto
+package com.safehill.kcrypto
 
 import at.favre.lib.hkdf.HKDF
-import crypto.models.SHPublicKey
-import crypto.models.SHShareablePayload
-import crypto.models.SHSignature
-import crypto.models.SignatureVerificationError
+import com.safehill.kcrypto.models.SHPublicKey
+import com.safehill.kcrypto.models.SHShareablePayload
+import com.safehill.kcrypto.models.SHSignature
+import com.safehill.kcrypto.models.SignatureVerificationError
 import java.security.KeyPair
 import java.security.PublicKey
 import java.security.SecureRandom

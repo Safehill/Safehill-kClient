@@ -1,8 +1,8 @@
-package crypto
+package com.safehill.kcrypto
 
-import crypto.models.SHKeyPair
-import crypto.models.SHSymmetricKey
-import crypto.models.SHSymmetricKeySize
+import com.safehill.kcrypto.models.SHKeyPair
+import com.safehill.kcrypto.models.SHSymmetricKey
+import com.safehill.kcrypto.models.SHSymmetricKeySize
 import org.junit.jupiter.api.Test
 import java.util.*
 import kotlin.test.assertEquals

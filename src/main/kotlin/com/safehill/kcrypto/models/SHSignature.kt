@@ -1,4 +1,4 @@
-package crypto.models
+package com.safehill.kcrypto.models
 
 import java.security.KeyPair
 import java.security.PublicKey

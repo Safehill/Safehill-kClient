@@ -1,4 +1,4 @@
-package crypto.models
+package com.safehill.kcrypto.models
 
 data class SHShareablePayload(
     val ephemeralPublicKeyData: ByteArray,

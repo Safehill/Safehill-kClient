@@ -1,6 +1,6 @@
-package crypto.models
+package com.safehill.kcrypto.models
 
-import crypto.models.SHSymmetricKeySize.*
+import com.safehill.kcrypto.models.SHSymmetricKeySize.*
 import java.security.SecureRandom
 import javax.crypto.spec.SecretKeySpec
 

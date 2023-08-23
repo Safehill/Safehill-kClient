@@ -1,8 +1,8 @@
-package crypto
+package com.safehill.kcrypto
 
-import crypto.models.SHKeyPair
-import crypto.models.SHPrivateKey
-import crypto.models.SHPublicKey
+import com.safehill.kcrypto.models.SHKeyPair
+import com.safehill.kcrypto.models.SHPrivateKey
+import com.safehill.kcrypto.models.SHPublicKey
 import org.junit.jupiter.api.Test
 import java.util.*
 import kotlin.test.assertEquals
