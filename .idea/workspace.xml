@@ -1,21 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="ArtifactsWorkspaceSettings">
+    <artifacts-to-build>
+      <artifact name="safehill-kcrypto-16:jar" />
+    </artifacts-to-build>
+  </component>
   <component name="AutoImportSettings">
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6f553440-09e3-46db-90c0-2bc3d019b885" name="Changes" comment="">
+    <list default="true" id="5cb28e90-3bf3-49d2-adf8-835df57d3444" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/artifacts/safehill_kcrypto_16_jar.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/runConfigurations/Build_Fat_JAR.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/kotlinc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/kotlinc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/crypto/SHCypher.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/safehill/kcrypto/SHCypher.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/crypto/models/SHCryptoUser.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/safehill/kcrypto/models/SHCryptoUser.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/crypto/models/SHKeyPair.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/safehill/kcrypto/models/SHKeyPair.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/crypto/models/SHShareablePayload.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/safehill/kcrypto/models/SHShareablePayload.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/crypto/models/SHSignature.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/safehill/kcrypto/models/SHSignature.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/crypto/models/SHSymmetricKey.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/safehill/kcrypto/models/SHSymmetricKey.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/kotlin/crypto/CipherTests.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/com/safehill/kcrypto/CipherTests.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/kotlin/crypto/KeyEncodingTests.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/com/safehill/kcrypto/KeyEncodingTests.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.jar" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.jar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle.kts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -38,12 +43,7 @@
             <expand>
               <path>
                 <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="Safehill-kCrypto" type="f1a62948:ProjectNode" />
-              </path>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="Safehill-kCrypto" type="f1a62948:ProjectNode" />
-                <item name="Dependencies" type="6de06a37:ExternalSystemViewDefaultContributor$MyDependenciesNode" />
+                <item name="safehill-kcrypto-16" type="f1a62948:ProjectNode" />
               </path>
             </expand>
             <select />
@@ -52,21 +52,13 @@
       </state>
     </system>
   </component>
-  <component name="FileTemplateManagerImpl">
-    <option name="RECENT_TEMPLATES">
-      <list>
-        <option value="Kotlin Enum" />
-        <option value="Kotlin Class" />
-      </list>
-    </option>
-  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
-  <component name="ProjectId" id="2NOr3J4QbzXjLyxAi2VPQekPZVR" />
+  <component name="ProjectId" id="2UMRG726e7c22Kpq3vvGOrEIlf1" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -74,31 +66,29 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "Downloaded.Files.Path.Enabled": "true",
-    "Repository.Attach.Annotations": "true",
-    "Repository.Attach.JavaDocs": "true",
-    "Repository.Attach.Sources": "true",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "project.structure.last.edited": "Project",
+    "last_opened_file_path": "/Users/gennaro/code/Safehill-kCrypto-1.6",
+    "project.structure.last.edited": "Artifacts",
     "project.structure.proportion": "0.15",
     "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "project.kotlinCompiler"
+    "settings.editor.selected.configurable": "preferences.lookFeel"
   }
 }]]></component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/test/kotlin/com/safehill/kcrypto" />
+      <recent name="$PROJECT_DIR$/src/main/kotlin/com/safehill/kcrypto" />
+    </key>
     <key name="MoveKotlinTopLevelDeclarationsDialog.RECENTS_KEY">
       <recent name="com.safehill.kcrypto" />
-      <recent name="crypto.models" />
-      <recent name="base64" />
     </key>
     <key name="CopyKotlinDeclarationDialog.RECENTS_KEY">
-      <recent name="crypto" />
+      <recent name="com.safehill.kcrypto.models" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.Safehill-kCrypto">
+  <component name="RunManager" selected="Gradle.Build Fat JAR">
     <configuration name="CipherTests" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -145,33 +135,13 @@
       <DebugAllEnabled>false</DebugAllEnabled>
       <method v="2" />
     </configuration>
-    <configuration name="Safehill-kCrypto" type="GradleRunConfiguration" factoryName="Gradle" nameIsGenerated="true">
-      <ExternalSystemSettings>
-        <option name="executionName" />
-        <option name="externalProjectPath" value="$PROJECT_DIR$" />
-        <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" value="" />
-        <option name="taskDescriptions">
-          <list />
-        </option>
-        <option name="taskNames">
-          <list />
-        </option>
-        <option name="vmOptions" />
-      </ExternalSystemSettings>
-      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
-      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
-      <DebugAllEnabled>false</DebugAllEnabled>
-      <method v="2" />
-    </configuration>
     <list>
-      <item itemvalue="Gradle.Safehill-kCrypto" />
-      <item itemvalue="Gradle.KeyEncodingTests" />
+      <item itemvalue="Gradle.Build Fat JAR" />
       <item itemvalue="Gradle.CipherTests" />
+      <item itemvalue="Gradle.KeyEncodingTests" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Gradle.CipherTests" />
         <item itemvalue="Gradle.KeyEncodingTests" />
         <item itemvalue="Gradle.CipherTests" />
       </list>
@@ -180,47 +150,12 @@
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="6f553440-09e3-46db-90c0-2bc3d019b885" name="Changes" comment="" />
-      <created>1679545770277</created>
+      <changelist id="5cb28e90-3bf3-49d2-adf8-835df57d3444" name="Changes" comment="" />
+      <created>1692747364911</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1679545770277</updated>
+      <updated>1692747364911</updated>
     </task>
     <servers />
-  </component>
-  <component name="UnknownFeatures">
-    <option featureType="dependencySupport" implementationName="java:org.springframework.security:spring-security-core" />
-    <option featureType="dependencySupport" implementationName="java:org.springframework:spring-core" />
-    <option featureType="dependencySupport" implementationName="java:jakarta.validation:jakarta.validation-api" />
-    <option featureType="dependencySupport" implementationName="java:com.google.protobuf:protobuf-java" />
-    <option featureType="dependencySupport" implementationName="java:io.projectreactor:reactor-core" />
-    <option featureType="dependencySupport" implementationName="java:javax.ws.rs:javax.ws.rs-api" />
-    <option featureType="dependencySupport" implementationName="java:javax.persistence:javax.persistence-api" />
-    <option featureType="dependencySupport" implementationName="java:org.springframework:spring-webmvc" />
-    <option featureType="dependencySupport" implementationName="java:io.grpc:grpc-api" />
-    <option featureType="dependencySupport" implementationName="java:io.reactivex.rxjava3:rxjava" />
-    <option featureType="dependencySupport" implementationName="java:org.thymeleaf:thymeleaf" />
-    <option featureType="dependencySupport" implementationName="java:jakarta.ws.rs:jakarta.ws.rs-api" />
-    <option featureType="dependencySupport" implementationName="java:org.springframework.boot:spring-boot" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>jar://$USER_HOME$/Library/Java/JavaVirtualMachines/corretto-1.8.0_362/Contents/Home/src.zip!/com/sun/crypto/provider/CipherCore.java</url>
-          <line>466</line>
-          <option name="timeStamp" value="9" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="kotlin-line">
-          <url>file://$PROJECT_DIR$/src/test/kotlin/com/safehill/kcrypto/KeyEncodingTests.kt</url>
-          <line>17</line>
-          <option name="timeStamp" value="25" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
-  </component>
-  <component name="XSLT-Support.FileAssociations.UIState">
-    <expand />
-    <select />
   </component>
 </project>

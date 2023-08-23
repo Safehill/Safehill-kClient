@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "1.8.0"
+    kotlin("jvm") version "1.6.20"
     application
 }
 
@@ -13,17 +13,18 @@ repositories {
 dependencies {
     implementation("at.favre.lib:hkdf:2.0.0")
     testImplementation(kotlin("test"))
-    implementation(kotlin("stdlib"))
 }
 
 tasks.test {
     useJUnitPlatform()
 }
 
-kotlin {
-    jvmToolchain(8)
-}
-
 application {
     mainClass.set("MainKt")
+}
+
+tasks.withType<Jar> {
+    manifest {
+        attributes["Main-Class"] = "com.safehill.kcrypto.Main.kt"
+    }
 }
