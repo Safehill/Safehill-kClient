@@ -3,7 +3,7 @@
 1. Install IntelliJ Idea
 2. Either run configuration "Build Fat JAR" or run the following from the project root
     ```bash
-    ./gradlew build jar
+    ./gradlew build
     ```
 3. Copy the jar built in `./build/libs/safehill-kcrypto-0.1.jar`
 4. Paste it to `app/libs` in the Android Studio project 
