@@ -101,7 +101,7 @@ class SHCypher {
             // Signs the message
             val signature = SHSignature.sign(
                 cypher + ephemeralKey.public.encoded + receiverPublicKey.encoded,
-                senderSignatureKey
+                senderSignatureKey.private
             )
 
             return SHShareablePayload(ephemeralKey.public.encoded, cypher, signature, null)

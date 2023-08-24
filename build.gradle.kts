@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm") version "1.6.20"
+    kotlin("plugin.serialization") version "1.9.0"
     application
 }
 
@@ -12,6 +13,10 @@ repositories {
 
 dependencies {
     implementation("at.favre.lib:hkdf:2.0.0")
+    implementation("com.github.kittinunf.fuel:fuel:2.3.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
+    implementation("com.google.code.gson:gson:2.10.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
     testImplementation(kotlin("test"))
     implementation(kotlin("stdlib"))
 }

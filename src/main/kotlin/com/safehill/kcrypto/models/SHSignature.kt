@@ -1,6 +1,7 @@
 package com.safehill.kcrypto.models
 
 import java.security.KeyPair
+import java.security.PrivateKey
 import java.security.PublicKey
 import java.security.Signature
 
@@ -9,12 +10,12 @@ import java.security.Signature
 class SignatureVerificationError(override val message: String) : Error(message) {
 }
 
-class SHSignature(private val mySignature: KeyPair) {
+class SHSignature {
 
     companion object {
-        fun sign(message: ByteArray, signature: KeyPair): ByteArray {
+        fun sign(message: ByteArray, signaturePrivateKey: PrivateKey): ByteArray {
             val ecdsaSign = Signature.getInstance("SHA256withECDSA")
-            ecdsaSign.initSign(signature.private)
+            ecdsaSign.initSign(signaturePrivateKey)
             ecdsaSign.update(message)
             return ecdsaSign.sign() ?: throw Error("unable to sign message")
         }

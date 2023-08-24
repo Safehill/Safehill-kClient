@@ -1,6 +1,7 @@
 package com.safehill.kcrypto.models
 
 import com.safehill.kcrypto.SHCypher
+import java.math.BigInteger
 import java.security.KeyPair
 import java.security.MessageDigest
 import java.security.PublicKey
@@ -59,10 +60,12 @@ class SHLocalCryptoUser(val key: KeyPair, val signature: KeyPair) : SHCryptoUser
 
     val identifier: String
         get() {
-            return MessageDigest.getInstance("SHA-512")
-                .digest(this.publicSignatureData)
-                .fold("") { str, it -> str + "%02xhhx".format(it) }
+            return SHHash.stringDigest(this.publicSignatureData)
         }
+
+    fun sign(data: ByteArray): ByteArray {
+        return SHSignature.sign(data, this.signature.private)
+    }
 
 }
 
