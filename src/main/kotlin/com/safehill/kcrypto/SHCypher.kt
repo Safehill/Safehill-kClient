@@ -6,13 +6,16 @@ import com.safehill.kcrypto.models.SHShareablePayload
 import com.safehill.kcrypto.models.SHSignature
 import com.safehill.kcrypto.models.SignatureVerificationError
 import java.security.KeyPair
+import java.security.PrivateKey
 import java.security.PublicKey
 import java.security.SecureRandom
 import java.util.*
+import javax.crypto.AEADBadTagException
 import javax.crypto.Cipher
 import javax.crypto.KeyAgreement
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
+import kotlin.math.sign
 
 // https://stackoverflow.com/questions/59577317/ios-cryptokit-in-java/59658891#59658891
 // https://stackoverflow.com/questions/61332076/cross-platform-aes-encryption-between-ios-and-kotlin-java-using-apples-cryptokit
@@ -63,13 +66,29 @@ class SHCypher {
             // Create SecretKeySpec
             val keySpec = SecretKeySpec(key, "AES")
 
-            // Create GCMParameterSpec
-            val gcmParameterSpec = GCMParameterSpec(GCM_TAG_LENGTH * 8, iv ?: STATIC_IV)
-            // Initialize Cipher for DECRYPT_MODE
-            cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmParameterSpec)
+            val decryptedText: ByteArray = try {
+                // Create GCMParameterSpec
+                val gcmParameterSpec = GCMParameterSpec(GCM_TAG_LENGTH * 8, iv ?: STATIC_IV)
+                // Initialize Cipher for DECRYPT_MODE
+                cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmParameterSpec)
+                // Perform Decryption
+                cipher.doFinal(cipherText)
+            } catch (_: AEADBadTagException) {
+                // Swift-server generated encrypted challenge has the first 16 bits for the IV
+                val base64EncodedCypher = Base64.getEncoder().encodeToString(cipherText)
+                val ivBase64 = base64EncodedCypher.substring(0, GCM_TAG_LENGTH)
+                val cipherTextBase64 = base64EncodedCypher.substring(GCM_TAG_LENGTH)
+                val swiftIV = Base64.getDecoder().decode(ivBase64)
+                val swiftCipherText = Base64.getDecoder().decode(cipherTextBase64)
 
-            // Perform Decryption
-            val decryptedText = cipher.doFinal(cipherText)
+                // Create GCMParameterSpec with the right IV
+                val gcmParameterSpec = GCMParameterSpec(GCM_TAG_LENGTH * 8, swiftIV)
+                // Initialize Cipher for DECRYPT_MODE
+                cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmParameterSpec)
+                // Perform Decryption
+                cipher.doFinal(swiftCipherText)
+            }
+
             return decryptedText
         }
 
@@ -112,8 +131,22 @@ class SHCypher {
             encryptionKey: KeyPair,
             signedBy: PublicKey
         ): ByteArray {
+            return this.decrypt(
+                sealedMessage,
+                encryptionKey.private,
+                encryptionKey.public,
+                signedBy
+            )
+        }
+
+        fun decrypt(
+            sealedMessage: SHShareablePayload,
+            userPrivateKey: PrivateKey,
+            userPublicKey: PublicKey,
+            signedBy: PublicKey
+        ): ByteArray {
             // Verify the signature matches
-            val data = sealedMessage.ciphertext + sealedMessage.ephemeralPublicKeyData + encryptionKey.public.encoded
+            val data = sealedMessage.ciphertext + sealedMessage.ephemeralPublicKeyData + userPublicKey.encoded
             if (!SHSignature.verify(data, sealedMessage.signature, signedBy)) {
                 throw SignatureVerificationError("Invalid signature")
             }
@@ -121,12 +154,12 @@ class SHCypher {
             // Retrieve the shared secret from the key agreement
             val ephemeralKey: PublicKey = SHPublicKey.from(sealedMessage.ephemeralPublicKeyData)
             val keyAgreement = KeyAgreement.getInstance("ECDH")
-            keyAgreement.init(encryptionKey.private)
+            keyAgreement.init(userPrivateKey)
             keyAgreement.doPhase(ephemeralKey, true)
             val sharedSecret = keyAgreement.generateSecret()
 
             val sharedInfo: ByteArray = ephemeralKey.encoded +
-                    encryptionKey.public.encoded +
+                    userPublicKey.encoded +
                     signedBy.encoded
 
             val hkdf = HKDF.fromHmacSha256()

@@ -1,6 +1,5 @@
 package com.safehill.kclient.api
 
-import com.github.kittinunf.fuel.Fuel
 import com.github.kittinunf.fuel.core.*
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.result.Result
@@ -10,8 +9,9 @@ import com.safehill.kclient.models.*
 import com.safehill.kcrypto.SHCypher
 import com.safehill.kcrypto.models.SHRemoteCryptoUser
 import com.safehill.kcrypto.models.SHShareablePayload
-import java.io.Serializable
+import com.safehill.kcrypto.models.SHSignature
 import java.security.MessageDigest
+import java.security.PrivateKey
 import java.util.Base64
 
 
@@ -84,13 +84,43 @@ class SHHTTPAPI(
         }
     }
 
+    fun solveChallenge(authChallenge: SHAuthChallenge): SHAuthSolvedChallenge {
+        val serverCrypto = SHRemoteCryptoUser(
+            Base64.getDecoder().decode(authChallenge.publicKey),
+            Base64.getDecoder().decode(authChallenge.publicSignature)
+        )
+        val encryptedChallenge = SHShareablePayload(
+            ephemeralPublicKeyData = Base64.getDecoder().decode(authChallenge.ephemeralPublicKey),
+            ciphertext = Base64.getDecoder().decode(authChallenge.challenge),
+            signature = Base64.getDecoder().decode(authChallenge.ephemeralPublicSignature),
+            null
+        )
+
+        val decryptedChallenge = SHCypher.decrypt(
+            sealedMessage = encryptedChallenge,
+            encryptionKey = this.requestor.shUser.key,
+            signedBy = serverCrypto.publicSignature
+        )
+        val signatureForChallenge = this.requestor.shUser.sign(decryptedChallenge)
+        val md = MessageDigest.getInstance("SHA-512")
+        val digest512 = md.digest(decryptedChallenge)
+        val signatureForDigest = this.requestor.shUser.sign(digest512)
+
+        return SHAuthSolvedChallenge(
+            userIdentifier = requestor.identifier,
+            signedChallenge = Base64.getEncoder().encodeToString(signatureForChallenge),
+            digest = Base64.getEncoder().encodeToString(digest512),
+            signedDigest = Base64.getEncoder().encodeToString(signatureForDigest)
+        )
+    }
+
     override suspend fun signIn(name: String): SHAuthResponse {
-        val startRequestBody = SHAuthStartRequest(
+        val authRequestBody = SHAuthStartChallenge(
             identifier=requestor.identifier,
             name=name
         )
         val (startRequest, startResponse, startResult) = "/signin/challenge/start".httpPost()
-            .body(Gson().toJson(startRequestBody))
+            .body(Gson().toJson(authRequestBody))
             .responseObject(SHAuthChallenge.Deserializer())
 
         println("[api] POST url=${startRequest.url} with headers=${startRequest.header()} body=${startRequest.body} " +
@@ -104,35 +134,10 @@ class SHHTTPAPI(
             }
         }
 
-        val serverCrypto = SHRemoteCryptoUser(
-            Base64.getDecoder().decode(authChallenge.publicKey),
-            Base64.getDecoder().decode(authChallenge.publicSignature)
-        )
-        val encryptedChallenge = SHShareablePayload(
-            Base64.getDecoder().decode(authChallenge.ephemeralPublicKey),
-            ciphertext = Base64.getDecoder().decode(authChallenge.challenge),
-            Base64.getDecoder().decode(authChallenge.ephemeralPublicSignature),
-            null
-        )
+        val solvedChallenge = this.solveChallenge(authChallenge)
 
-        val decryptedChallenge = SHCypher.decrypt(
-            sealedMessage = encryptedChallenge,
-            encryptionKey = this.requestor.shUser.key,
-            signedBy = serverCrypto.publicKey
-        )
-        val signatureForChallenge = this.requestor.shUser.sign(decryptedChallenge)
-        val md = MessageDigest.getInstance("SHA-512")
-        val digest512 = md.digest(decryptedChallenge)
-        val signatureForDigest = this.requestor.shUser.sign(digest512)
-
-        val verifyRequestBody = SHAuthVerifyRequest(
-            userIdentifier = requestor.identifier,
-            signedChallenge = Base64.getEncoder().encodeToString(signatureForChallenge),
-            digest = Base64.getEncoder().encodeToString(digest512),
-            signedDigest = Base64.getEncoder().encodeToString(signatureForDigest)
-        )
         val (verifyRequest, verifyResponse, verifyResult) = "/signin/challenge/verify".httpPost()
-            .body(Gson().toJson(verifyRequestBody))
+            .body(Gson().toJson(solvedChallenge))
             .responseObject(SHAuthResponse.Deserializer())
 
         println("[api] POST url=${verifyRequest.url} with headers=${verifyRequest.header()} body=${verifyRequest.body} " +

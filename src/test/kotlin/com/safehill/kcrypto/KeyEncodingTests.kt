@@ -54,6 +54,5 @@ class KeyEncodingTests {
         val base64SwiftPublicEncryptionKey = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEdQv/dF3W066JQ6smdf+6CncWsQNIz1cWnheodKq60fEi27Osn3W3ORXML6RSepivi9bm1J1GQoCJGrZzw7eehA=="
         val publicEncryptionKey = SHPublicKey.from(base64Decoder.decode(base64SwiftPublicEncryptionKey))
         assertEquals(base64Encoder.encodeToString(publicEncryptionKey.encoded), base64SwiftPublicEncryptionKey)
-
     }
 }
