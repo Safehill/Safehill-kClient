@@ -99,7 +99,9 @@ class SHHTTPAPI(
         val decryptedChallenge = SHCypher.decrypt(
             sealedMessage = encryptedChallenge,
             encryptionKey = this.requestor.shUser.key,
-            signedBy = serverCrypto.publicSignature
+            signedBy = serverCrypto.publicSignature,
+            iv = authChallenge.iv?.let { Base64.getDecoder().decode(it) },
+            protocolSalt = Base64.getDecoder().decode(authChallenge.protocolSalt)
         )
         val signatureForChallenge = this.requestor.shUser.sign(decryptedChallenge)
         val md = MessageDigest.getInstance("SHA-512")

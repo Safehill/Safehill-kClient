@@ -37,12 +37,12 @@ class SHLocalUser(
         this.authToken = null
     }
 
-    fun shareable(data: ByteArray, with: SHCryptoUser): SHShareablePayload {
-        return SHUserContext(this.shUser).shareable(data, with)
+    fun shareable(data: ByteArray, with: SHCryptoUser, protocolSalt: ByteArray, iv: ByteArray): SHShareablePayload {
+        return SHUserContext(this.shUser).shareable(data, with, protocolSalt, iv)
     }
 
-    fun decrypted(data: ByteArray, encryptedSecret: SHShareablePayload, receivedFrom: SHCryptoUser): ByteArray {
-        return SHUserContext(this.shUser).decrypt(data, encryptedSecret, receivedFrom)
+    fun decrypted(data: ByteArray, encryptedSecret: SHShareablePayload, protocolSalt: ByteArray, iv: ByteArray, receivedFrom: SHCryptoUser): ByteArray {
+        return SHUserContext(this.shUser).decrypt(data, encryptedSecret, protocolSalt, iv, receivedFrom)
     }
 
     fun regenerateKeys() {

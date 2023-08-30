@@ -1,13 +1,12 @@
 package com.safehill.kcrypto
 
 import com.safehill.kclient.api.SHHTTPAPI
+import com.safehill.kclient.api.SHHTTPAPITests
 import com.safehill.kclient.api.dtos.SHAuthChallenge
 import com.safehill.kclient.api.dtos.SHAuthSolvedChallenge
 import com.safehill.kclient.models.SHLocalUser
 import com.safehill.kcrypto.models.*
 import org.junit.jupiter.api.Test
-import java.security.KeyPair
-import java.security.PublicKey
 import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -15,22 +14,25 @@ import kotlin.test.assertNotNull
 
 class CipherTests {
 
+    private val STATIC_IV: ByteArray = Base64.getDecoder().decode("/5RWVwIP//+i///Z")
+    private val STATIC_PROTOCOL_SALT: ByteArray = Base64.getDecoder().decode("/5RWVwIP//+i///Z")
+
     @Test
     fun testEncryptDecryptSharedSecretStaticIV() {
         val stringToEncrypt = "Text to encrypt"
         val encryptionKey = SHSymmetricKey().secretKeySpec.encoded
 
         // Encrypt
-        val cipherText = SHCypher.encrypt(stringToEncrypt.toByteArray(), encryptionKey)
+        val cipherText = SHCypher.encrypt(stringToEncrypt.toByteArray(), encryptionKey, STATIC_IV)
         assertNotNull(cipherText)
 
         // Base64 Encoded CipherText
-        val cipherText2 = SHCypher.encrypt(stringToEncrypt.toByteArray(), encryptionKey)
+        val cipherText2 = SHCypher.encrypt(stringToEncrypt.toByteArray(), encryptionKey, STATIC_IV)
         assertNotNull(cipherText2)
         assertEquals(Base64.getEncoder().encodeToString(cipherText), Base64.getEncoder().encodeToString(cipherText2))
 
         // Decrypt
-        val decrypted = SHCypher.decrypt(cipherText, encryptionKey)
+        val decrypted = SHCypher.decrypt(cipherText, encryptionKey, STATIC_IV)
         assertEquals(stringToEncrypt, String(decrypted))
     }
 
@@ -111,8 +113,21 @@ class CipherTests {
         val receiverEncryptionKeys = SHKeyPair.generate()
         val ephemeralSecret = SHKeyPair.generate()
 
-        val encrypted = SHCypher.encrypt(data, receiverEncryptionKeys.public, ephemeralSecret, senderSignatureKeys)
-        val decrypted = SHCypher.decrypt(encrypted, receiverEncryptionKeys, senderSignatureKeys.public)
+        val encrypted = SHCypher.encrypt(
+            message = data,
+            receiverPublicKey = receiverEncryptionKeys.public,
+            ephemeralKey = ephemeralSecret,
+            protocolSalt = STATIC_PROTOCOL_SALT,
+            iv = STATIC_IV,
+            senderSignatureKey = senderSignatureKeys
+        )
+        val decrypted = SHCypher.decrypt(
+            sealedMessage = encrypted,
+            encryptionKey = receiverEncryptionKeys,
+            protocolSalt = STATIC_PROTOCOL_SALT,
+            iv = STATIC_IV,
+            signedBy = senderSignatureKeys.public
+        )
 
         assertEquals(String(data), String(decrypted))
     }
@@ -130,13 +145,26 @@ class CipherTests {
 
         val secret = SHSymmetricKey(SHSymmetricKeySize.BITS_256).secretKeySpec
         val encryptedDataWithSecret = SHCypher.encrypt(data, secret.encoded, sharedIV)
-        val encryptedSecretUsingReceiverPublicKey = SHCypher.encrypt(secret.encoded, receiverEncryptionKeys.public, ephemeralSecret, senderSignatureKeys)
+        val encryptedSecretUsingReceiverPublicKey = SHCypher.encrypt(
+            message = secret.encoded,
+            receiverPublicKey = receiverEncryptionKeys.public,
+            ephemeralKey = ephemeralSecret,
+            protocolSalt = STATIC_PROTOCOL_SALT,
+            iv = STATIC_IV,
+            senderSignatureKey = senderSignatureKeys
+        )
 
         /*
          SENDER shares `encryptedDataWithSecret` and `encryptedSecretUsingReceiverPublicKey` with RECEIVER.
          RECEIVER decrypts `encryptedSecretUsingReceiverPublicKey` to retrieve `decryptedSecret`, which can be used to decrypt `encryptedDataWithSecret`
          */
-        val decryptedSecretBytes = SHCypher.decrypt(encryptedSecretUsingReceiverPublicKey, receiverEncryptionKeys, senderSignatureKeys.public)
+        val decryptedSecretBytes = SHCypher.decrypt(
+            sealedMessage = encryptedSecretUsingReceiverPublicKey,
+            encryptionKey = receiverEncryptionKeys,
+            protocolSalt = STATIC_PROTOCOL_SALT,
+            iv = STATIC_IV,
+            signedBy = senderSignatureKeys.public
+        )
         val decryptedSecret = SHSymmetricKey(decryptedSecretBytes).secretKeySpec
         val decryptedData = SHCypher.decrypt(encryptedDataWithSecret, decryptedSecret.encoded, sharedIV)
         val decryptedString = String(decryptedData)
@@ -147,6 +175,9 @@ class CipherTests {
     @Test
     fun testEncryptDecryptWithPublicKeySignatureSwiftEquivalent() {
         val string = "This is a test"
+
+        val protocolSalt = Base64.getDecoder().decode("/5RWVwIP//+i///Z")
+        val iv = Base64.getDecoder().decode("/5RWVwIP//+i///Z")
 
         val senderSignatureBase64 = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEk5nINqQDigFdTIEI5BJ1o4E72RDs4S7qi1/9dYRGcLQhENITPpM9jYM7KMpeg1/xgTFWZL+pk9rhfNorHOat5A=="
         val senderSignature = SHPublicKey.from(Base64.getDecoder().decode(senderSignatureBase64))
@@ -174,7 +205,14 @@ class CipherTests {
          SENDER shares `encryptedDataWithSecret` and `encryptedSecretUsingReceiverPublicKey` with RECEIVER.
          RECEIVER decrypts `encryptedSecretUsingReceiverPublicKey` to retrieve `decryptedSecret`, which can be used to decrypt `encryptedDataWithSecret`
          */
-        val decryptedSecretBytes = SHCypher.decrypt(encryptedSecretUsingReceiverPublicKey, receiverPrivateKey, receiverPublicKey, senderSignature)
+        val decryptedSecretBytes = SHCypher.decrypt(
+            sealedMessage = encryptedSecretUsingReceiverPublicKey,
+            userPrivateKey = receiverPrivateKey,
+            userPublicKey = receiverPublicKey,
+            protocolSalt = protocolSalt,
+            iv = iv,
+            signedBy = senderSignature
+        )
         val decryptedSecret = SHSymmetricKey(decryptedSecretBytes).secretKeySpec
         val decryptedData = SHCypher.decrypt(encryptedDataWithSecret, decryptedSecret.encoded, sharedIV)
         val decryptedString = String(decryptedData)
@@ -189,7 +227,7 @@ class CipherTests {
 
         // SERVER creates challenge (prefixed with /**/ are server executions in a real world scenario)
         /**/ val challenge = SHSymmetricKey(SHSymmetricKeySize.BITS_128).secretKeySpec.encoded
-        /**/ val encryptedChallenge = SHUserContext(serverUser).shareable(challenge, clientUser)
+        /**/ val encryptedChallenge = SHUserContext(serverUser).shareable(challenge, clientUser, STATIC_PROTOCOL_SALT, STATIC_IV)
 
         // Check the client would be able to verify it
         assert(SHSignature.verify(encryptedChallenge.ciphertext + encryptedChallenge.ephemeralPublicKeyData + clientUser.key.public.encoded, encryptedChallenge.signature, serverUser.publicSignature))
@@ -200,6 +238,8 @@ class CipherTests {
         val ephemeralPublicSignatureBase64 = Base64.getEncoder().encodeToString(encryptedChallenge.signature)
         val publicKeyBase64 = Base64.getEncoder().encodeToString(serverUser.publicKeyData)
         val publicSignatureBase64 = Base64.getEncoder().encodeToString(serverUser.publicSignatureData)
+        val protocolSalt = Base64.getEncoder().encodeToString(STATIC_PROTOCOL_SALT)
+        val iv = Base64.getEncoder().encodeToString(STATIC_IV)
 
         // Ensure nothing gets lost during SerDe
         assert(Arrays.equals(Base64.getDecoder().decode(challengeBase64), encryptedChallenge.ciphertext))
@@ -213,7 +253,9 @@ class CipherTests {
             ephemeralPublicKeyBase64,
             ephemeralPublicSignatureBase64,
             publicKeyBase64,
-            publicSignatureBase64
+            publicSignatureBase64,
+            protocolSalt,
+            iv
         )
 
         // Client solves the challenge
@@ -226,16 +268,5 @@ class CipherTests {
         // SERVER verifies the solved challenge
         /**/ assert(SHSignature.verify(challenge, signedChallenge, clientUser.publicSignature))
         /**/ assert(SHSignature.verify(digest, signedDigest, clientUser.publicSignature))
-    }
-
-    @Test
-    fun testServerAuthenticationChallengeSwift() {
-        val authChallenge = SHAuthChallenge(
-            challenge = "GXnYgZ2VEqaFW9jORNcuuj/z9Fd5XtZJ37hTem00mYhnAFEwjwjT75Uy4ew=",
-            ephemeralPublicKey = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAECCLE/GAwi3l4FD5N+5k/DdBSuDIKKKSi3IbWHJCHjwtx75pGGEma86a16cVnYDc7riojCzoTbzuPF+MA8RMUPg==",
-            ephemeralPublicSignature = "MEYCIQDSJSJDvUdYddLZc+Rc+rA/gIbUzPQuNA+L+nWNJRidbwIhAJ9qS5OCWj5XwZQtUbmgd7tkCKozAK1OFpaPNfX05+uW",
-            publicKey = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEOQHp1hTpZcmFVI+J/OskCpMtSwd0osxeYJpSHRPy1zk8WyF9TqPpRPMXHNSCzOk2HSPKqa3hCuFevnItOS3WGQ==",
-            publicSignature = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEUJjWbMzuHtzhLzu9Mbh0S9fxKeTYYVaAzz1JJs3jR2A7tbir6H31Ub/oNhZg0vDtb6u78sQ4UGuofgo59VphPA=="
-        )
     }
 }

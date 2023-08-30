@@ -10,15 +10,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5cb28e90-3bf3-49d2-adf8-835df57d3444" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/safehill/kclient/api/SHHTTPAPI.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/safehill/kclient/api/SHHTTPAPI.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/safehill/kclient/api/dtos/SHAuthStartRequest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/safehill/kclient/api/dtos/SHAuthStartChallenge.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/safehill/kclient/api/dtos/SHAuthVerifyRequest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/safehill/kclient/api/dtos/SHAuthSolvedChallenge.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/safehill/kclient/api/dtos/SHAuthChallenge.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/safehill/kclient/api/dtos/SHAuthChallenge.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/safehill/kclient/models/SHLocalUser.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/safehill/kclient/models/SHLocalUser.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/safehill/kcrypto/SHCypher.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/safehill/kcrypto/SHCypher.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/safehill/kcrypto/models/SHKeyPair.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/safehill/kcrypto/models/SHKeyPair.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/com/safehill/kcrypto/models/SHCryptoUser.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/com/safehill/kcrypto/models/SHCryptoUser.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/kotlin/com/safehill/kclient/api/SHHTTPAPITests.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/com/safehill/kclient/api/SHHTTPAPITests.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/kotlin/com/safehill/kcrypto/CipherTests.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/com/safehill/kcrypto/CipherTests.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/kotlin/com/safehill/kcrypto/KeyEncodingTests.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/com/safehill/kcrypto/KeyEncodingTests.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -64,9 +63,11 @@
   <component name="HighlightingSettingsPerFile">
     <setting file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/bouncycastle/bouncycastle-jce-jdk13/112/106e97a5ad7a57aa2cbc48074db80225d3c0972a/bouncycastle-jce-jdk13-112.jar!/org/bouncycastle/asn1/x9/X962NamedCurves.class" root0="SKIP_INSPECTION" />
     <setting file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/bouncycastle/bouncycastle-jce-jdk13/112/106e97a5ad7a57aa2cbc48074db80225d3c0972a/bouncycastle-jce-jdk13-112.jar!/org/bouncycastle/jce/ECNamedCurveTable.class" root0="SKIP_INSPECTION" />
+    <setting file="jar://$USER_HOME$/Library/Java/JavaVirtualMachines/azul-16.0.2/Contents/Home/lib/src.zip!/java.base/java/security/KeyPair.java" root0="SKIP_INSPECTION" />
     <setting file="jar://$USER_HOME$/Library/Java/JavaVirtualMachines/azul-16.0.2/Contents/Home/lib/src.zip!/java.base/javax/crypto/AEADBadTagException.java" root0="SKIP_INSPECTION" />
     <setting file="jar://$USER_HOME$/Library/Java/JavaVirtualMachines/azul-16.0.2/Contents/Home/lib/src.zip!/java.base/javax/crypto/Cipher.java" root0="SKIP_INSPECTION" />
     <setting file="jar://$USER_HOME$/Library/Java/JavaVirtualMachines/azul-16.0.2/Contents/Home/lib/src.zip!/java.base/javax/crypto/spec/GCMParameterSpec.java" root0="SKIP_INSPECTION" />
+    <setting file="jar://$USER_HOME$/Library/Java/JavaVirtualMachines/azul-16.0.2/Contents/Home/lib/src.zip!/java.base/jdk/internal/reflect/NativeMethodAccessorImpl.java" root0="SKIP_INSPECTION" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
@@ -90,7 +91,7 @@
     "project.structure.last.edited": "Facets",
     "project.structure.proportion": "0.15",
     "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "preferences.lookFeel"
+    "settings.editor.selected.configurable": "preferences.pluginManager"
   }
 }]]></component>
   <component name="RecentsManager">
@@ -110,7 +111,7 @@
       <recent name="com.safehill.kcrypto.models" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.CipherTests">
+  <component name="RunManager" selected="Gradle.SHHTTPAPITests.testUserCrud">
     <configuration name="Build Library" type="GradleRunConfiguration" factoryName="Gradle">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -158,54 +159,6 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="CipherTests.testDecryptSwiftGeneratedSharedSecret" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
-      <ExternalSystemSettings>
-        <option name="executionName" />
-        <option name="externalProjectPath" value="$PROJECT_DIR$" />
-        <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" value="" />
-        <option name="taskDescriptions">
-          <list />
-        </option>
-        <option name="taskNames">
-          <list>
-            <option value=":test" />
-            <option value="--tests" />
-            <option value="&quot;com.safehill.kcrypto.CipherTests.testDecryptSwiftGeneratedSharedSecret&quot;" />
-          </list>
-        </option>
-        <option name="vmOptions" />
-      </ExternalSystemSettings>
-      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
-      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
-      <DebugAllEnabled>false</DebugAllEnabled>
-      <RunAsTest>true</RunAsTest>
-      <method v="2" />
-    </configuration>
-    <configuration name="CipherTests.testEncryptDecryptWithPublicKeySignature" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
-      <ExternalSystemSettings>
-        <option name="executionName" />
-        <option name="externalProjectPath" value="$PROJECT_DIR$" />
-        <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" value="" />
-        <option name="taskDescriptions">
-          <list />
-        </option>
-        <option name="taskNames">
-          <list>
-            <option value=":test" />
-            <option value="--tests" />
-            <option value="&quot;com.safehill.kcrypto.CipherTests.testEncryptDecryptWithPublicKeySignature&quot;" />
-          </list>
-        </option>
-        <option name="vmOptions" />
-      </ExternalSystemSettings>
-      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
-      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
-      <DebugAllEnabled>false</DebugAllEnabled>
-      <RunAsTest>true</RunAsTest>
-      <method v="2" />
-    </configuration>
     <configuration name="CipherTests.testEncryptDecryptWithPublicKeySignatureSwiftEquivalent" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -220,6 +173,54 @@
             <option value=":test" />
             <option value="--tests" />
             <option value="&quot;com.safehill.kcrypto.CipherTests.testEncryptDecryptWithPublicKeySignatureSwiftEquivalent&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <method v="2" />
+    </configuration>
+    <configuration name="CipherTests.testServerAuthenticationChallenge" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":test" />
+            <option value="--tests" />
+            <option value="&quot;com.safehill.kcrypto.CipherTests.testServerAuthenticationChallenge&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <method v="2" />
+    </configuration>
+    <configuration name="CipherTests.testServerAuthenticationChallengeSwift" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":test" />
+            <option value="--tests" />
+            <option value="&quot;com.safehill.kcrypto.CipherTests.testServerAuthenticationChallengeSwift&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -256,19 +257,19 @@
     </configuration>
     <list>
       <item itemvalue="Gradle.Build Library" />
-      <item itemvalue="Gradle.CipherTests.testDecryptSwiftGeneratedSharedSecret" />
-      <item itemvalue="Gradle.CipherTests.testEncryptDecryptWithPublicKeySignature" />
       <item itemvalue="Gradle.CipherTests.testEncryptDecryptWithPublicKeySignatureSwiftEquivalent" />
+      <item itemvalue="Gradle.CipherTests.testServerAuthenticationChallengeSwift" />
+      <item itemvalue="Gradle.CipherTests.testServerAuthenticationChallenge" />
       <item itemvalue="Gradle.SHHTTPAPITests.testUserCrud" />
       <item itemvalue="Gradle.CipherTests" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Gradle.SHHTTPAPITests.testUserCrud" />
+        <item itemvalue="Gradle.CipherTests.testServerAuthenticationChallengeSwift" />
+        <item itemvalue="Gradle.CipherTests.testServerAuthenticationChallenge" />
         <item itemvalue="Gradle.CipherTests" />
         <item itemvalue="Gradle.CipherTests.testEncryptDecryptWithPublicKeySignatureSwiftEquivalent" />
-        <item itemvalue="Gradle.CipherTests.testEncryptDecryptWithPublicKeySignature" />
-        <item itemvalue="Gradle.CipherTests.testDecryptSwiftGeneratedSharedSecret" />
-        <item itemvalue="Gradle.SHHTTPAPITests.testUserCrud" />
       </list>
     </recent_temporary>
   </component>
@@ -298,38 +299,23 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="kotlin-line">
           <url>file://$PROJECT_DIR$/src/main/kotlin/com/safehill/kclient/api/SHHTTPAPI.kt</url>
-          <line>138</line>
+          <line>140</line>
           <option name="timeStamp" value="40" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="kotlin-line">
           <url>file://$PROJECT_DIR$/src/main/kotlin/com/safehill/kclient/api/SHHTTPAPI.kt</url>
-          <line>145</line>
+          <line>147</line>
           <option name="timeStamp" value="41" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="kotlin-line">
-          <url>file://$PROJECT_DIR$/src/test/kotlin/com/safehill/kclient/api/SHHTTPAPITests.kt</url>
-          <line>49</line>
-          <option name="timeStamp" value="58" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="kotlin-line">
-          <url>file://$PROJECT_DIR$/src/test/kotlin/com/safehill/kclient/api/SHHTTPAPITests.kt</url>
-          <line>53</line>
-          <option name="timeStamp" value="59" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="kotlin-line">
           <url>file://$PROJECT_DIR$/src/main/kotlin/com/safehill/kclient/api/SHHTTPAPI.kt</url>
-          <line>136</line>
+          <line>138</line>
           <option name="timeStamp" value="69" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="kotlin-line">
-          <url>file://$PROJECT_DIR$/src/main/kotlin/com/safehill/kclient/api/SHHTTPAPI.kt</url>
-          <line>98</line>
-          <option name="timeStamp" value="70" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="kotlin-line">
           <url>file://$PROJECT_DIR$/src/main/kotlin/com/safehill/kcrypto/SHCypher.kt</url>
-          <line>88</line>
-          <option name="timeStamp" value="72" />
+          <line>99</line>
+          <option name="timeStamp" value="76" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>jar://$USER_HOME$/Library/Java/JavaVirtualMachines/azul-16.0.2/Contents/Home/lib/src.zip!/java.base/javax/crypto/Cipher.java</url>

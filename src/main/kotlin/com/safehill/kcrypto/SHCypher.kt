@@ -15,7 +15,6 @@ import javax.crypto.Cipher
 import javax.crypto.KeyAgreement
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
-import kotlin.math.sign
 
 // https://stackoverflow.com/questions/59577317/ios-cryptokit-in-java/59658891#59658891
 // https://stackoverflow.com/questions/61332076/cross-platform-aes-encryption-between-ios-and-kotlin-java-using-apples-cryptokit
@@ -24,13 +23,8 @@ class SHCypher {
 
     companion object {
 
-        // TODO: Edit this. Should this be common across all clients, or unique per user?
-        val STATIC_IV: ByteArray = Base64.getDecoder().decode("/5RWVwIP//+i///Z")
-        // TODO: Hard-coded PROTOCOL SALT ??
-        val PROTOCOL_SALT: ByteArray = Base64.getDecoder().decode("/5RWVwIP//+i///Z")
-
-        val GCM_IV_LENGTH = 12
-        val GCM_TAG_LENGTH = 16
+        private const val GCM_IV_LENGTH = 12
+        private const val GCM_TAG_LENGTH = 16
 
         fun generateRandomIV(length: Int = GCM_IV_LENGTH): ByteArray {
             val sr = SecureRandom()
@@ -39,7 +33,7 @@ class SHCypher {
             return iv
         }
 
-        fun encrypt(message: ByteArray, key: ByteArray, iv: ByteArray? = null): ByteArray {
+        fun encrypt(message: ByteArray, key: ByteArray, iv: ByteArray): ByteArray {
             // Get Cipher Instance
             val cipher = Cipher.getInstance("AES_256/GCM/NoPadding")
 
@@ -47,55 +41,23 @@ class SHCypher {
             val keySpec = SecretKeySpec(key, "AES")
 
             // Create GCMParameterSpec
-            val gcmParameterSpec = GCMParameterSpec(GCM_TAG_LENGTH * 8, iv ?: STATIC_IV)
+            val gcmParameterSpec = GCMParameterSpec(GCM_TAG_LENGTH * 8, iv)
             // Initialize Cipher for ENCRYPT_MODE
             cipher.init(Cipher.ENCRYPT_MODE, keySpec, gcmParameterSpec)
 
             // Perform Encryption
-//            return cipher.doFinal(plaintext)
             val cipherText = ByteArray(cipher.getOutputSize(message.size))
             var ctLength = cipher.update(message, 0, message.size, cipherText, 0)
             ctLength += cipher.doFinal(cipherText, ctLength)
             return cipherText
         }
 
-        fun decrypt(cipherText: ByteArray, key: ByteArray, iv: ByteArray? = null): ByteArray {
-            // Get Cipher Instance
-            val cipher = Cipher.getInstance("AES_256/GCM/NoPadding")
-
-            // Create SecretKeySpec
-            val keySpec = SecretKeySpec(key, "AES")
-
-            val decryptedText: ByteArray = try {
-                // Create GCMParameterSpec
-                val gcmParameterSpec = GCMParameterSpec(GCM_TAG_LENGTH * 8, iv ?: STATIC_IV)
-                // Initialize Cipher for DECRYPT_MODE
-                cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmParameterSpec)
-                // Perform Decryption
-                cipher.doFinal(cipherText)
-            } catch (_: AEADBadTagException) {
-                // Swift-server generated encrypted challenge has the first 16 bits for the IV
-                val base64EncodedCypher = Base64.getEncoder().encodeToString(cipherText)
-                val ivBase64 = base64EncodedCypher.substring(0, GCM_TAG_LENGTH)
-                val cipherTextBase64 = base64EncodedCypher.substring(GCM_TAG_LENGTH)
-                val swiftIV = Base64.getDecoder().decode(ivBase64)
-                val swiftCipherText = Base64.getDecoder().decode(cipherTextBase64)
-
-                // Create GCMParameterSpec with the right IV
-                val gcmParameterSpec = GCMParameterSpec(GCM_TAG_LENGTH * 8, swiftIV)
-                // Initialize Cipher for DECRYPT_MODE
-                cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmParameterSpec)
-                // Perform Decryption
-                cipher.doFinal(swiftCipherText)
-            }
-
-            return decryptedText
-        }
-
         fun encrypt(
             message: ByteArray,
             receiverPublicKey: PublicKey,
             ephemeralKey: KeyPair,
+            protocolSalt: ByteArray,
+            iv: ByteArray,
             senderSignatureKey: KeyPair
         ) : SHShareablePayload
         {
@@ -112,10 +74,10 @@ class SHCypher {
 
             // Derives a symmetric encryption key from the secret using HKDF key derivation
             val hkdf = HKDF.fromHmacSha256()
-            val pseudoRandomKey = hkdf.extract(PROTOCOL_SALT, sharedSecretFromKeyAgreement)
+            val pseudoRandomKey = hkdf.extract(protocolSalt, sharedSecretFromKeyAgreement)
             val derivedSymmetricKey = hkdf.expand(pseudoRandomKey, sharedInfo, 32)
 
-            val cypher = encrypt(message, derivedSymmetricKey)
+            val cypher = encrypt(message, derivedSymmetricKey, iv)
 
             // Signs the message
             val signature = SHSignature.sign(
@@ -126,15 +88,53 @@ class SHCypher {
             return SHShareablePayload(ephemeralKey.public.encoded, cypher, signature, null)
         }
 
+        fun decrypt(cipherText: ByteArray, key: ByteArray, iv: ByteArray? = null): ByteArray {
+            val nonOptionalIV: ByteArray
+            val encryptedData: ByteArray
+
+            if (iv == null) {
+                //
+                // If IV is null, we are expecting the IV to be the first 16 bits for the cipherText
+                //
+                val base64EncodedCypher = Base64.getEncoder().encodeToString(cipherText)
+                if (base64EncodedCypher.length < 60) {
+                    throw AEADBadTagException()
+                }
+
+                val ivBase64 = base64EncodedCypher.substring(0, GCM_TAG_LENGTH)
+                val cipherTextBase64 = base64EncodedCypher.substring(GCM_TAG_LENGTH)
+                nonOptionalIV = Base64.getDecoder().decode(ivBase64)
+                encryptedData = Base64.getDecoder().decode(cipherTextBase64)
+            } else {
+                nonOptionalIV = iv
+                encryptedData = cipherText
+            }
+
+            // Get Cipher Instance
+            val cipher = Cipher.getInstance("AES_256/GCM/NoPadding")
+            // Create SecretKeySpec
+            val keySpec = SecretKeySpec(key, "AES")
+            // Create GCMParameterSpec
+            val gcmParameterSpec = GCMParameterSpec(GCM_TAG_LENGTH * 8, nonOptionalIV)
+            // Initialize Cipher for DECRYPT_MODE
+            cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmParameterSpec)
+            // Perform Decryption
+            return cipher.doFinal(encryptedData)
+        }
+
         fun decrypt(
             sealedMessage: SHShareablePayload,
             encryptionKey: KeyPair,
+            protocolSalt: ByteArray,
+            iv: ByteArray? = null,
             signedBy: PublicKey
         ): ByteArray {
             return this.decrypt(
                 sealedMessage,
                 encryptionKey.private,
                 encryptionKey.public,
+                protocolSalt,
+                iv,
                 signedBy
             )
         }
@@ -143,6 +143,8 @@ class SHCypher {
             sealedMessage: SHShareablePayload,
             userPrivateKey: PrivateKey,
             userPublicKey: PublicKey,
+            protocolSalt: ByteArray,
+            iv: ByteArray? = null,
             signedBy: PublicKey
         ): ByteArray {
             // Verify the signature matches
@@ -163,10 +165,10 @@ class SHCypher {
                     signedBy.encoded
 
             val hkdf = HKDF.fromHmacSha256()
-            val pseudoRandomKey = hkdf.extract(PROTOCOL_SALT, sharedSecret)
+            val pseudoRandomKey = hkdf.extract(protocolSalt, sharedSecret)
             val derivedSymmetricKey = hkdf.expand(pseudoRandomKey, sharedInfo, 32)
 
-            return decrypt(sealedMessage.ciphertext, derivedSymmetricKey)
+            return decrypt(sealedMessage.ciphertext, derivedSymmetricKey, iv)
         }
     }
 }

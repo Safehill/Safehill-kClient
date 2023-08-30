@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test
 class SHHTTPAPITests {
 
     @Test
-    fun testUserCrud() {
+    fun testUserAuthCrud() {
         runBlocking {
             val cryptoUser = SHLocalCryptoUser()
             val localUser = SHLocalUser(cryptoUser)

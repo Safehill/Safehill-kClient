@@ -71,14 +71,14 @@ class SHLocalCryptoUser(val key: KeyPair, val signature: KeyPair) : SHCryptoUser
 
 
 class SHUserContext(private val user: SHLocalCryptoUser) {
-    fun shareable(data: ByteArray, with: SHCryptoUser): SHShareablePayload {
+    fun shareable(data: ByteArray, with: SHCryptoUser, protocolSalt: ByteArray, iv: ByteArray): SHShareablePayload {
         val ephemeralKey = SHKeyPair.generate()
-        val encrypted = SHCypher.encrypt(data, with.publicKey, ephemeralKey, this.user.signature)
+        val encrypted = SHCypher.encrypt(data, with.publicKey, ephemeralKey, protocolSalt, iv, this.user.signature)
         return SHShareablePayload(ephemeralKey.public.encoded, encrypted.ciphertext, encrypted.signature, user)
     }
 
-    fun decrypt(data: ByteArray, encryptedSecret: SHShareablePayload, sender: SHCryptoUser): ByteArray {
-        val secretData = SHCypher.decrypt(encryptedSecret, this.user.key, sender.publicSignature)
+    fun decrypt(data: ByteArray, encryptedSecret: SHShareablePayload, protocolSalt: ByteArray, iv: ByteArray, sender: SHCryptoUser): ByteArray {
+        val secretData = SHCypher.decrypt(encryptedSecret, this.user.key, protocolSalt, iv, sender.publicSignature)
         return SHCypher.decrypt(data, secretData)
     }
 }
