@@ -9,6 +9,7 @@ build/
 .idea/jarRepositories.xml
 .idea/compiler.xml
 .idea/workspace.xml
+.idea/sourcegraph.xml
 .idea/libraries/
 *.iws
 *.iml
@@ -41,3 +42,6 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### Local libraries ##
+lib
