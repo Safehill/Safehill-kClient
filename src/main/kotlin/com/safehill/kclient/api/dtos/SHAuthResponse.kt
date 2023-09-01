@@ -10,7 +10,8 @@ typealias BearerToken = String
 @Serializable
 data class SHAuthResponse(
     val user: SHRemoteUser,
-    val bearerToken: BearerToken
+    val bearerToken: BearerToken,
+    val encryptionProtocolSalt: String
 ) {
     class Deserializer : ResponseDeserializable<SHAuthResponse> {
         override fun deserialize(content: String): SHAuthResponse

@@ -26,13 +26,13 @@ class SHHTTPAPITests {
             }
             createJob.join()
 
-            serverUser?.let {
-                println("Created new user with name: ${it.name}")
-                localUser.name = it.name
+            error?.let {
+                println("error: $it")
+                throw it
             } ?: run {
-                error?.let {
-                    println("error: $it")
-                    throw it
+                serverUser?.let {
+                    println("Created new user with name: ${it.name}")
+                    localUser.name = it.name
                 }
             }
 
@@ -46,13 +46,13 @@ class SHHTTPAPITests {
             }
             authJob.join()
 
-            authResponse?.let {
-                println("Auth token: ${it.bearerToken}")
-                localUser.authenticate(it.user, it.bearerToken)
+            error?.let {
+                println("error: $it")
+                throw it
             } ?: run {
-                error?.let {
-                    println("error: $it")
-                    throw it
+                authResponse?.let {
+                    println("Auth token: ${it.bearerToken}")
+                    localUser.authenticate(it.user, it.bearerToken)
                 }
             }
 
@@ -64,6 +64,11 @@ class SHHTTPAPITests {
                 }
             }
             deleteJob.join()
+
+            error?.let {
+                println("error: $it")
+                throw it
+            }
         }
     }
 

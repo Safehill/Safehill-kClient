@@ -7,8 +7,6 @@ import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.encoding.*
 
-@OptIn(ExperimentalSerializationApi::class)
-@Serializer(forClass = SHRemoteUser::class)
 object SHRemoteUserSerializer : KSerializer<SHRemoteUser> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("SHRemoteUser") {
         element<String>("identifier")
