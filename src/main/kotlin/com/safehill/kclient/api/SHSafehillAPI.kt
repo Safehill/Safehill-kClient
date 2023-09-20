@@ -2,6 +2,7 @@ package com.safehill.kclient.api
 
 import com.safehill.kclient.api.dtos.SHAuthResponse
 import com.safehill.kclient.models.SHLocalUser
+import com.safehill.kclient.models.SHRemoteUser
 import com.safehill.kclient.models.SHServerUser
 
 interface SHSafehillAPI {
@@ -36,11 +37,11 @@ interface SHSafehillAPI {
     /// Get a User's public key and public signature
     /// - Parameters:
     ///   - userIdentifiers: the unique identifiers for the users. If NULL, retrieves all the connected users
-    suspend fun getUsers(withIdentifiers: Array<String>?): Array<SHServerUser>
+    suspend fun getUsers(withIdentifiers: List<String>): List<SHRemoteUser>
 
     /// Get a User's public key and public signature
     /// - Parameters:
     ///   - query: the query string
-    suspend fun searchUsers(query: String): Array<SHServerUser>
+    suspend fun searchUsers(query: String): List<SHRemoteUser>
 
 }

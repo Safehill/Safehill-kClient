@@ -6,6 +6,7 @@ import com.safehill.kclient.models.SHServerUser
 import com.safehill.kcrypto.models.SHLocalCryptoUser
 import kotlinx.coroutines.*
 import org.junit.jupiter.api.Test
+import java.util.Base64
 
 class SHHTTPAPITests {
 
@@ -54,6 +55,26 @@ class SHHTTPAPITests {
                     println("Auth token: ${it.bearerToken}")
                     localUser.authenticate(it.user, it.bearerToken)
                 }
+            }
+
+            val getJob = launch {
+                try {
+                    val users = SHHTTPAPI(localUser).getUsers(listOf(localUser.identifier))
+                    assert(users.isNotEmpty())
+                    val retrievedUser = users[0]
+                    assert(retrievedUser.identifier == localUser.identifier)
+                    assert(retrievedUser.name == localUser.name)
+                    assert(Base64.getEncoder().encodeToString(retrievedUser.publicKeyData) == Base64.getEncoder().encodeToString(localUser.publicKeyData))
+                    assert(Base64.getEncoder().encodeToString(retrievedUser.publicSignatureData) == Base64.getEncoder().encodeToString(localUser.publicSignatureData))
+                } catch (err: Exception) {
+                    error = err
+                }
+            }
+            getJob.join()
+
+            error?.let {
+                println("error: $it")
+                throw it
             }
 
             val deleteJob = launch {

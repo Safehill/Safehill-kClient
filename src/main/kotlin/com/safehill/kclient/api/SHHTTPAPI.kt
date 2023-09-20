@@ -1,18 +1,19 @@
 package com.safehill.kclient.api
 
-import com.github.kittinunf.fuel.core.*
+import com.github.kittinunf.fuel.core.FuelManager
+import com.github.kittinunf.fuel.core.HttpException
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
 import com.safehill.kclient.api.dtos.*
-import com.safehill.kclient.models.*
+import com.safehill.kclient.models.SHLocalUser
+import com.safehill.kclient.models.SHRemoteUser
+import com.safehill.kclient.models.SHServerUser
 import com.safehill.kcrypto.SHCypher
 import com.safehill.kcrypto.models.SHRemoteCryptoUser
 import com.safehill.kcrypto.models.SHShareablePayload
-import com.safehill.kcrypto.models.SHSignature
 import java.security.MessageDigest
-import java.security.PrivateKey
-import java.util.Base64
+import java.util.*
 
 
 enum class ServerEnvironment {
@@ -55,7 +56,6 @@ class SHHTTPAPI(
         when (result) {
             is Result.Success -> return result.component1()!!
             is Result.Failure -> {
-//                println("Error: ${result.error}")
                 throw HttpException(response.statusCode, response.responseMessage)
             }
         }
@@ -75,6 +75,7 @@ class SHHTTPAPI(
         val (request, response, result) = "/users/safe_delete".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .responseString()
+
         println("[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
                 "response.status=${response.statusCode}")
 
@@ -154,12 +155,44 @@ class SHHTTPAPI(
         }
     }
 
-    override suspend fun getUsers(withIdentifiers: Array<String>?): Array<SHServerUser> {
-        TODO("Not yet implemented")
+    override suspend fun getUsers(withIdentifiers: List<String>): List<SHRemoteUser> {
+        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+
+        if (withIdentifiers.isEmpty()) { return listOf() }
+
+        val getUsersRequestBody = SHGetUsersRequest(userIdentifiers = withIdentifiers)
+        val (getRequest, getResponse, getResult) = "/users/retrieve".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Gson().toJson(getUsersRequestBody))
+            .responseObject(SHRemoteUser.ListDeserializer())
+
+        println("[api] POST url=${getRequest.url} with headers=${getRequest.header()} body=${getRequest.body} " +
+                "response.status=${getResponse.statusCode}")
+
+        when (getResult) {
+            is Result.Success -> return getResult.component1()!!
+            is Result.Failure ->
+                throw HttpException(getResponse.statusCode, getResponse.responseMessage)
+        }
     }
 
-    override suspend fun searchUsers(query: String): Array<SHServerUser> {
-        TODO("Not yet implemented")
+    override suspend fun searchUsers(query: String): List<SHRemoteUser> {
+        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+
+        val getUsersRequestBody = SHSearchUsersRequest(query, per = 5, page = 1)
+        val (searchRequest, searchResponse, searchResult) = "/users/search".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Gson().toJson(getUsersRequestBody))
+            .responseObject(SHRemoteUser.ListDeserializer())
+
+        println("[api] POST url=${searchRequest.url} with headers=${searchRequest.header()} body=${searchRequest.body} " +
+                "response.status=${searchResponse.statusCode}")
+
+        when (searchResult) {
+            is Result.Success -> return searchResult.component1()!!
+            is Result.Failure ->
+                throw HttpException(searchResponse.statusCode, searchResponse.responseMessage)
+        }
     }
 
 }
