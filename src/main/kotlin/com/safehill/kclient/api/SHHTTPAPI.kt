@@ -6,9 +6,8 @@ import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
 import com.safehill.kclient.api.dtos.*
-import com.safehill.kclient.models.SHLocalUser
-import com.safehill.kclient.models.SHRemoteUser
-import com.safehill.kclient.models.SHServerUser
+import com.safehill.kclient.api.serde.toIso8601String
+import com.safehill.kclient.models.*
 import com.safehill.kcrypto.SHCypher
 import com.safehill.kcrypto.models.SHRemoteCryptoUser
 import com.safehill.kcrypto.models.SHShareablePayload
@@ -192,6 +191,65 @@ class SHHTTPAPI(
             is Result.Success -> return searchResult.component1()!!
             is Result.Failure ->
                 throw HttpException(searchResponse.statusCode, searchResponse.responseMessage)
+        }
+    }
+
+    override suspend fun getAssetDescriptors(): List<SHAssetDescriptor> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getAssetDescriptors(assetGlobalIdentifiers: List<AssetGlobalIdentifier>): List<SHAssetDescriptor> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getAssets(
+        withGlobalIdentifiers: List<String>,
+        versions: List<SHAssetQuality>?,
+    ): Map<String, SHEncryptedAsset> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun create(
+        assets: List<SHEncryptedAsset>,
+        groupId: String,
+        filterVersions: List<SHAssetQuality>?,
+    ): List<SHServerAsset> {
+        if (assets.size > 1) {
+            throw NotImplementedError("Current API only supports creating one asset per request")
+        }
+        val asset = assets.first()
+
+        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+
+        val assetCreatedAt = asset.creationDate ?: run { Date(0) }
+        val requestBody = SHCreateAssetRequest(
+            asset.globalIdentifier,
+            asset.localIdentifier,
+            assetCreatedAt.toIso8601String(),
+            groupId,
+            asset.encryptedVersions.map {
+                SHCreateServerAssetVersion(
+                    it.key.toString(),
+                    Base64.getEncoder().encodeToString(it.value.publicKeyData),
+                    Base64.getEncoder().encodeToString(it.value.publicSignatureData),
+                    Base64.getEncoder().encodeToString(it.value.encryptedSecret),
+                )
+            },
+            forceUpdateVersions = true
+        )
+        val (request, response, result) = "/assets/create".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Gson().toJson(requestBody))
+            .responseObject(SHServerAsset.Deserializer())
+
+        println("[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
+                "response.status=${response.statusCode}")
+
+        when (result) {
+            is Result.Success -> return listOf(result.component1()!!)
+            is Result.Failure -> {
+                throw HttpException(response.statusCode, response.responseMessage)
+            }
         }
     }
 
