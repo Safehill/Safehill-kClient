@@ -16,17 +16,17 @@ object SHServerAssetSerializer : KSerializer<SHServerAsset> {
     object SHServerAssetVersionSerializer : KSerializer<SHServerAssetVersion> {
         override val descriptor: SerialDescriptor= buildClassSerialDescriptor("SHServerAsset") {
             element<String>("versionName")
-            element<ByteArray>("publicKey")
+            element<ByteArray>("ephemeralPublicKey")
             element<ByteArray>("publicSignature")
             element<ByteArray>("encryptedSecret")
             element<String?>("presignedURL")
-            element<Int?>("presignedExpiresIn")
+            element<Int?>("presignedURLExpiresInMinutes")
         }
 
         override fun deserialize(decoder: Decoder): SHServerAssetVersion {
             return decoder.decodeStructure(descriptor) {
                 var versionName: String? = null
-                var publicKey: ByteArray? = null
+                var ephemeralPublicKey: ByteArray? = null
                 var publicSignature: ByteArray? = null
                 var encryptedSecret: ByteArray? = null
                 var presignedURL: String? = null
@@ -37,7 +37,7 @@ object SHServerAssetSerializer : KSerializer<SHServerAsset> {
                         CompositeDecoder.DECODE_DONE -> break@loop
 
                         0 -> versionName = decodeStringElement(descriptor, 0)
-                        1 -> publicKey = decodeSerializableElement(descriptor, 1, Base64DataSerializer)
+                        1 -> ephemeralPublicKey = decodeSerializableElement(descriptor, 1, Base64DataSerializer)
                         2 -> publicSignature = decodeSerializableElement(descriptor, 2, Base64DataSerializer)
                         3 -> encryptedSecret = decodeSerializableElement(descriptor, 3, Base64DataSerializer)
                         4 -> presignedURL = decodeStringElement(descriptor, 4)
@@ -49,8 +49,8 @@ object SHServerAssetSerializer : KSerializer<SHServerAsset> {
 
                 SHServerAssetVersion(
                     requireNotNull(versionName),
-                    requireNotNull(publicKey),
-                    requireNotNull(publicSignature),
+                    publicKeyData = requireNotNull(ephemeralPublicKey),
+                    publicSignatureData = requireNotNull(publicSignature),
                     requireNotNull(encryptedSecret),
                     presignedURL,
                     presignedURLExpiresInMinutes
@@ -73,9 +73,19 @@ object SHServerAssetSerializer : KSerializer<SHServerAsset> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("SHServerAsset") {
         element<String>("globalIdentifier")
         element<String>("localIdentifier")
-        element<Date>("creationDate")
+        element<String>("creationDate")
         element<String>("groupId")
         element<List<SHServerAssetVersion>>("versions")
+    }
+
+    override fun serialize(encoder: Encoder, value: SHServerAsset) {
+        encoder.encodeStructure(descriptor) {
+            encodeStringElement(descriptor, 0, value.globalIdentifier)
+            value.localIdentifier?.let { encodeStringElement(descriptor, 1, it) }
+            value.creationDate?.let { encodeSerializableElement(descriptor, 2, ISO8601DateSerializer, it) }
+            encodeStringElement(descriptor, 3, value.groupId)
+            encodeSerializableElement(descriptor, 4, ListSerializer(SHServerAssetVersionSerializer), value.versions)
+        }
     }
 
     override fun deserialize(decoder: Decoder): SHServerAsset {
@@ -107,16 +117,6 @@ object SHServerAssetSerializer : KSerializer<SHServerAsset> {
                 requireNotNull(groupId),
                 requireNotNull(versions)
             )
-        }
-    }
-
-    override fun serialize(encoder: Encoder, value: SHServerAsset) {
-        encoder.encodeStructure(descriptor) {
-            encodeStringElement(descriptor, 0, value.globalIdentifier)
-            value.localIdentifier?.let { encodeStringElement(descriptor, 1, it) }
-            value.creationDate?.let { encodeSerializableElement(descriptor, 2, ISO8601DateSerializer, it) }
-            encodeStringElement(descriptor, 3, value.groupId)
-            encodeSerializableElement(descriptor, 4, ListSerializer(SHServerAssetVersionSerializer), value.versions)
         }
     }
 }

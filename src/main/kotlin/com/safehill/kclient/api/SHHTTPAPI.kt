@@ -253,4 +253,21 @@ class SHHTTPAPI(
         }
     }
 
+    override suspend fun deleteAssets(withGlobalIdentifiers: List<String>): List<String> {
+        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+
+        val (request, response, _) = "/assets/delete".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Gson().toJson(SHDeleteAssetRequest(withGlobalIdentifiers)))
+            .response()
+
+        println("[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
+                "response.status=${response.statusCode}")
+
+        when (response.statusCode) {
+            200 -> return withGlobalIdentifiers
+            else -> throw HttpException(response.statusCode, response.responseMessage)
+        }
+    }
+
 }

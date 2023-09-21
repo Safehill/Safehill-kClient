@@ -88,8 +88,26 @@ class SHHTTPAPITests {
         }
     }
 
+    private suspend fun deleteAssets(coroutineScope: CoroutineScope, localUser: SHLocalUser,assets: List<SHServerAsset>) {
+        var error: Exception? = null
+
+        val deleteJob = coroutineScope.launch {
+            try {
+                SHHTTPAPI(localUser).deleteAssets(assets.map { it.globalIdentifier })
+            } catch (err: Exception) {
+                error = err
+            }
+        }
+        deleteJob.join()
+
+        error?.let {
+            println("error: $it")
+            throw it
+        }
+    }
+
     @Test
-    fun testUserAuthCrud() {
+    fun testUserAuthCRUD() {
         runBlocking {
             val user = createNewUser(this)
             authenticateUser(this, user)
@@ -121,7 +139,7 @@ class SHHTTPAPITests {
     }
 
     @Test
-    fun testCreateAsset() {
+    fun testAssetAndDescriptorCRUD() {
         val groupId = "sampleGroupId"
         val assetKey = SHKeyPair.generate()
         val assetSignature = SHKeyPair.generate()
@@ -166,6 +184,7 @@ class SHHTTPAPITests {
                 throw it
             }
 
+            deleteAssets(this, user, listOf(createdAsset!!))
             deleteUser(this, user)
         }
     }
