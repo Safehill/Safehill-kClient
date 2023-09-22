@@ -1,8 +1,10 @@
 package com.safehill.kclient.models
 
+import com.github.kittinunf.fuel.core.ResponseDeserializable
 import com.safehill.kclient.api.serde.SHAssetDescriptorSerializer
 import kotlinx.serialization.Serializable
-import java.util.Date
+import kotlinx.serialization.json.Json
+import java.util.*
 
 @Serializable(with = SHAssetDescriptorSerializer::class)
 interface SHAssetDescriptor : SHRemoteAssetIdentifiable {
@@ -49,5 +51,11 @@ interface SHAssetDescriptor : SHRemoteAssetIdentifiable {
     val creationDate: Date?
     var uploadState: UploadState
     var sharingInfo: SharingInfo
+
+    class ListDeserializer : ResponseDeserializable<List<SHAssetDescriptor>> {
+        override fun deserialize(content: String): List<SHAssetDescriptor> {
+            return Json.decodeFromString(content)
+        }
+    }
 }
 

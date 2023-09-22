@@ -17,15 +17,37 @@ object SHAssetDescriptorSerializer : KSerializer<SHAssetDescriptor> {
         object GroupInfoSerializer : KSerializer<SHAssetDescriptor.SharingInfo.GroupInfo> {
             override val descriptor: SerialDescriptor = buildClassSerialDescriptor("SHAssetDescriptor.SharingInfo.GroupInfo") {
                 element<String>("name")
-                element<Date>("createdAt")
-            }
-
-            override fun deserialize(decoder: Decoder): SHAssetDescriptor.SharingInfo.GroupInfo {
-                TODO("Not yet implemented")
+                element<String>("createdAt")
             }
 
             override fun serialize(encoder: Encoder, value: SHAssetDescriptor.SharingInfo.GroupInfo) {
-                TODO("Not yet implemented")
+                encoder.encodeStructure(descriptor) {
+                    value.name?.let { encodeStringElement(descriptor, 0, it) }
+                    value.createdAt?.let { encodeSerializableElement(SharingInfoSerializer.descriptor, 1, ISO8601DateSerializer, it) }
+                }
+            }
+
+            override fun deserialize(decoder: Decoder): SHAssetDescriptor.SharingInfo.GroupInfo {
+                return decoder.decodeStructure(descriptor) {
+                    var name: String? = null
+                    var createdAt: Date? = null
+
+                    loop@ while (true) {
+                        when (val index = decodeElementIndex(descriptor)) {
+                            CompositeDecoder.DECODE_DONE -> break@loop
+
+                            0 -> name = decodeStringElement(descriptor, 0)
+                            1 -> createdAt = decodeSerializableElement(descriptor, 1, ISO8601DateSerializer)
+
+                            else -> throw SerializationException("unexpected index $index")
+                        }
+                    }
+
+                    SHAssetDescriptorImpl.SharingInfoImpl.GroupInfoImpl(
+                        name = name,
+                        createdAt = createdAt
+                    )
+                }
             }
 
         }
@@ -51,7 +73,7 @@ object SHAssetDescriptorSerializer : KSerializer<SHAssetDescriptor> {
                 var groupInfoById: Map<String, SHAssetDescriptor.SharingInfo.GroupInfo>? = null
 
                 loop@ while (true) {
-                    when (val index = decodeElementIndex(SHAssetDescriptorSerializer.descriptor)) {
+                    when (val index = decodeElementIndex(descriptor)) {
                         CompositeDecoder.DECODE_DONE -> break@loop
 
                         0 -> sharedByUserIdentifier = decodeStringElement(descriptor, 0)
@@ -75,7 +97,7 @@ object SHAssetDescriptorSerializer : KSerializer<SHAssetDescriptor> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("SHAssetDescriptor") {
         element<String>("globalIdentifier")
         element<String>("localIdentifier")
-        element<Date>("creationDate")
+        element<String>("creationDate")
         element<SHAssetDescriptor.UploadState>("uploadState")
         element<SHAssetDescriptor.SharingInfo>("sharingInfo")
     }
@@ -87,7 +109,7 @@ object SHAssetDescriptorSerializer : KSerializer<SHAssetDescriptor> {
             value.creationDate?.let { encodeSerializableElement(descriptor, 2, ISO8601DateSerializer, it) }
             encodeStringElement(descriptor, 3, value.uploadState.toString())
             encodeSerializableElement(descriptor, 4, SharingInfoSerializer,
-                value.sharingInfo as SHAssetDescriptor.SharingInfo
+                value.sharingInfo
             )
         }
     }
@@ -107,7 +129,7 @@ object SHAssetDescriptorSerializer : KSerializer<SHAssetDescriptor> {
                     0 -> globalIdentifier = decodeStringElement(descriptor, 0)
                     1 -> localIdentifier = decodeStringElement(descriptor, 1)
                     2 -> creationDate = decodeSerializableElement(descriptor, 2, ISO8601DateSerializer)
-                    3 -> uploadState = SHAssetDescriptor.UploadState.valueOf(decodeStringElement(descriptor, 3))
+                    3 -> uploadState = SHAssetDescriptor.UploadState.entries.firstOrNull { it.toString() == decodeStringElement(descriptor, 3) }
                     4 -> sharingInfo = decodeSerializableElement(descriptor, 4, SharingInfoSerializer)
 
                     else -> throw SerializationException("unexpected index $index")

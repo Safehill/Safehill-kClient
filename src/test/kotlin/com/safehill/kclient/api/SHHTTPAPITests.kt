@@ -163,26 +163,47 @@ class SHHTTPAPITests {
             val user = createNewUser(this)
             authenticateUser(this, user)
 
+            val api = SHHTTPAPI(user)
+
             var createdAsset: SHServerAsset? = null
             var error: Exception? = null
-            val getJob = launch {
+            val createJob = launch {
                 try {
-                    createdAsset = SHHTTPAPI(user).create(
+                    createdAsset = api.create(
                         listOf(encryptedAsset),
                         groupId,
                         null
                     ).first()
                 } catch (err: Exception) {
-                    deleteUser(this, user)
                     error = err
                 }
             }
-            getJob.join()
+            createJob.join()
 
             error?.let {
+                deleteUser(this, user)
                 println("error: $it")
                 throw it
             }
+
+            var descriptors: List<SHAssetDescriptor> = emptyList()
+            val getDescriptorJob = launch {
+                try {
+                    descriptors = api.getAssetDescriptors()
+                } catch (err: Exception) {
+                    error = err
+                }
+            }
+            getDescriptorJob.join()
+
+            error?.let {
+                deleteAssets(this, user, listOf(createdAsset!!))
+                deleteUser(this, user)
+                println("error: $it")
+                throw it
+            }
+
+            assert(descriptors.size == 1)
 
             deleteAssets(this, user, listOf(createdAsset!!))
             deleteUser(this, user)

@@ -195,7 +195,21 @@ class SHHTTPAPI(
     }
 
     override suspend fun getAssetDescriptors(): List<SHAssetDescriptor> {
-        TODO("Not yet implemented")
+        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+
+        val (request, response, result) = "/assets/descriptors/retrieve".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .responseObject(SHAssetDescriptor.ListDeserializer())
+
+        println("[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
+                "response.status=${response.statusCode}")
+
+        when (result) {
+            is Result.Success -> return result.component1()!!
+            is Result.Failure -> {
+                throw HttpException(response.statusCode, response.responseMessage)
+            }
+        }
     }
 
     override suspend fun getAssetDescriptors(assetGlobalIdentifiers: List<AssetGlobalIdentifier>): List<SHAssetDescriptor> {
@@ -203,7 +217,7 @@ class SHHTTPAPI(
     }
 
     override suspend fun getAssets(
-        withGlobalIdentifiers: List<String>,
+        globalIdentifiers: List<String>,
         versions: List<SHAssetQuality>?,
     ): Map<String, SHEncryptedAsset> {
         TODO("Not yet implemented")
@@ -253,19 +267,19 @@ class SHHTTPAPI(
         }
     }
 
-    override suspend fun deleteAssets(withGlobalIdentifiers: List<String>): List<String> {
+    override suspend fun deleteAssets(globalIdentifiers: List<String>): List<String> {
         val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
 
         val (request, response, _) = "/assets/delete".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Gson().toJson(SHDeleteAssetRequest(withGlobalIdentifiers)))
+            .body(Gson().toJson(SHDeleteAssetRequest(globalIdentifiers)))
             .response()
 
         println("[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
                 "response.status=${response.statusCode}")
 
         when (response.statusCode) {
-            200 -> return withGlobalIdentifiers
+            200 -> return globalIdentifiers
             else -> throw HttpException(response.statusCode, response.responseMessage)
         }
     }

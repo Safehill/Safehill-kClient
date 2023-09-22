@@ -75,7 +75,7 @@ interface SHSafehillAPI {
     ///   - versions: filtering by version
     /// - Returns:
     ///   - the encrypted assets from the server
-    suspend fun getAssets(withGlobalIdentifiers: List<String>,
+    suspend fun getAssets(globalIdentifiers: List<String>,
                           versions: List<SHAssetQuality>?): Map<String, SHEncryptedAsset>
 
     // MARK: Assets Write
@@ -96,5 +96,5 @@ interface SHSafehillAPI {
     ///   - withGlobalIdentifiers: the global identifier
     /// - Returns:
     ///   - the list of global identifiers that have been deleted
-    suspend fun deleteAssets(withGlobalIdentifiers: List<String>): List<String>
+    suspend fun deleteAssets(globalIdentifiers: List<String>): List<String>
 }
