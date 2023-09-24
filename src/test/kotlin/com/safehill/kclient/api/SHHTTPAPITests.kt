@@ -10,12 +10,15 @@ import org.junit.jupiter.api.Test
 import java.util.Base64
 import java.util.Date
 import kotlin.random.Random
+import kotlin.test.assertIs
 
 class SHHTTPAPITests {
 
-    private suspend fun createNewUser(coroutineScope: CoroutineScope): SHLocalUser {
-        val cryptoUser = SHLocalCryptoUser()
-        val localUser = SHLocalUser(cryptoUser)
+    private suspend fun createUserOnServer(coroutineScope: CoroutineScope, user: SHLocalUser? = null): SHLocalUser {
+        val localUser: SHLocalUser = user ?: run {
+            val cryptoUser = SHLocalCryptoUser()
+            SHLocalUser(cryptoUser)
+        }
 
         val charPool : List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
         val newUserName = (1..20)
@@ -109,7 +112,7 @@ class SHHTTPAPITests {
     @Test
     fun testUserAuthCRUD() {
         runBlocking {
-            val user = createNewUser(this)
+            val user = createUserOnServer(this)
             authenticateUser(this, user)
 
             var error: Exception? = null
@@ -160,7 +163,7 @@ class SHHTTPAPITests {
         )
 
         runBlocking {
-            val user = createNewUser(this)
+            val user = createUserOnServer(this)
             authenticateUser(this, user)
 
             val api = SHHTTPAPI(user)
@@ -207,6 +210,49 @@ class SHHTTPAPITests {
 
             deleteAssets(this, user, listOf(createdAsset!!))
             deleteUser(this, user)
+        }
+    }
+
+    @Test
+    fun testUnauthorizedGetUsers() {
+        val cryptoUser = SHLocalCryptoUser()
+        val localUser = SHLocalUser(cryptoUser)
+        val api = SHHTTPAPI(localUser)
+
+        runBlocking {
+            try {
+                api.getUsers(listOf(localUser.shUser.identifier)).firstOrNull()
+            } catch (e: SHHTTPException) {
+                assert(e.statusCode == SHHTTPStatusCode.UNAUTHORIZED)
+            }
+
+            createUserOnServer(this, localUser)
+            authenticateUser(this, localUser)
+
+            api.getUsers(listOf(localUser.shUser.identifier)).firstOrNull()
+
+            // Invalid auth token
+            localUser.authToken = ""
+
+            try {
+                api.getUsers(listOf(localUser.shUser.identifier)).firstOrNull()
+            } catch (e: SHHTTPException) {
+                assert(e.statusCode == SHHTTPStatusCode.UNAUTHORIZED)
+            }
+        }
+    }
+
+    @Test
+    fun testAuthenticateNonExistingUser() {
+        val localUser = SHLocalUser(SHLocalCryptoUser())
+        val api = SHHTTPAPI(localUser)
+
+        runBlocking {
+            try {
+                api.signIn("invalidUserName")
+            } catch (e: SHHTTPException) {
+                assert(e.statusCode == SHHTTPStatusCode.CONFLICT)
+            }
         }
     }
 }
