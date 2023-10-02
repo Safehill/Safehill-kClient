@@ -4,6 +4,7 @@ import com.safehill.kcrypto.models.SHCryptoUser
 import com.safehill.kcrypto.models.SHLocalCryptoUser
 import com.safehill.kcrypto.models.SHShareablePayload
 import com.safehill.kcrypto.models.SHUserContext
+import org.jetbrains.annotations.TestOnly
 
 class SHLocalUser(
     var shUser: SHLocalCryptoUser
@@ -21,7 +22,7 @@ class SHLocalUser(
     var authToken: String? = null
 
     private fun updateUserDetails(given: SHServerUser?) {
-        val user = given?.let {
+        given?.let {
             this.name = it.name
         } ?: run {
             this.name = ""

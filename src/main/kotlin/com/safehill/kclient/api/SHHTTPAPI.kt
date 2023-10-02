@@ -6,18 +6,40 @@ import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
 import com.safehill.kclient.api.dtos.*
-import com.safehill.kclient.models.SHLocalUser
-import com.safehill.kclient.models.SHRemoteUser
-import com.safehill.kclient.models.SHServerUser
+import com.safehill.kclient.api.serde.toIso8601String
+import com.safehill.kclient.models.*
 import com.safehill.kcrypto.SHCypher
 import com.safehill.kcrypto.models.SHRemoteCryptoUser
 import com.safehill.kcrypto.models.SHShareablePayload
 import java.security.MessageDigest
 import java.util.*
+import javax.lang.model.type.UnionType
 
 
 enum class ServerEnvironment {
     Production, Development
+}
+
+enum class SHHTTPStatusCode(val statusCode: Int) {
+    UNAUTHORIZED(401),
+    PAYMENT_REQUIRED(402),
+    NOT_FOUND(404),
+    METHOD_NOT_ALLOWED(405),
+    CONFLICT(409);
+
+    companion object {
+        fun fromInt(value: Int): SHHTTPStatusCode? {
+            return entries.firstOrNull() { it.statusCode == value }
+        }
+    }
+}
+
+data class SHHTTPException(
+    val statusCode: SHHTTPStatusCode?,
+    override val message: String,
+) : Exception(message) {
+    constructor(statusCode: Int, message: String)
+            : this(SHHTTPStatusCode.fromInt(statusCode), "$statusCode: $message")
 }
 
 
@@ -25,12 +47,13 @@ enum class ServerEnvironment {
 
 class SHHTTPAPI(
     override var requestor: SHLocalUser,
-    private val environment: ServerEnvironment = ServerEnvironment.Development
+    private val environment: ServerEnvironment = ServerEnvironment.Development,
+    hostname: String = "localhost"
 ) : SHSafehillAPI {
 
     init {
         FuelManager.instance.basePath = when(this.environment) {
-            ServerEnvironment.Development -> "http://localhost:8080"
+            ServerEnvironment.Development -> "http://${hostname}:8080"
             ServerEnvironment.Production -> "https://app.safehill.io:433"
         }
         FuelManager.instance.baseHeaders = mapOf("Content-type" to "application/json")
@@ -56,19 +79,22 @@ class SHHTTPAPI(
         when (result) {
             is Result.Success -> return result.component1()!!
             is Result.Failure -> {
-                throw HttpException(response.statusCode, response.responseMessage)
+                throw SHHTTPException(response.statusCode, response.responseMessage)
             }
         }
     }
 
+    @Throws
     override suspend fun updateUser(name: String?): SHServerUser {
         TODO("Not yet implemented")
     }
 
+    @Throws
     override suspend fun deleteAccount(name: String, password: String) {
         TODO("Not yet implemented")
     }
 
+    @Throws
     override suspend fun deleteAccount() {
         val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
 
@@ -81,10 +107,12 @@ class SHHTTPAPI(
 
         when (result) {
             is Result.Success -> return
-            is Result.Failure -> throw result.getException()
+            is Result.Failure ->
+                throw SHHTTPException(response.statusCode, response.responseMessage)
         }
     }
 
+    @Throws
     fun solveChallenge(authChallenge: SHAuthChallenge): SHAuthSolvedChallenge {
         val serverCrypto = SHRemoteCryptoUser(
             Base64.getDecoder().decode(authChallenge.publicKey),
@@ -117,6 +145,7 @@ class SHHTTPAPI(
         )
     }
 
+    @Throws
     override suspend fun signIn(name: String): SHAuthResponse {
         val authRequestBody = SHAuthStartChallenge(
             identifier=requestor.identifier,
@@ -132,8 +161,7 @@ class SHHTTPAPI(
         val authChallenge = when (startResult) {
             is Result.Success -> startResult.component1()!!
             is Result.Failure -> {
-//                println("Error: ${result.error}")
-                throw HttpException(startResponse.statusCode, startResponse.responseMessage)
+                throw SHHTTPException(startResponse.statusCode, startResponse.responseMessage)
             }
         }
 
@@ -149,14 +177,14 @@ class SHHTTPAPI(
         when (verifyResult) {
             is Result.Success -> return verifyResult.component1()!!
             is Result.Failure -> {
-//                println("Error: ${result.error}")
-                throw HttpException(verifyResponse.statusCode, verifyResponse.responseMessage)
+                throw SHHTTPException(verifyResponse.statusCode, verifyResponse.responseMessage)
             }
         }
     }
 
+    @Throws
     override suspend fun getUsers(withIdentifiers: List<String>): List<SHRemoteUser> {
-        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+        val bearerToken = this.requestor.authToken ?: throw SHHTTPException(401, "unauthorized")
 
         if (withIdentifiers.isEmpty()) { return listOf() }
 
@@ -172,10 +200,11 @@ class SHHTTPAPI(
         when (getResult) {
             is Result.Success -> return getResult.component1()!!
             is Result.Failure ->
-                throw HttpException(getResponse.statusCode, getResponse.responseMessage)
+                throw SHHTTPException(getResponse.statusCode, getResponse.responseMessage)
         }
     }
 
+    @Throws
     override suspend fun searchUsers(query: String): List<SHRemoteUser> {
         val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
 
@@ -191,7 +220,102 @@ class SHHTTPAPI(
         when (searchResult) {
             is Result.Success -> return searchResult.component1()!!
             is Result.Failure ->
-                throw HttpException(searchResponse.statusCode, searchResponse.responseMessage)
+                throw SHHTTPException(searchResponse.statusCode, searchResponse.responseMessage)
+        }
+    }
+
+    @Throws
+    override suspend fun getAssetDescriptors(): List<SHAssetDescriptor> {
+        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+
+        val (request, response, result) = "/assets/descriptors/retrieve".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .responseObject(SHAssetDescriptor.ListDeserializer())
+
+        println("[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
+                "response.status=${response.statusCode}")
+
+        when (result) {
+            is Result.Success -> return result.component1()!!
+            is Result.Failure -> {
+                throw SHHTTPException(response.statusCode, response.responseMessage)
+            }
+        }
+    }
+
+    @Throws
+    override suspend fun getAssetDescriptors(assetGlobalIdentifiers: List<AssetGlobalIdentifier>): List<SHAssetDescriptor> {
+        TODO("Not yet implemented")
+    }
+
+    @Throws
+    override suspend fun getAssets(
+        globalIdentifiers: List<String>,
+        versions: List<SHAssetQuality>?,
+    ): Map<String, SHEncryptedAsset> {
+        TODO("Not yet implemented")
+    }
+
+    @Throws
+    override suspend fun create(
+        assets: List<SHEncryptedAsset>,
+        groupId: String,
+        filterVersions: List<SHAssetQuality>?,
+    ): List<SHServerAsset> {
+        if (assets.size > 1) {
+            throw NotImplementedError("Current API only supports creating one asset per request")
+        }
+        val asset = assets.first()
+
+        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+
+        val assetCreatedAt = asset.creationDate ?: run { Date(0) }
+        val requestBody = SHCreateAssetRequest(
+            asset.globalIdentifier,
+            asset.localIdentifier,
+            assetCreatedAt.toIso8601String(),
+            groupId,
+            asset.encryptedVersions.map {
+                SHCreateServerAssetVersion(
+                    it.key.toString(),
+                    Base64.getEncoder().encodeToString(it.value.publicKeyData),
+                    Base64.getEncoder().encodeToString(it.value.publicSignatureData),
+                    Base64.getEncoder().encodeToString(it.value.encryptedSecret),
+                )
+            },
+            forceUpdateVersions = true
+        )
+        val (request, response, result) = "/assets/create".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Gson().toJson(requestBody))
+            .responseObject(SHServerAsset.Deserializer())
+
+        println("[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
+                "response.status=${response.statusCode}")
+
+        when (result) {
+            is Result.Success -> return listOf(result.component1()!!)
+            is Result.Failure -> {
+                throw SHHTTPException(response.statusCode, response.responseMessage)
+            }
+        }
+    }
+
+    @Throws
+    override suspend fun deleteAssets(globalIdentifiers: List<String>): List<String> {
+        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+
+        val (request, response, _) = "/assets/delete".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Gson().toJson(SHDeleteAssetRequest(globalIdentifiers)))
+            .response()
+
+        println("[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
+                "response.status=${response.statusCode}")
+
+        when (response.statusCode) {
+            200 -> return globalIdentifiers
+            else -> throw SHHTTPException(response.statusCode, response.responseMessage)
         }
     }
 
