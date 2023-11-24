@@ -62,7 +62,7 @@ class SHHTTPAPI(
 
     @Throws
     override suspend fun createUser(name: String): SHServerUser {
-        val requestBody = SHCreateUserRequest(
+        val requestBody = SHUserCreateDTO(
             identifier=requestor.identifier,
             publicKey=Base64.getEncoder().encodeToString(requestor.publicKeyData),
             publicSignature=Base64.getEncoder().encodeToString(requestor.publicSignatureData),
@@ -85,11 +85,31 @@ class SHHTTPAPI(
 
     override suspend fun sendCodeToUser(
         countryCode: Int,
-        phoneNumber: Int,
+        phoneNumber: Long,
         code: String,
         medium: SHSendCodeToUserRequestDTO.Medium,
     ) {
-        TODO("Not yet implemented")
+        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+
+        val requestBody = SHSendCodeToUserRequestDTO(
+            countryCode = countryCode,
+            phoneNumber = phoneNumber,
+            code = code,
+            medium = medium
+        )
+
+        val (request, response, result) = "/users/code/send".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Gson().toJson(requestBody))
+            .response()
+
+        println("[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
+                "response.status=${response.statusCode}")
+
+        when (response.statusCode) {
+            200 -> return
+            else -> throw SHHTTPException(response.statusCode, response.responseMessage)
+        }
     }
 
     @Throws

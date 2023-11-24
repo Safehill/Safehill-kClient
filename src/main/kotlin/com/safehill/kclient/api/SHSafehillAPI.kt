@@ -28,7 +28,7 @@ interface SHSafehillAPI {
     ///   - medium: the medium, either SMS or email
     suspend fun sendCodeToUser(
         countryCode: Int,
-        phoneNumber: Int,
+        phoneNumber: Long,
         code: String,
         medium: SHSendCodeToUserRequestDTO.Medium
     )

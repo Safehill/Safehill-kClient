@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test
 import java.util.Base64
 import java.util.Date
 import kotlin.random.Random
-import kotlin.test.assertIs
 
 class SHHTTPAPITests {
 
@@ -252,6 +251,29 @@ class SHHTTPAPITests {
                 api.signIn("invalidUserName")
             } catch (e: SHHTTPException) {
                 assert(e.statusCode == SHHTTPStatusCode.CONFLICT)
+            }
+        }
+    }
+
+    @Test
+    fun testSendCodeToUser() {
+        runBlocking {
+            val user = createUserOnServer(this)
+            authenticateUser(this, user)
+
+            var error: Exception? = null
+            val api = SHHTTPAPI(user)
+
+            try {
+                api.sendCodeToUser(1, 4151234567, "12345", SHSendCodeToUserRequestDTO.Medium.SMS)
+            } catch (e: Exception) {
+                error = e
+            }
+
+            error?.let {
+                deleteUser(this, user)
+                println("error: $it")
+                throw it
             }
         }
     }

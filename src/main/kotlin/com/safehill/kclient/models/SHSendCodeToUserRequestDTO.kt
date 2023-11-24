@@ -1,8 +1,11 @@
 package com.safehill.kclient.models
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class SHSendCodeToUserRequestDTO(
     val countryCode: Int,
-    val phoneNumber: Int,
+    val phoneNumber: Long,
     val code: String,
     val medium: Medium
 ) {

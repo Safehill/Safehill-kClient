@@ -3,7 +3,7 @@ package com.safehill.kclient.api.dtos
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class SHCreateUserRequest(
+data class SHUserCreateDTO(
     val identifier: String,
     val publicKey: String,
     val publicSignature: String,
