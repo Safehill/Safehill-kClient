@@ -17,6 +17,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
+    implementation("dev.turingcomplete:kotlin-onetimepassword:2.4.0")
     testImplementation(kotlin("test"))
     implementation(kotlin("stdlib"))
 }

@@ -5,11 +5,17 @@ import com.safehill.kcrypto.models.SHPublicKey
 import com.safehill.kcrypto.models.SHShareablePayload
 import com.safehill.kcrypto.models.SHSignature
 import com.safehill.kcrypto.models.SignatureVerificationError
+import dev.turingcomplete.kotlinonetimepassword.HmacAlgorithm
+import dev.turingcomplete.kotlinonetimepassword.TimeBasedOneTimePasswordConfig
+import dev.turingcomplete.kotlinonetimepassword.TimeBasedOneTimePasswordGenerator
+import java.security.DrbgParameters.Instantiation
 import java.security.KeyPair
 import java.security.PrivateKey
 import java.security.PublicKey
 import java.security.SecureRandom
+import java.time.Instant
 import java.util.*
+import java.util.concurrent.TimeUnit
 import javax.crypto.AEADBadTagException
 import javax.crypto.Cipher
 import javax.crypto.KeyAgreement
@@ -31,6 +37,20 @@ class SHCypher {
             val iv = ByteArray(length)
             sr.nextBytes(iv)
             return iv
+        }
+
+        fun generateOTPCode(secret: ByteArray, digits: Int = 6, timeStepInSeconds: Long = 30): String {
+            val config = TimeBasedOneTimePasswordConfig(
+                codeDigits = digits,
+                hmacAlgorithm = HmacAlgorithm.SHA1,
+                timeStep = timeStepInSeconds,
+                timeStepUnit = TimeUnit.SECONDS
+            )
+            val timeBasedOneTimePasswordGenerator = TimeBasedOneTimePasswordGenerator(secret, config)
+
+            val timestamp = Date().toInstant().toEpochMilli()
+            val code = timeBasedOneTimePasswordGenerator.generate(timestamp)
+            return code
         }
 
         fun encrypt(message: ByteArray, key: ByteArray, iv: ByteArray): ByteArray {

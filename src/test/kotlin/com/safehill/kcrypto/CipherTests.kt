@@ -18,6 +18,43 @@ class CipherTests {
     private val STATIC_PROTOCOL_SALT: ByteArray = Base64.getDecoder().decode("/5RWVwIP//+i///Z")
 
     @Test
+    fun testGenerateOTP() {
+        val secret = SHCypher.generateRandomIV()
+        val code1 = SHCypher.generateOTPCode(secret = secret, digits = 6)
+        assertEquals(code1.length, 6)
+
+        val code2 = SHCypher.generateOTPCode(secret = secret, digits = 6)
+        assertEquals(code1.length, 6)
+        assertEquals(code1, code2)
+
+        val code3 = SHCypher.generateOTPCode(secret = secret, digits = 6, timeStepInSeconds = 1)
+        val code4 = SHCypher.generateOTPCode(secret = secret, digits = 6, timeStepInSeconds = 1)
+        assertEquals(code3, code4)
+
+        Thread.sleep(1100)
+
+        val code5 = SHCypher.generateOTPCode(secret = secret, digits = 6, timeStepInSeconds = 1)
+        assertNotEquals(code4, code5)
+
+        val code6 = SHCypher.generateOTPCode(secret = secret, digits = 6, timeStepInSeconds = 5)
+        assertNotEquals(code5, code6)
+
+        val code7 = SHCypher.generateOTPCode(secret = secret, digits = 6, timeStepInSeconds = 5)
+        assertEquals(code6, code7)
+
+        Thread.sleep(1100)
+
+        val code8 = SHCypher.generateOTPCode(secret = secret, digits = 6, timeStepInSeconds = 5)
+        val code9 = SHCypher.generateOTPCode(secret = secret, digits = 6, timeStepInSeconds = 5)
+        assertEquals(code8, code9)
+
+        Thread.sleep(4100)
+
+        val code10 = SHCypher.generateOTPCode(secret = secret, digits = 6, timeStepInSeconds = 5)
+        assertNotEquals(code9, code10)
+    }
+
+    @Test
     fun testEncryptDecryptSharedSecretStaticIV() {
         val stringToEncrypt = "Text to encrypt"
         val encryptionKey = SHSymmetricKey().secretKeySpec.encoded
