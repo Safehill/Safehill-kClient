@@ -20,6 +20,19 @@ interface SHSafehillAPI {
     ///   - the user just created
     suspend fun createUser(name: String): SHServerUser
 
+    /// Send a code to a user to verify identity, via either phone or SMS
+    /// - Parameters:
+    ///   - countryCode: the recipient's phone country code
+    ///   - phoneNumber: the recipient's phone number
+    ///   - code: the code to send
+    ///   - medium: the medium, either SMS or email
+    suspend fun sendCodeToUser(
+        countryCode: Int,
+        phoneNumber: Int,
+        code: String,
+        medium: SHSendCodeToUserRequestDTO.Medium
+    )
+
     /// Updates an existing user details or credentials
     /// - Parameters:
     ///   - name: the new username
@@ -91,10 +104,110 @@ interface SHSafehillAPI {
                        groupId: String,
                        filterVersions: List<SHAssetQuality>?): List<SHServerAsset>
 
+    /// Shares one or more assets with a set of users
+    /// - Parameters:
+    ///   - asset: the asset to share, with references to asset id, version and user id to share with
+    suspend fun share(asset: SHShareableEncryptedAsset)
+
+    /// Unshares one asset (all of its versions) with a user. If the asset or the user don't exist, or the asset is not shared with the user, it's a no-op
+    /// - Parameters:
+    ///   - assetId: the identifier of asset previously shared
+    ///   - with: the public identifier of the user it was previously shared with
+    suspend fun unshare(
+        assetId: AssetGlobalIdentifier,
+        userPublicIdentifier: String
+    )
+
+    /// Upload encrypted asset versions data to the CDN.
+    suspend fun upload(
+        serverAsset: SHServerAsset,
+        asset: SHEncryptedAsset,
+        filterVersions: List<SHAssetQuality>
+    )
+
+    /// Mark encrypted asset versions data as uploaded to the CDN.
+    /// - Parameters:
+    ///   - assetGlobalIdentifier: the global identifier of the asset
+    ///   - quality: the version of the asset
+    ///   - as: the new state
+    suspend fun markAsset(
+        assetGlobalIdentifier: AssetGlobalIdentifier,
+        quality: SHAssetQuality,
+        asState: SHAssetDescriptorUploadState
+    )
+
     /// Removes assets from the CDN and on the server
     /// - Parameters:
     ///   - withGlobalIdentifiers: the global identifier
     /// - Returns:
     ///   - the list of global identifiers that have been deleted
     suspend fun deleteAssets(globalIdentifiers: List<String>): List<String>
+
+    /// Creates a group and provides the encryption details for users in the group for E2EE.
+    /// This method needs to be called every time a share (group) is created so that reactions and comments can be added to it.
+    /// - Parameters:
+    ///   - groupId: the group identifier
+    ///   - recipientsEncryptionDetails: the encryption details for each reciepient
+    suspend fun setGroupEncryptionDetails(
+        groupId: String,
+        recipientsEncryptionDetails: List<SHRecipientEncryptionDetailsDTO>
+    )
+
+    /// Delete a group, related messages and reactions, given its id
+    /// - Parameters:
+    ///   - groupId: the group identifier
+    suspend fun deleteGroup(groupId: String)
+
+    /// Retrieved the E2EE details for a group, if one exists
+    /// - Parameters:
+    ///   - groupId: the group identifier
+    ///   - completionHandler: the callback method
+    suspend fun retrieveGroupUserEncryptionDetails(
+        groupId: String,
+    ): List<SHRecipientEncryptionDetailsDTO>
+
+
+    /// Adds reactions to a share (group)
+    /// - Parameters:
+    ///   - reactions: the reactions details
+    ///   - groupId: the group identifier
+    /// - Returns:
+    ///   - the list of reactions added
+    suspend fun addReactions(
+        reactions: List<SHReactionInput>,
+        toGroupId: String
+    ): List<SHReactionOutputDTO>
+
+    /// Removes a reaction to an asset or a message
+    /// - Parameters:
+    ///   - reaction: the reaction type and references to remove
+    ///   - fromGroupId: the group the reaction belongs to
+    suspend fun removeReaction(
+        reaction: SHReactionInput,
+        fromGroupId: String
+    )
+
+    /// Retrieves all the messages and reactions for a group id. Results are paginated and returned in reverse cronological order.
+    /// - Parameters:
+    ///   - groupId: the group identifier
+    ///   - per: the number of items to retrieve
+    ///   - page: the page number, because results are paginated
+    /// - Returns:
+    ///   - the list of interactions (reactions and messages) in the group
+    suspend fun retrieveInteractions(
+        inGroupId: String,
+        per: Int,
+        page: Int
+    ): List<SHInteractionsGroupDTO>
+
+    /// Adds a messages to a share (group)
+    /// - Parameters:
+    ///   - messages: the message details
+    ///   - groupId: the group identifier
+    /// - Returns:
+    ///   - the list of messages created
+    suspend fun addMessages(
+        messages: List<SHMessageInput>,
+        toGroupId: String
+    ): List<SHMessageOutputDTO>
 }

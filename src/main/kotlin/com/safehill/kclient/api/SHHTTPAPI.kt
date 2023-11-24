@@ -13,7 +13,6 @@ import com.safehill.kcrypto.models.SHRemoteCryptoUser
 import com.safehill.kcrypto.models.SHShareablePayload
 import java.security.MessageDigest
 import java.util.*
-import javax.lang.model.type.UnionType
 
 
 enum class ServerEnvironment {
@@ -82,6 +81,15 @@ class SHHTTPAPI(
                 throw SHHTTPException(response.statusCode, response.responseMessage)
             }
         }
+    }
+
+    override suspend fun sendCodeToUser(
+        countryCode: Int,
+        phoneNumber: Int,
+        code: String,
+        medium: SHSendCodeToUserRequestDTO.Medium,
+    ) {
+        TODO("Not yet implemented")
     }
 
     @Throws
@@ -301,6 +309,30 @@ class SHHTTPAPI(
         }
     }
 
+    override suspend fun share(asset: SHShareableEncryptedAsset) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun unshare(assetId: AssetGlobalIdentifier, userPublicIdentifier: String) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun upload(
+        serverAsset: SHServerAsset,
+        asset: SHEncryptedAsset,
+        filterVersions: List<SHAssetQuality>,
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun markAsset(
+        assetGlobalIdentifier: AssetGlobalIdentifier,
+        quality: SHAssetQuality,
+        asState: SHAssetDescriptorUploadState,
+    ) {
+        TODO("Not yet implemented")
+    }
+
     @Throws
     override suspend fun deleteAssets(globalIdentifiers: List<String>): List<String> {
         val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
@@ -317,6 +349,37 @@ class SHHTTPAPI(
             200 -> return globalIdentifiers
             else -> throw SHHTTPException(response.statusCode, response.responseMessage)
         }
+    }
+
+    override suspend fun setGroupEncryptionDetails(
+        groupId: String,
+        recipientsEncryptionDetails: List<SHRecipientEncryptionDetailsDTO>,
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun deleteGroup(groupId: String) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun retrieveGroupUserEncryptionDetails(groupId: String): List<SHRecipientEncryptionDetailsDTO> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun addReactions(reactions: List<SHReactionInput>, toGroupId: String): List<SHReactionOutputDTO> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun removeReaction(reaction: SHReactionInput, fromGroupId: String) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun retrieveInteractions(inGroupId: String, per: Int, page: Int): List<SHInteractionsGroupDTO> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun addMessages(messages: List<SHMessageInput>, toGroupId: String): List<SHMessageOutputDTO> {
+        TODO("Not yet implemented")
     }
 
 }
