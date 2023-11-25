@@ -1,9 +1,8 @@
 package com.safehill.kcrypto
 
 import com.safehill.kclient.api.SHHTTPAPI
-import com.safehill.kclient.api.SHHTTPAPITests
-import com.safehill.kclient.api.dtos.SHAuthChallenge
-import com.safehill.kclient.api.dtos.SHAuthSolvedChallenge
+import com.safehill.kclient.api.dtos.SHAuthChallengeResponseDTO
+import com.safehill.kclient.api.dtos.SHAuthResolvedChallengeDTO
 import com.safehill.kclient.models.SHLocalUser
 import com.safehill.kcrypto.models.*
 import org.junit.jupiter.api.Test
@@ -285,7 +284,7 @@ class CipherTests {
         assert(Arrays.equals(Base64.getDecoder().decode(publicKeyBase64), serverUser.publicKeyData))
         assert(Arrays.equals(Base64.getDecoder().decode(publicSignatureBase64), serverUser.publicSignatureData))
 
-        val authChallenge = SHAuthChallenge(
+        val authChallenge = SHAuthChallengeResponseDTO(
             challengeBase64,
             ephemeralPublicKeyBase64,
             ephemeralPublicSignatureBase64,
@@ -296,7 +295,7 @@ class CipherTests {
         )
 
         // Client solves the challenge
-        val solvedChallenge: SHAuthSolvedChallenge = SHHTTPAPI(SHLocalUser(clientUser)).solveChallenge(authChallenge)
+        val solvedChallenge: SHAuthResolvedChallengeDTO = SHHTTPAPI(SHLocalUser(clientUser)).solveChallenge(authChallenge)
 
         val signedChallenge = Base64.getDecoder().decode(solvedChallenge.signedChallenge)
         val digest = Base64.getDecoder().decode(solvedChallenge.digest)

@@ -1,6 +1,6 @@
 package com.safehill.kclient.models
 
-interface SHReactionInput {
+interface SHUserReaction {
     val interactionId: String?
     val senderUserIdentifier: String?
     val inReplyToAssetGlobalIdentifier: String?

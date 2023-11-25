@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 @Serializable(with = SHServerAssetSerializer.SHServerAssetVersionSerializer::class)
-data class SHServerAssetVersion(
+data class SHAssetVersionOutputDTO(
     val versionName: String,
     @SerialName("ephemeralPublicKey")
     val publicKeyData: ByteArray,
@@ -22,7 +22,7 @@ data class SHServerAssetVersion(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as SHServerAssetVersion
+        other as SHAssetVersionOutputDTO
 
         if (versionName != other.versionName) return false
         if (!publicKeyData.contentEquals(other.publicKeyData)) return false
@@ -41,8 +41,8 @@ data class SHServerAssetVersion(
     }
 
 
-    class Deserializer : ResponseDeserializable<SHServerAssetVersion> {
-        override fun deserialize(content: String): SHServerAssetVersion {
+    class Deserializer : ResponseDeserializable<SHAssetVersionOutputDTO> {
+        override fun deserialize(content: String): SHAssetVersionOutputDTO {
             return Json.decodeFromString(content)
         }
     }

@@ -8,13 +8,13 @@ import kotlinx.serialization.Serializable
 typealias BearerToken = String
 
 @Serializable
-data class SHAuthResponse(
+data class SHAuthResponseDTO(
     val user: SHRemoteUser,
     val bearerToken: BearerToken,
     val encryptionProtocolSalt: String
 ) {
-    class Deserializer : ResponseDeserializable<SHAuthResponse> {
-        override fun deserialize(content: String): SHAuthResponse
-                = Gson().fromJson(content, SHAuthResponse::class.java)
+    class Deserializer : ResponseDeserializable<SHAuthResponseDTO> {
+        override fun deserialize(content: String): SHAuthResponseDTO
+                = Gson().fromJson(content, SHAuthResponseDTO::class.java)
     }
 }

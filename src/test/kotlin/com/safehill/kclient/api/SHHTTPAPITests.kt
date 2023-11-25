@@ -1,8 +1,9 @@
 package com.safehill.kclient.api
 
-import com.safehill.kclient.api.dtos.SHAuthResponse
-import com.safehill.kclient.api.dtos.SHServerAsset
+import com.safehill.kclient.api.dtos.SHAuthResponseDTO
+import com.safehill.kclient.api.dtos.SHAssetOutputDTO
 import com.safehill.kclient.models.*
+import com.safehill.kclient.api.dtos.SHSendCodeToUserRequestDTO
 import com.safehill.kcrypto.models.SHKeyPair
 import com.safehill.kcrypto.models.SHLocalCryptoUser
 import kotlinx.coroutines.*
@@ -50,7 +51,7 @@ class SHHTTPAPITests {
 
     private suspend fun authenticateUser(coroutineScope: CoroutineScope, localUser: SHLocalUser) {
         var error: Exception? = null
-        var authResponse: SHAuthResponse? = null
+        var authResponse: SHAuthResponseDTO? = null
 
         val authJob = coroutineScope.launch {
             try {
@@ -90,7 +91,7 @@ class SHHTTPAPITests {
         }
     }
 
-    private suspend fun deleteAssets(coroutineScope: CoroutineScope, localUser: SHLocalUser,assets: List<SHServerAsset>) {
+    private suspend fun deleteAssets(coroutineScope: CoroutineScope, localUser: SHLocalUser,assets: List<SHAssetOutputDTO>) {
         var error: Exception? = null
 
         val deleteJob = coroutineScope.launch {
@@ -167,7 +168,7 @@ class SHHTTPAPITests {
 
             val api = SHHTTPAPI(user)
 
-            var createdAsset: SHServerAsset? = null
+            var createdAsset: SHAssetOutputDTO? = null
             var error: Exception? = null
             val createJob = launch {
                 try {

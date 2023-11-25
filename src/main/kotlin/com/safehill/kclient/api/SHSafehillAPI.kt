@@ -1,7 +1,6 @@
 package com.safehill.kclient.api
 
-import com.safehill.kclient.api.dtos.SHAuthResponse
-import com.safehill.kclient.api.dtos.SHServerAsset
+import com.safehill.kclient.api.dtos.*
 import com.safehill.kclient.models.*
 
 
@@ -55,7 +54,7 @@ interface SHSafehillAPI {
     ///   - name: the username
     /// - Returns:
     ///   - the response with the auth token if credentials are valid
-    suspend fun signIn(name: String): SHAuthResponse
+    suspend fun signIn(name: String): SHAuthResponseDTO
 
     /// Get a User's public key and public signature
     /// - Parameters:
@@ -102,7 +101,7 @@ interface SHSafehillAPI {
     ///   - the list of assets created
     suspend fun create(assets: List<SHEncryptedAsset>,
                        groupId: String,
-                       filterVersions: List<SHAssetQuality>?): List<SHServerAsset>
+                       filterVersions: List<SHAssetQuality>?): List<SHAssetOutputDTO>
 
     /// Shares one or more assets with a set of users
     /// - Parameters:
@@ -120,7 +119,7 @@ interface SHSafehillAPI {
 
     /// Upload encrypted asset versions data to the CDN.
     suspend fun upload(
-        serverAsset: SHServerAsset,
+        serverAsset: SHAssetOutputDTO,
         asset: SHEncryptedAsset,
         filterVersions: List<SHAssetQuality>
     )
@@ -174,7 +173,7 @@ interface SHSafehillAPI {
     /// - Returns:
     ///   - the list of reactions added
     suspend fun addReactions(
-        reactions: List<SHReactionInput>,
+        reactions: List<SHUserReaction>,
         toGroupId: String
     ): List<SHReactionOutputDTO>
 
@@ -183,7 +182,7 @@ interface SHSafehillAPI {
     ///   - reaction: the reaction type and references to remove
     ///   - fromGroupId: the group the reaction belongs to
     suspend fun removeReaction(
-        reaction: SHReactionInput,
+        reaction: SHUserReaction,
         fromGroupId: String
     )
 
@@ -207,7 +206,7 @@ interface SHSafehillAPI {
     /// - Returns:
     ///   - the list of messages created
     suspend fun addMessages(
-        messages: List<SHMessageInput>,
+        messages: List<SHMessageInputDTO>,
         toGroupId: String
     ): List<SHMessageOutputDTO>
 }

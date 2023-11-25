@@ -5,7 +5,7 @@ import com.google.gson.Gson
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class SHAuthChallenge(
+data class SHAuthChallengeResponseDTO(
     val challenge: String,
     val ephemeralPublicKey: String, // base64EncodedData
     val ephemeralPublicSignature: String, // base64EncodedData
@@ -14,8 +14,8 @@ data class SHAuthChallenge(
     val protocolSalt: String, // base64EncodedData
     val iv: String? // base64EncodedData
 ) {
-    class Deserializer : ResponseDeserializable<SHAuthChallenge> {
-        override fun deserialize(content: String): SHAuthChallenge
-                = Gson().fromJson(content, SHAuthChallenge::class.java)
+    class Deserializer : ResponseDeserializable<SHAuthChallengeResponseDTO> {
+        override fun deserialize(content: String): SHAuthChallengeResponseDTO
+                = Gson().fromJson(content, SHAuthChallengeResponseDTO::class.java)
     }
 }

@@ -3,7 +3,7 @@ package com.safehill.kclient.api.dtos
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class SHCreateAssetRequest(
+data class SHAssetInputDTO(
     val globalIdentifier: String,
     val localIdentifier: String?,
     // ISO8601 formatted datetime, representing the time the asset was created (i.e. the photo was taken).
@@ -14,7 +14,7 @@ data class SHCreateAssetRequest(
     // Sending this information in this payload avoids an extra unnecessary call to /share with sefl
     // If  no groupId was provided, it was a single-asset upload, so the identifier can be safely generated on server
     val groupId: String?,
-    val versions: List<SHCreateServerAssetVersion>,
+    val versions: List<SHAssetVersionInputDTO>,
     // If set to true destroys all sharing information for the existing asset version, if one with the same name exists
     val forceUpdateVersions: Boolean? = false
 )

@@ -7,15 +7,15 @@ import kotlinx.serialization.json.Json
 import java.util.Date
 
 @Serializable(with = SHServerAssetSerializer::class)
-data class SHServerAsset(
+data class SHAssetOutputDTO(
     val globalIdentifier: String,
     val localIdentifier: String?,
     val creationDate: Date?,
     val groupId: String,
-    val versions: List<SHServerAssetVersion>,
+    val versions: List<SHAssetVersionOutputDTO>,
 ) {
-    class Deserializer : ResponseDeserializable<SHServerAsset> {
-        override fun deserialize(content: String): SHServerAsset {
+    class Deserializer : ResponseDeserializable<SHAssetOutputDTO> {
+        override fun deserialize(content: String): SHAssetOutputDTO {
             return Json.decodeFromString(content)
         }
     }

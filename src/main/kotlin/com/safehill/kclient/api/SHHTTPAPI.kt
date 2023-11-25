@@ -62,7 +62,7 @@ class SHHTTPAPI(
 
     @Throws
     override suspend fun createUser(name: String): SHServerUser {
-        val requestBody = SHUserCreateDTO(
+        val requestBody = SHUserInputDTO(
             identifier=requestor.identifier,
             publicKey=Base64.getEncoder().encodeToString(requestor.publicKeyData),
             publicSignature=Base64.getEncoder().encodeToString(requestor.publicSignatureData),
@@ -141,7 +141,7 @@ class SHHTTPAPI(
     }
 
     @Throws
-    fun solveChallenge(authChallenge: SHAuthChallenge): SHAuthSolvedChallenge {
+    fun solveChallenge(authChallenge: SHAuthChallengeResponseDTO): SHAuthResolvedChallengeDTO {
         val serverCrypto = SHRemoteCryptoUser(
             Base64.getDecoder().decode(authChallenge.publicKey),
             Base64.getDecoder().decode(authChallenge.publicSignature)
@@ -165,7 +165,7 @@ class SHHTTPAPI(
         val digest512 = md.digest(decryptedChallenge)
         val signatureForDigest = this.requestor.shUser.sign(digest512)
 
-        return SHAuthSolvedChallenge(
+        return SHAuthResolvedChallengeDTO(
             userIdentifier = requestor.identifier,
             signedChallenge = Base64.getEncoder().encodeToString(signatureForChallenge),
             digest = Base64.getEncoder().encodeToString(digest512),
@@ -174,14 +174,14 @@ class SHHTTPAPI(
     }
 
     @Throws
-    override suspend fun signIn(name: String): SHAuthResponse {
-        val authRequestBody = SHAuthStartChallenge(
+    override suspend fun signIn(name: String): SHAuthResponseDTO {
+        val authRequestBody = SHAuthChallengeRequestDTO(
             identifier=requestor.identifier,
             name=name
         )
         val (startRequest, startResponse, startResult) = "/signin/challenge/start".httpPost()
             .body(Gson().toJson(authRequestBody))
-            .responseObject(SHAuthChallenge.Deserializer())
+            .responseObject(SHAuthChallengeResponseDTO.Deserializer())
 
         println("[api] POST url=${startRequest.url} with headers=${startRequest.header()} body=${startRequest.body} " +
                 "response.status=${startResponse.statusCode}")
@@ -197,7 +197,7 @@ class SHHTTPAPI(
 
         val (verifyRequest, verifyResponse, verifyResult) = "/signin/challenge/verify".httpPost()
             .body(Gson().toJson(solvedChallenge))
-            .responseObject(SHAuthResponse.Deserializer())
+            .responseObject(SHAuthResponseDTO.Deserializer())
 
         println("[api] POST url=${verifyRequest.url} with headers=${verifyRequest.header()} body=${verifyRequest.body} " +
                 "response.status=${verifyResponse.statusCode}")
@@ -216,7 +216,7 @@ class SHHTTPAPI(
 
         if (withIdentifiers.isEmpty()) { return listOf() }
 
-        val getUsersRequestBody = SHGetUsersRequest(userIdentifiers = withIdentifiers)
+        val getUsersRequestBody = SHUserIdentifiersDTO(userIdentifiers = withIdentifiers)
         val (getRequest, getResponse, getResult) = "/users/retrieve".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Gson().toJson(getUsersRequestBody))
@@ -236,7 +236,7 @@ class SHHTTPAPI(
     override suspend fun searchUsers(query: String): List<SHRemoteUser> {
         val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
 
-        val getUsersRequestBody = SHSearchUsersRequest(query, per = 5, page = 1)
+        val getUsersRequestBody = SHUserSearchDTO(query, per = 5, page = 1)
         val (searchRequest, searchResponse, searchResult) = "/users/search".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Gson().toJson(getUsersRequestBody))
@@ -289,7 +289,7 @@ class SHHTTPAPI(
         assets: List<SHEncryptedAsset>,
         groupId: String,
         filterVersions: List<SHAssetQuality>?,
-    ): List<SHServerAsset> {
+    ): List<SHAssetOutputDTO> {
         if (assets.size > 1) {
             throw NotImplementedError("Current API only supports creating one asset per request")
         }
@@ -298,13 +298,13 @@ class SHHTTPAPI(
         val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
 
         val assetCreatedAt = asset.creationDate ?: run { Date(0) }
-        val requestBody = SHCreateAssetRequest(
+        val requestBody = SHAssetInputDTO(
             asset.globalIdentifier,
             asset.localIdentifier,
             assetCreatedAt.toIso8601String(),
             groupId,
             asset.encryptedVersions.map {
-                SHCreateServerAssetVersion(
+                SHAssetVersionInputDTO(
                     it.key.toString(),
                     Base64.getEncoder().encodeToString(it.value.publicKeyData),
                     Base64.getEncoder().encodeToString(it.value.publicSignatureData),
@@ -316,7 +316,7 @@ class SHHTTPAPI(
         val (request, response, result) = "/assets/create".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Gson().toJson(requestBody))
-            .responseObject(SHServerAsset.Deserializer())
+            .responseObject(SHAssetOutputDTO.Deserializer())
 
         println("[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
                 "response.status=${response.statusCode}")
@@ -338,7 +338,7 @@ class SHHTTPAPI(
     }
 
     override suspend fun upload(
-        serverAsset: SHServerAsset,
+        serverAsset: SHAssetOutputDTO,
         asset: SHEncryptedAsset,
         filterVersions: List<SHAssetQuality>,
     ) {
@@ -359,7 +359,7 @@ class SHHTTPAPI(
 
         val (request, response, _) = "/assets/delete".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Gson().toJson(SHDeleteAssetRequest(globalIdentifiers)))
+            .body(Gson().toJson(SHAssetDeleteCriteriaDTO(globalIdentifiers)))
             .response()
 
         println("[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
@@ -386,11 +386,11 @@ class SHHTTPAPI(
         TODO("Not yet implemented")
     }
 
-    override suspend fun addReactions(reactions: List<SHReactionInput>, toGroupId: String): List<SHReactionOutputDTO> {
+    override suspend fun addReactions(reactions: List<SHUserReaction>, toGroupId: String): List<SHReactionOutputDTO> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun removeReaction(reaction: SHReactionInput, fromGroupId: String) {
+    override suspend fun removeReaction(reaction: SHUserReaction, fromGroupId: String) {
         TODO("Not yet implemented")
     }
 
@@ -398,7 +398,7 @@ class SHHTTPAPI(
         TODO("Not yet implemented")
     }
 
-    override suspend fun addMessages(messages: List<SHMessageInput>, toGroupId: String): List<SHMessageOutputDTO> {
+    override suspend fun addMessages(messages: List<SHMessageInputDTO>, toGroupId: String): List<SHMessageOutputDTO> {
         TODO("Not yet implemented")
     }
 
