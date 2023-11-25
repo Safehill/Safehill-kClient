@@ -7,10 +7,14 @@ import com.github.kittinunf.result.Result
 import com.google.gson.Gson
 import com.safehill.kclient.api.dtos.*
 import com.safehill.kclient.api.serde.toIso8601String
+import com.safehill.kclient.controllers.SHS3Proxy
 import com.safehill.kclient.models.*
 import com.safehill.kcrypto.SHCypher
 import com.safehill.kcrypto.models.SHRemoteCryptoUser
 import com.safehill.kcrypto.models.SHShareablePayload
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.net.URLEncoder
 import java.security.MessageDigest
 import java.util.*
 
@@ -254,11 +258,22 @@ class SHHTTPAPI(
 
     @Throws
     override suspend fun getAssetDescriptors(): List<SHAssetDescriptor> {
+        return this.getAssetDescriptors(emptyList())
+    }
+
+    @Throws
+    override suspend fun getAssetDescriptors(assetGlobalIdentifiers: List<AssetGlobalIdentifier>): List<SHAssetDescriptor> {
         val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
 
-        val (request, response, result) = "/assets/descriptors/retrieve".httpPost()
+        val postRequest = "/assets/descriptors/retrieve".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .responseObject(SHAssetDescriptor.ListDeserializer())
+
+        if (assetGlobalIdentifiers.isNotEmpty()) {
+            val requestBody = SHAssetIdentifiersDTO(assetGlobalIdentifiers)
+            postRequest.body(Gson().toJson(requestBody))
+        }
+
+        val (request, response, result) = postRequest.responseObject(SHAssetDescriptor.ListDeserializer())
 
         println("[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
                 "response.status=${response.statusCode}")
@@ -272,16 +287,60 @@ class SHHTTPAPI(
     }
 
     @Throws
-    override suspend fun getAssetDescriptors(assetGlobalIdentifiers: List<AssetGlobalIdentifier>): List<SHAssetDescriptor> {
-        TODO("Not yet implemented")
-    }
-
-    @Throws
     override suspend fun getAssets(
-        globalIdentifiers: List<String>,
+        globalIdentifiers: List<AssetGlobalIdentifier>,
         versions: List<SHAssetQuality>?,
-    ): Map<String, SHEncryptedAsset> {
-        TODO("Not yet implemented")
+    ): Map<AssetGlobalIdentifier, SHEncryptedAsset> {
+        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+
+        val getAssetsRequestBody = SHAssetSearchDTO(globalIdentifiers, versions?.map { v -> v.toString() } ?: emptyList())
+        val (request, response, result) = "/assets/retrieve".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Gson().toJson(getAssetsRequestBody))
+            .responseObject(SHAssetOutputDTO.ListDeserializer())
+
+        println("[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
+                "response.status=${response.statusCode}")
+
+        when (result) {
+            is Result.Success -> {
+                val assets: List<SHAssetOutputDTO> = result.component1()!!
+
+                val assetsManifest = mutableMapOf<AssetGlobalIdentifier, SHEncryptedAsset>()
+                for (asset in assets) {
+                    for (version in asset.versions) {
+                        val quality = try {
+                            SHAssetQuality.valueOf(version.versionName)
+                        } catch (e: IllegalArgumentException) {
+                            println("error parsing version name ${version.versionName}. Defaulting to LowResolution")
+                            SHAssetQuality.LowResolution
+                        }
+
+                        val presignedURL = withContext(Dispatchers.IO) {
+                            URLEncoder.encode(version.presignedURL, "UTF-8")
+                        }
+                        val encryptedAssetVersion = SHS3Proxy(presignedURL).retrieve(asset, version, quality)
+
+                        if (assetsManifest[asset.globalIdentifier] == null) {
+                            assetsManifest[asset.globalIdentifier] = SHEncryptedAssetImpl(
+                                asset.globalIdentifier,
+                                asset.localIdentifier,
+                                asset.creationDate,
+                                mapOf(quality to encryptedAssetVersion)
+                            )
+                        } else {
+                            val newMap = assetsManifest[asset.globalIdentifier]!!.encryptedVersions.toMutableMap()
+                            newMap[quality] = encryptedAssetVersion
+                            assetsManifest[asset.globalIdentifier]!!.encryptedVersions = newMap
+                        }
+                    }
+                }
+
+                return assetsManifest
+            }
+            is Result.Failure ->
+                throw SHHTTPException(response.statusCode, response.responseMessage)
+        }
     }
 
     @Throws
@@ -330,7 +389,40 @@ class SHHTTPAPI(
     }
 
     override suspend fun share(asset: SHShareableEncryptedAsset) {
-        TODO("Not yet implemented")
+        if (asset.sharedVersions.isEmpty()) {
+            println("no versions specified in sharing. Skipping")
+            return
+        }
+
+        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+
+        val versionsSharingDetails = asset.sharedVersions.map { v ->
+            SHAssetVersionUserShareDTO(
+                versionName = v.quality.toString(),
+                recipientUserIdentifier = v.userPublicIdentifier,
+                Base64.getEncoder().encodeToString(v.encryptedSecret),
+                Base64.getEncoder().encodeToString(v.ephemeralPublicKey),
+                Base64.getEncoder().encodeToString(v.publicSignature)
+            )
+        }
+
+        val requestBody = SHAssetShareDTO(
+            asset.globalIdentifier,
+            versionsSharingDetails,
+            asset.groupId
+        )
+
+        val (request, response, _) = "/assets/share".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Gson().toJson(requestBody))
+            .response()
+
+        println("[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
+                "response.status=${response.statusCode}")
+
+        if (response.statusCode != 200) {
+            throw SHHTTPException(response.statusCode, response.responseMessage)
+        }
     }
 
     override suspend fun unshare(assetId: AssetGlobalIdentifier, userPublicIdentifier: String) {
@@ -342,7 +434,25 @@ class SHHTTPAPI(
         asset: SHEncryptedAsset,
         filterVersions: List<SHAssetQuality>,
     ) {
-        TODO("Not yet implemented")
+        for ((quality, encryptedAssetVersion) in asset.encryptedVersions.entries) {
+            if (filterVersions.isNotEmpty() && !filterVersions.contains(quality)) {
+                continue
+            }
+
+            println("uploading to CDN asset version $quality for asset ${asset.globalIdentifier}")
+
+            val serverAssetVersion = serverAsset.versions.first { sav ->
+                sav.versionName == quality.toString()
+            }.let { serverAssetVersion ->
+                val presignedURL = withContext(Dispatchers.IO) {
+                    URLEncoder.encode(serverAssetVersion.presignedURL, "UTF-8")
+                }
+
+                SHS3Proxy(presignedURL).save(
+                    encryptedAssetVersion.encryptedData,
+                )
+            }
+        }
     }
 
     override suspend fun markAsset(
@@ -359,7 +469,7 @@ class SHHTTPAPI(
 
         val (request, response, _) = "/assets/delete".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Gson().toJson(SHAssetDeleteCriteriaDTO(globalIdentifiers)))
+            .body(Gson().toJson(SHAssetIdentifiersDTO(globalIdentifiers)))
             .response()
 
         println("[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +

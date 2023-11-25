@@ -2,6 +2,7 @@ package com.safehill.kclient.api.dtos
 
 import com.github.kittinunf.fuel.core.ResponseDeserializable
 import com.safehill.kclient.api.serde.SHServerAssetSerializer
+import com.safehill.kclient.models.SHAssetDescriptor
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.util.Date
@@ -16,6 +17,12 @@ data class SHAssetOutputDTO(
 ) {
     class Deserializer : ResponseDeserializable<SHAssetOutputDTO> {
         override fun deserialize(content: String): SHAssetOutputDTO {
+            return Json.decodeFromString(content)
+        }
+    }
+
+    class ListDeserializer : ResponseDeserializable<List<SHAssetOutputDTO>> {
+        override fun deserialize(content: String): List<SHAssetOutputDTO> {
             return Json.decodeFromString(content)
         }
     }

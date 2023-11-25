@@ -87,8 +87,8 @@ interface SHSafehillAPI {
     ///   - versions: filtering by version
     /// - Returns:
     ///   - the encrypted assets from the server
-    suspend fun getAssets(globalIdentifiers: List<String>,
-                          versions: List<SHAssetQuality>?): Map<String, SHEncryptedAsset>
+    suspend fun getAssets(globalIdentifiers: List<AssetGlobalIdentifier>,
+                          versions: List<SHAssetQuality>?): Map<AssetGlobalIdentifier, SHEncryptedAsset>
 
     // MARK: Assets Write
 
