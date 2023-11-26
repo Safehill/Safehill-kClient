@@ -7,6 +7,7 @@ import com.safehill.kclient.models.SHLocalUser
 import com.safehill.kcrypto.models.*
 import org.junit.jupiter.api.Test
 import java.util.*
+import kotlin.math.max
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
@@ -19,38 +20,43 @@ class CipherTests {
     @Test
     fun testGenerateOTP() {
         val secret = SHCypher.generateRandomIV()
-        val code1 = SHCypher.generateOTPCode(secret = secret, digits = 6)
+        val (code1, _) = SHCypher.generateOTPCode(secret = secret, digits = 6)
         assertEquals(code1.length, 6)
 
-        val code2 = SHCypher.generateOTPCode(secret = secret, digits = 6)
+        val (code2, _) = SHCypher.generateOTPCode(secret = secret, digits = 6)
         assertEquals(code1.length, 6)
         assertEquals(code1, code2)
 
-        val code3 = SHCypher.generateOTPCode(secret = secret, digits = 6, timeStepInSeconds = 1)
-        val code4 = SHCypher.generateOTPCode(secret = secret, digits = 6, timeStepInSeconds = 1)
+        val (code3, _) = SHCypher.generateOTPCode(secret = secret, digits = 6, timeStepInSeconds = 1)
+        val (code4, valid4) = SHCypher.generateOTPCode(secret = secret, digits = 6, timeStepInSeconds = 1)
         assertEquals(code3, code4)
 
-        Thread.sleep(1100)
+        Thread.sleep(valid4+1)
 
-        val code5 = SHCypher.generateOTPCode(secret = secret, digits = 6, timeStepInSeconds = 1)
+        val (code5, _) = SHCypher.generateOTPCode(secret = secret, digits = 6, timeStepInSeconds = 1)
         assertNotEquals(code4, code5)
 
-        val code6 = SHCypher.generateOTPCode(secret = secret, digits = 6, timeStepInSeconds = 5)
+        val (code6, _) = SHCypher.generateOTPCode(secret = secret, digits = 6, timeStepInSeconds = 2)
         assertNotEquals(code5, code6)
 
-        val code7 = SHCypher.generateOTPCode(secret = secret, digits = 6, timeStepInSeconds = 5)
+        val (code7, _) = SHCypher.generateOTPCode(secret = secret, digits = 6, timeStepInSeconds = 2)
         assertEquals(code6, code7)
 
         Thread.sleep(1100)
 
-        val code8 = SHCypher.generateOTPCode(secret = secret, digits = 6, timeStepInSeconds = 5)
-        val code9 = SHCypher.generateOTPCode(secret = secret, digits = 6, timeStepInSeconds = 5)
+        val (code8, valid8) = SHCypher.generateOTPCode(secret = secret, digits = 6, timeStepInSeconds = 2)
+        Thread.sleep(max(0, valid8-100))
+        val (code9, valid9) = SHCypher.generateOTPCode(secret = secret, digits = 6, timeStepInSeconds = 2)
         assertEquals(code8, code9)
-
-        Thread.sleep(4100)
-
-        val code10 = SHCypher.generateOTPCode(secret = secret, digits = 6, timeStepInSeconds = 5)
+        Thread.sleep(valid9+1)
+        val (code10, _) = SHCypher.generateOTPCode(secret = secret, digits = 6, timeStepInSeconds = 2)
         assertNotEquals(code9, code10)
+
+        val newSecret = SHCypher.generateRandomIV()
+        val (code11, valid11) = SHCypher.generateOTPCode(secret = newSecret, digits = 6, timeStepInSeconds = 2)
+        Thread.sleep(max(0, valid11-100))
+        val (code12, _) = SHCypher.generateOTPCode(secret = newSecret, digits = 6, timeStepInSeconds = 2)
+        assertEquals(code11, code12)
     }
 
     @Test

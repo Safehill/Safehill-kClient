@@ -39,7 +39,14 @@ class SHCypher {
             return iv
         }
 
-        fun generateOTPCode(secret: ByteArray, digits: Int = 6, timeStepInSeconds: Long = 30): String {
+        /**
+         * OTP code generation
+         * @param secret the cryptographically-secure secret
+         * @param digits how long (the number of digits) is the OTP
+         * @param timeStepInSeconds the duration of each step
+         * @return a Pair holding the code and the number of milliseconds the current TOTP is still valid
+         */
+        fun generateOTPCode(secret: ByteArray, digits: Int = 6, timeStepInSeconds: Long = 30): Pair<String, Long> {
             val config = TimeBasedOneTimePasswordConfig(
                 codeDigits = digits,
                 hmacAlgorithm = HmacAlgorithm.SHA1,
@@ -50,7 +57,14 @@ class SHCypher {
 
             val timestamp = Date().toInstant().toEpochMilli()
             val code = timeBasedOneTimePasswordGenerator.generate(timestamp)
-            return code
+
+            val counter = timeBasedOneTimePasswordGenerator.counter()
+            // the start of next time slot minus 1ms
+            val endEpochMillis = timeBasedOneTimePasswordGenerator.timeslotStart(counter+1)-1
+            // number of milliseconds the current TOTP is still valid
+            val millisValid = endEpochMillis - timestamp
+
+            return code to millisValid
         }
 
         fun encrypt(message: ByteArray, key: ByteArray, iv: ByteArray): ByteArray {
