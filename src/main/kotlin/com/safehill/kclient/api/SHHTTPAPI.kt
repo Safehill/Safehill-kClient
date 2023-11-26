@@ -441,7 +441,7 @@ class SHHTTPAPI(
 
             println("uploading to CDN asset version $quality for asset ${asset.globalIdentifier}")
 
-            val serverAssetVersion = serverAsset.versions.first { sav ->
+            serverAsset.versions.first { sav ->
                 sav.versionName == quality.toString()
             }.let { serverAssetVersion ->
                 val presignedURL = withContext(Dispatchers.IO) {

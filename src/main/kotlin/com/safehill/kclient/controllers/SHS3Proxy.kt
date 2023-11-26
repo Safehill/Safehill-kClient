@@ -6,9 +6,11 @@ import com.safehill.kclient.models.SHAssetQuality
 import com.safehill.kclient.models.SHEncryptedAssetVersion
 import com.safehill.kclient.models.SHEncryptedAssetVersionImpl
 
-class SHS3Proxy(val presignedURL: String) {
+class SHS3Proxy(private val presignedURL: String) {
 
-    fun save(data: ByteArray, headers: Map<String, String> = emptyMap()) {}
+    suspend fun save(data: ByteArray, headers: Map<String, String> = emptyMap()) {
+
+    }
 
     suspend fun retrieve(asset: SHAssetOutputDTO, version: SHAssetVersionOutputDTO, quality: SHAssetQuality): SHEncryptedAssetVersion {
 
