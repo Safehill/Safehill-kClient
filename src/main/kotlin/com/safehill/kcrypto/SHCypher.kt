@@ -41,9 +41,9 @@ class SHCypher {
 
         /**
          * OTP code generation
-         * @param secret the secret
-         * @param digits
-         * @param timeStepInSeconds
+         * @param secret the cryptographically-secure secret
+         * @param digits how long (the number of digits) is the OTP
+         * @param timeStepInSeconds the duration of each step
          * @return a Pair holding the code and the number of milliseconds the current TOTP is still valid
          */
         fun generateOTPCode(secret: ByteArray, digits: Int = 6, timeStepInSeconds: Long = 30): Pair<String, Long> {
