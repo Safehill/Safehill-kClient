@@ -271,6 +271,12 @@ class SHHTTPAPITests {
                 error = e
             }
 
+            try {
+                api.sendCodeToUser(1, 4151234567, "12345", SHSendCodeToUserRequestDTO.Medium.Phone)
+            } catch (e: Exception) {
+                error = e
+            }
+
             error?.let {
                 deleteUser(this, user)
                 println("error: $it")
