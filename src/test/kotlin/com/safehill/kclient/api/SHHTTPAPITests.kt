@@ -67,6 +67,7 @@ class SHHTTPAPITests {
             throw it
         } ?: run {
             authResponse?.let {
+                assert(!it.metadata.isPhoneNumberVerified)
                 println("Auth token: ${it.bearerToken}")
                 localUser.authenticate(it.user, it.bearerToken)
             }
@@ -116,7 +117,7 @@ class SHHTTPAPITests {
             authenticateUser(this, user)
 
             var error: Exception? = null
-            val getJob = launch {
+            var getJob = launch {
                 try {
                     val users = SHHTTPAPI(user).getUsers(listOf(user.identifier))
                     assert(users.isNotEmpty())
@@ -136,6 +137,61 @@ class SHHTTPAPITests {
                 deleteUser(this, user)
                 throw it
             }
+
+            val newPhoneNumber = "+11234567890"
+
+            val updateJob = launch {
+                try {
+                    val updatedUser = SHHTTPAPI(user).updateUser(
+                        name = null,
+                        phoneNumber = newPhoneNumber,
+                        email = null
+                    )
+                    assert(updatedUser.identifier == user.identifier)
+                    assert(updatedUser.name == user.name)
+                } catch (err: Exception) {
+                    error = err
+                }
+            }
+            updateJob.join()
+
+            error?.let {
+                println("error: $it")
+                deleteUser(this, user)
+                throw it
+            }
+
+            val authJob = launch {
+                try {
+                    val authResponse = SHHTTPAPI(user).signIn(user.name)
+                    assert(authResponse.metadata.isPhoneNumberVerified)
+                } catch (err: Exception) {
+                    error = err
+                }
+            }
+            authJob.join()
+
+            error?.let {
+                println("error: $it")
+                deleteUser(this, user)
+                throw it
+            }
+
+            getJob = launch {
+                try {
+                    val users = SHHTTPAPI(user).getUsers(listOf(user.identifier))
+                    assert(users.isNotEmpty())
+                    assert(users.count() == 1)
+                    val retrievedUser = users[0]
+                    assert(retrievedUser.identifier == user.identifier)
+                    assert(retrievedUser.name == user.name)
+                    assert(Base64.getEncoder().encodeToString(retrievedUser.publicKeyData) == Base64.getEncoder().encodeToString(user.publicKeyData))
+                    assert(Base64.getEncoder().encodeToString(retrievedUser.publicSignatureData) == Base64.getEncoder().encodeToString(user.publicSignatureData))
+                } catch (err: Exception) {
+                    error = err
+                }
+            }
+            getJob.join()
 
             deleteUser(this, user)
         }

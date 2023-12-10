@@ -35,10 +35,11 @@ interface SHSafehillAPI {
     /// Updates an existing user details or credentials
     /// - Parameters:
     ///   - name: the new username
-    ///   - password: the new user password
+    ///   - phoneNumber: the new phone number
+    ///   - email: the new email
     /// - Returns:
     ///   - the user just created
-    suspend fun updateUser(name: String?): SHServerUser
+    suspend fun updateUser(name: String?, phoneNumber: String?, email: String?): SHServerUser
 
     /// Delete the user making the request and all related assets, metadata and sharing information
     /// - Parameters:
