@@ -113,8 +113,35 @@ class SHHTTPAPI(
     }
 
     @Throws
-    override suspend fun updateUser(name: String?): SHServerUser {
-        TODO("Not yet implemented")
+    override suspend fun updateUser(
+        name: String?,
+        phoneNumber: String?,
+        email: String?,
+    ): SHServerUser {
+        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+
+        val requestBody = SHUserUpdateDTO(
+            identifier = null,
+            name = name,
+            phoneNumber = phoneNumber,
+            email = email,
+            publicKey = null,
+            publicSignature = null
+        )
+        val (request, response, result) = "/users/update".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Gson().toJson(requestBody))
+            .responseObject(SHRemoteUser.Deserializer())
+
+        println("[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
+                "response.status=${response.statusCode}")
+
+        when (result) {
+            is Result.Success -> return result.component1()!!
+            is Result.Failure -> {
+                throw SHHTTPException(response.statusCode, response.responseMessage)
+            }
+        }
     }
 
     @Throws
