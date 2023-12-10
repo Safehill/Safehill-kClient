@@ -55,14 +55,13 @@ class SHCypher {
             )
             val timeBasedOneTimePasswordGenerator = TimeBasedOneTimePasswordGenerator(secret, config)
 
-            val timestamp = Date().toInstant().toEpochMilli()
-            val code = timeBasedOneTimePasswordGenerator.generate(timestamp)
+            val code = timeBasedOneTimePasswordGenerator.generate(Date().toInstant().toEpochMilli())
 
             val counter = timeBasedOneTimePasswordGenerator.counter()
             // the start of next time slot minus 1ms
             val endEpochMillis = timeBasedOneTimePasswordGenerator.timeslotStart(counter+1)-1
             // number of milliseconds the current TOTP is still valid
-            val millisValid = endEpochMillis - timestamp
+            val millisValid = endEpochMillis - Date().toInstant().toEpochMilli()
 
             return code to millisValid
         }
