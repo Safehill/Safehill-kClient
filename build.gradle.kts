@@ -35,3 +35,7 @@ tasks.withType<Jar> {
         attributes["Main-Class"] = "com.safehill.kcrypto.Main.kt"
     }
 }
+
+java{
+    withSourcesJar()
+}
