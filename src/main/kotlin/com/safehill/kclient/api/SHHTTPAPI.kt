@@ -98,7 +98,7 @@ class SHHTTPAPI(
             medium = medium
         )
 
-        val (request, response, result) = "/users/code/send".httpPost()
+        val (request, response, _) = "/users/code/send".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Gson().toJson(requestBody))
             .response()
