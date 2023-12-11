@@ -55,7 +55,7 @@ interface SHSafehillAPI {
     ///   - name: the username
     /// - Returns:
     ///   - the response with the auth token if credentials are valid
-    suspend fun signIn(name: String): SHAuthResponseDTO
+    suspend fun signIn(): SHAuthResponseDTO
 
     /// Get a User's public key and public signature
     /// - Parameters:

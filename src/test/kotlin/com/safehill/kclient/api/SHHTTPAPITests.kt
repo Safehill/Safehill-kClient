@@ -55,7 +55,7 @@ class SHHTTPAPITests {
 
         val authJob = coroutineScope.launch {
             try {
-                authResponse = SHHTTPAPI(localUser).signIn(localUser.name)
+                authResponse = SHHTTPAPI(localUser).signIn()
             } catch (err: Exception) {
                 error = err
             }
@@ -163,7 +163,7 @@ class SHHTTPAPITests {
 
             val authJob = launch {
                 try {
-                    val authResponse = SHHTTPAPI(user).signIn(user.name)
+                    val authResponse = SHHTTPAPI(user).signIn()
                     assert(authResponse.metadata.isPhoneNumberVerified)
                 } catch (err: Exception) {
                     error = err
@@ -305,9 +305,9 @@ class SHHTTPAPITests {
 
         runBlocking {
             try {
-                api.signIn("invalidUserName")
+                api.signIn()
             } catch (e: SHHTTPException) {
-                assert(e.statusCode == SHHTTPStatusCode.CONFLICT)
+                assert(e.statusCode == SHHTTPStatusCode.NOT_FOUND)
             }
         }
     }

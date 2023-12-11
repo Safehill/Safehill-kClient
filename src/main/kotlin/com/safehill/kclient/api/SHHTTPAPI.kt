@@ -201,10 +201,9 @@ class SHHTTPAPI(
     }
 
     @Throws
-    override suspend fun signIn(name: String): SHAuthResponseDTO {
+    override suspend fun signIn(): SHAuthResponseDTO {
         val authRequestBody = SHAuthChallengeRequestDTO(
             identifier=requestor.identifier,
-            name=name
         )
         val (startRequest, startResponse, startResult) = "/signin/challenge/start".httpPost()
             .body(Gson().toJson(authRequestBody))
