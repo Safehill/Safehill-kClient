@@ -1,6 +1,6 @@
 package com.safehill.kcrypto
 
-import com.safehill.kclient.api.SHHTTPAPI
+import com.safehill.kclient.api.SafehillApiImpl
 import com.safehill.kclient.api.dtos.SHAuthChallengeResponseDTO
 import com.safehill.kclient.api.dtos.SHAuthResolvedChallengeDTO
 import com.safehill.kclient.models.SHLocalUser
@@ -301,7 +301,7 @@ class CipherTests {
         )
 
         // Client solves the challenge
-        val solvedChallenge: SHAuthResolvedChallengeDTO = SHHTTPAPI(SHLocalUser(clientUser)).solveChallenge(authChallenge)
+        val solvedChallenge: SHAuthResolvedChallengeDTO = SafehillApiImpl(SHLocalUser(clientUser)).solveChallenge(authChallenge)
 
         val signedChallenge = Base64.getDecoder().decode(solvedChallenge.signedChallenge)
         val digest = Base64.getDecoder().decode(solvedChallenge.digest)

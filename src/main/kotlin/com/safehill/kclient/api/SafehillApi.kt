@@ -6,7 +6,7 @@ import com.safehill.kclient.models.*
 
 typealias AssetGlobalIdentifier = String
 
-interface SHSafehillAPI {
+interface SafehillApi {
 
     var requestor: SHLocalUser
 

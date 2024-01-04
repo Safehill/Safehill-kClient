@@ -46,36 +46,44 @@ enum class ServerEnvironment {
     Production, Development
 }
 
-enum class SHHTTPStatusCode(val statusCode: Int) {
-    UNAUTHORIZED(401),
-    PAYMENT_REQUIRED(402),
-    NOT_FOUND(404),
-    METHOD_NOT_ALLOWED(405),
-    CONFLICT(409);
+enum class SafehillHttpStatusCode(val statusCode: Int) {
+    UnAuthorized(401),
+    PaymentRequired(402),
+    NotFound(404),
+    MethodNotAllowed(405),
+    Conflict(409);
 
     companion object {
-        fun fromInt(value: Int): SHHTTPStatusCode? {
+        fun fromInt(value: Int): SafehillHttpStatusCode? {
             return entries.firstOrNull() { it.statusCode == value }
         }
     }
 }
 
-data class SHHTTPException(
-    val statusCode: SHHTTPStatusCode?,
+data class SafehillHttpException(
+    val statusCode: SafehillHttpStatusCode?,
     override val message: String,
-) : Exception(message) {
-    constructor(statusCode: Int, message: String)
-            : this(SHHTTPStatusCode.fromInt(statusCode), "$statusCode: $message")
+    val httpException: HttpException
+) : Exception(message, httpException) {
+    constructor(
+        statusCode: Int,
+        message: String,
+        httpException: HttpException
+    ) : this(
+        SafehillHttpStatusCode.fromInt(statusCode),
+        "$statusCode: $message",
+        httpException
+    )
 }
 
 
 // For Fuel howto see https://www.baeldung.com/kotlin/fuel
 
-class SHHTTPAPI(
+class SafehillApiImpl(
     override var requestor: SHLocalUser,
     private val environment: ServerEnvironment = ServerEnvironment.Development,
     hostname: String = "localhost"
-) : SHSafehillAPI {
+) : SafehillApi {
 
     init {
         FuelManager.instance.basePath = when (this.environment) {
@@ -217,7 +225,8 @@ class SHHTTPAPI(
 
     @Throws
     override suspend fun getUsers(withIdentifiers: List<String>): List<SHRemoteUser> {
-        val bearerToken = this.requestor.authToken ?: throw SHHTTPException(401, "unauthorized")
+        val bearerToken =
+            this.requestor.authToken ?: throw SafehillHttpException(401, "unauthorized")
 
         if (withIdentifiers.isEmpty()) {
             return listOf()
@@ -397,7 +406,7 @@ class SHHTTPAPI(
             is Result.Failure -> {
                 val fuelError = result.error
                 throw if (fuelError.exception is HttpException) {
-                    SHHTTPException(
+                    SafehillHttpException(
                         fuelError.response.statusCode,
                         fuelError.response.responseMessage
                     )
