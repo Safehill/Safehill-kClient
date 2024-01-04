@@ -416,32 +416,37 @@ class SHHTTPAPI(
         TODO("Not yet implemented")
     }
 
-}
+    private fun <T> ResponseResultOf<T>.handleResponse(): T {
+        log()
+        return getOrThrow()
+    }
 
-fun <T> ResponseResultOf<T>.handleResponse(): T {
-    log()
-    return getOrThrow()
-}
-
-fun <T> ResponseResultOf<T>.getOrThrow(): T {
-    return when (val result = this.third) {
-        is Result.Success -> result.value
-        is Result.Failure -> {
-            val fuelError = result.error
-            throw if (fuelError.exception is HttpException) {
-                SHHTTPException(fuelError.response.statusCode, fuelError.response.responseMessage)
-            } else {
-                result.error.exception
+    private fun <T> ResponseResultOf<T>.getOrThrow(): T {
+        return when (val result = this.third) {
+            is Result.Success -> result.value
+            is Result.Failure -> {
+                val fuelError = result.error
+                throw if (fuelError.exception is HttpException) {
+                    SHHTTPException(
+                        fuelError.response.statusCode,
+                        fuelError.response.responseMessage
+                    )
+                } else {
+                    result.error.exception
+                }
             }
         }
     }
+
+    private fun <T> ResponseResultOf<T>.log() {
+        val (request, response, result) = this
+        println(
+            "[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
+                    "response.status=${response.statusCode}"
+        )
+
+    }
+
+
 }
 
-fun <T> ResponseResultOf<T>.log() {
-    val (request, response, result) = this
-    println(
-        "[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
-                "response.status=${response.statusCode}"
-    )
-
-}
