@@ -6,14 +6,40 @@ import com.github.kittinunf.fuel.core.ResponseResultOf
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
-import com.safehill.kclient.api.dtos.*
+import com.safehill.kclient.api.dtos.SHAssetDeleteCriteriaDTO
+import com.safehill.kclient.api.dtos.SHAssetInputDTO
+import com.safehill.kclient.api.dtos.SHAssetOutputDTO
+import com.safehill.kclient.api.dtos.SHAssetVersionInputDTO
+import com.safehill.kclient.api.dtos.SHAuthChallengeRequestDTO
+import com.safehill.kclient.api.dtos.SHAuthChallengeResponseDTO
+import com.safehill.kclient.api.dtos.SHAuthResolvedChallengeDTO
+import com.safehill.kclient.api.dtos.SHAuthResponseDTO
+import com.safehill.kclient.api.dtos.SHInteractionsGroupDTO
+import com.safehill.kclient.api.dtos.SHMessageInputDTO
+import com.safehill.kclient.api.dtos.SHMessageOutputDTO
+import com.safehill.kclient.api.dtos.SHReactionOutputDTO
+import com.safehill.kclient.api.dtos.SHRecipientEncryptionDetailsDTO
+import com.safehill.kclient.api.dtos.SHSendCodeToUserRequestDTO
+import com.safehill.kclient.api.dtos.SHUserIdentifiersDTO
+import com.safehill.kclient.api.dtos.SHUserInputDTO
+import com.safehill.kclient.api.dtos.SHUserSearchDTO
+import com.safehill.kclient.api.dtos.SHUserUpdateDTO
 import com.safehill.kclient.api.serde.toIso8601String
-import com.safehill.kclient.models.*
+import com.safehill.kclient.models.SHAssetDescriptor
+import com.safehill.kclient.models.SHAssetDescriptorUploadState
+import com.safehill.kclient.models.SHAssetQuality
+import com.safehill.kclient.models.SHEncryptedAsset
+import com.safehill.kclient.models.SHLocalUser
+import com.safehill.kclient.models.SHRemoteUser
+import com.safehill.kclient.models.SHServerUser
+import com.safehill.kclient.models.SHShareableEncryptedAsset
+import com.safehill.kclient.models.SHUserReaction
 import com.safehill.kcrypto.SHCypher
 import com.safehill.kcrypto.models.SHRemoteCryptoUser
 import com.safehill.kcrypto.models.SHShareablePayload
 import java.security.MessageDigest
-import java.util.*
+import java.util.Base64
+import java.util.Date
 
 
 enum class ServerEnvironment {
@@ -114,22 +140,11 @@ class SHHTTPAPI(
             publicKey = null,
             publicSignature = null
         )
-        val (request, response, result) = "/users/update".httpPost()
+        return "/users/update".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Gson().toJson(requestBody))
             .responseObject(SHRemoteUser.Deserializer())
-
-        println(
-            "[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
-                    "response.status=${response.statusCode}"
-        )
-
-        when (result) {
-            is Result.Success -> return result.component1()!!
-            is Result.Failure -> {
-                throw SHHTTPException(response.statusCode, response.responseMessage)
-            }
-        }
+            .handleResponse()
     }
 
     @Throws
@@ -141,18 +156,10 @@ class SHHTTPAPI(
     override suspend fun deleteAccount() {
         val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
 
-        val (request, response, result) = "/users/safe_delete".httpPost()
+        "/users/safe_delete".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .responseString()
-
-        println("[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
-                "response.status=${response.statusCode}")
-
-        when (result) {
-            is Result.Success -> return
-            is Result.Failure ->
-                throw SHHTTPException(response.statusCode, response.responseMessage)
-        }
+            .handleResponse()
     }
 
     @Throws
@@ -191,59 +198,37 @@ class SHHTTPAPI(
     @Throws
     override suspend fun signIn(): SHAuthResponseDTO {
         val authRequestBody = SHAuthChallengeRequestDTO(
-            identifier=requestor.identifier,
+            identifier = requestor.identifier,
         )
-        val (startRequest, startResponse, startResult) = "/signin/challenge/start".httpPost()
+        val authChallenge = "/signin/challenge/start".httpPost()
             .body(Gson().toJson(authRequestBody))
             .responseObject(SHAuthChallengeResponseDTO.Deserializer())
+            .handleResponse()
 
-        println("[api] POST url=${startRequest.url} with headers=${startRequest.header()} body=${startRequest.body} " +
-                "response.status=${startResponse.statusCode}")
-
-        val authChallenge = when (startResult) {
-            is Result.Success -> startResult.component1()!!
-            is Result.Failure -> {
-                throw SHHTTPException(startResponse.statusCode, startResponse.responseMessage)
-            }
-        }
 
         val solvedChallenge = this.solveChallenge(authChallenge)
 
-        val (verifyRequest, verifyResponse, verifyResult) = "/signin/challenge/verify".httpPost()
+        return "/signin/challenge/verify".httpPost()
             .body(Gson().toJson(solvedChallenge))
             .responseObject(SHAuthResponseDTO.Deserializer())
+            .handleResponse()
 
-        println("[api] POST url=${verifyRequest.url} with headers=${verifyRequest.header()} body=${verifyRequest.body} " +
-                "response.status=${verifyResponse.statusCode}")
-
-        when (verifyResult) {
-            is Result.Success -> return verifyResult.component1()!!
-            is Result.Failure -> {
-                throw SHHTTPException(verifyResponse.statusCode, verifyResponse.responseMessage)
-            }
-        }
     }
 
     @Throws
     override suspend fun getUsers(withIdentifiers: List<String>): List<SHRemoteUser> {
         val bearerToken = this.requestor.authToken ?: throw SHHTTPException(401, "unauthorized")
 
-        if (withIdentifiers.isEmpty()) { return listOf() }
+        if (withIdentifiers.isEmpty()) {
+            return listOf()
+        }
 
         val getUsersRequestBody = SHUserIdentifiersDTO(userIdentifiers = withIdentifiers)
-        val (getRequest, getResponse, getResult) = "/users/retrieve".httpPost()
+        return "/users/retrieve".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Gson().toJson(getUsersRequestBody))
             .responseObject(SHRemoteUser.ListDeserializer())
-
-        println("[api] POST url=${getRequest.url} with headers=${getRequest.header()} body=${getRequest.body} " +
-                "response.status=${getResponse.statusCode}")
-
-        when (getResult) {
-            is Result.Success -> return getResult.component1()!!
-            is Result.Failure ->
-                throw SHHTTPException(getResponse.statusCode, getResponse.responseMessage)
-        }
+            .handleResponse()
     }
 
     @Throws
@@ -251,38 +236,22 @@ class SHHTTPAPI(
         val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
 
         val getUsersRequestBody = SHUserSearchDTO(query, per = 5, page = 1)
-        val (searchRequest, searchResponse, searchResult) = "/users/search".httpPost()
+        return "/users/search".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Gson().toJson(getUsersRequestBody))
             .responseObject(SHRemoteUser.ListDeserializer())
+            .handleResponse()
 
-        println("[api] POST url=${searchRequest.url} with headers=${searchRequest.header()} body=${searchRequest.body} " +
-                "response.status=${searchResponse.statusCode}")
-
-        when (searchResult) {
-            is Result.Success -> return searchResult.component1()!!
-            is Result.Failure ->
-                throw SHHTTPException(searchResponse.statusCode, searchResponse.responseMessage)
-        }
     }
 
     @Throws
     override suspend fun getAssetDescriptors(): List<SHAssetDescriptor> {
         val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
 
-        val (request, response, result) = "/assets/descriptors/retrieve".httpPost()
+        return "/assets/descriptors/retrieve".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .responseObject(SHAssetDescriptor.ListDeserializer())
-
-        println("[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
-                "response.status=${response.statusCode}")
-
-        when (result) {
-            is Result.Success -> return result.component1()!!
-            is Result.Failure -> {
-                throw SHHTTPException(response.statusCode, response.responseMessage)
-            }
-        }
+            .handleResponse()
     }
 
     @Throws
@@ -327,20 +296,12 @@ class SHHTTPAPI(
             },
             forceUpdateVersions = true
         )
-        val (request, response, result) = "/assets/create".httpPost()
+        val shOutput = "/assets/create".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Gson().toJson(requestBody))
             .responseObject(SHAssetOutputDTO.Deserializer())
-
-        println("[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
-                "response.status=${response.statusCode}")
-
-        when (result) {
-            is Result.Success -> return listOf(result.component1()!!)
-            is Result.Failure -> {
-                throw SHHTTPException(response.statusCode, response.responseMessage)
-            }
-        }
+            .handleResponse()
+        return listOf(shOutput)
     }
 
     override suspend fun share(asset: SHShareableEncryptedAsset) {
@@ -371,18 +332,12 @@ class SHHTTPAPI(
     override suspend fun deleteAssets(globalIdentifiers: List<String>): List<String> {
         val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
 
-        val (request, response, _) = "/assets/delete".httpPost()
+        val responseResult = "/assets/delete".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Gson().toJson(SHAssetDeleteCriteriaDTO(globalIdentifiers)))
             .response()
-
-        println("[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
-                "response.status=${response.statusCode}")
-
-        when (response.statusCode) {
-            200 -> return globalIdentifiers
-            else -> throw SHHTTPException(response.statusCode, response.responseMessage)
-        }
+        responseResult.log()
+        return responseResult.map { globalIdentifiers }
     }
 
     override suspend fun setGroupEncryptionDetails(
@@ -400,7 +355,10 @@ class SHHTTPAPI(
         TODO("Not yet implemented")
     }
 
-    override suspend fun addReactions(reactions: List<SHUserReaction>, toGroupId: String): List<SHReactionOutputDTO> {
+    override suspend fun addReactions(
+        reactions: List<SHUserReaction>,
+        toGroupId: String
+    ): List<SHReactionOutputDTO> {
         TODO("Not yet implemented")
     }
 
@@ -408,17 +366,29 @@ class SHHTTPAPI(
         TODO("Not yet implemented")
     }
 
-    override suspend fun retrieveInteractions(inGroupId: String, per: Int, page: Int): List<SHInteractionsGroupDTO> {
+    override suspend fun retrieveInteractions(
+        inGroupId: String,
+        per: Int,
+        page: Int
+    ): List<SHInteractionsGroupDTO> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun addMessages(messages: List<SHMessageInputDTO>, toGroupId: String): List<SHMessageOutputDTO> {
+    override suspend fun addMessages(
+        messages: List<SHMessageInputDTO>,
+        toGroupId: String
+    ): List<SHMessageOutputDTO> {
         TODO("Not yet implemented")
     }
 
     private fun <T> ResponseResultOf<T>.handleResponse(): T {
         log()
         return getOrThrow()
+    }
+
+    private fun <T, R> ResponseResultOf<T>.map(transform: (T) -> R): R {
+        val value = getOrThrow()
+        return transform(value)
     }
 
     private fun <T> ResponseResultOf<T>.getOrThrow(): T {
@@ -432,7 +402,7 @@ class SHHTTPAPI(
                         fuelError.response.responseMessage
                     )
                 } else {
-                    result.error.exception
+                    fuelError.exception
                 }
             }
         }
