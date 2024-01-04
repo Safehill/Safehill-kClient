@@ -2,6 +2,7 @@ package com.safehill.kclient.api
 
 import com.github.kittinunf.fuel.core.FuelManager
 import com.github.kittinunf.fuel.core.HttpException
+import com.github.kittinunf.fuel.core.ResponseResultOf
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
@@ -51,7 +52,7 @@ class SHHTTPAPI(
 ) : SHSafehillAPI {
 
     init {
-        FuelManager.instance.basePath = when(this.environment) {
+        FuelManager.instance.basePath = when (this.environment) {
             ServerEnvironment.Development -> "http://${hostname}:8080"
             ServerEnvironment.Production -> "https://app.safehill.io:433"
         }
@@ -63,24 +64,15 @@ class SHHTTPAPI(
     @Throws
     override suspend fun createUser(name: String): SHServerUser {
         val requestBody = SHUserInputDTO(
-            identifier=requestor.identifier,
-            publicKey=Base64.getEncoder().encodeToString(requestor.publicKeyData),
-            publicSignature=Base64.getEncoder().encodeToString(requestor.publicSignatureData),
-            name=name
+            identifier = requestor.identifier,
+            publicKey = Base64.getEncoder().encodeToString(requestor.publicKeyData),
+            publicSignature = Base64.getEncoder().encodeToString(requestor.publicSignatureData),
+            name = name
         )
-        val (request, response, result) = "/users/create".httpPost()
+        return "/users/create".httpPost()
             .body(Gson().toJson(requestBody))
             .responseObject(SHRemoteUser.Deserializer())
-
-        println("[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
-                "response.status=${response.statusCode}")
-
-        when (result) {
-            is Result.Success -> return result.component1()!!
-            is Result.Failure -> {
-                throw SHHTTPException(response.statusCode, response.responseMessage)
-            }
-        }
+            .handleResponse()
     }
 
     override suspend fun sendCodeToUser(
@@ -98,18 +90,12 @@ class SHHTTPAPI(
             medium = medium
         )
 
-        val (request, response, _) = "/users/code/send".httpPost()
+        "/users/code/send".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Gson().toJson(requestBody))
             .response()
+            .handleResponse()
 
-        println("[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
-                "response.status=${response.statusCode}")
-
-        when (response.statusCode) {
-            200 -> return
-            else -> throw SHHTTPException(response.statusCode, response.responseMessage)
-        }
     }
 
     @Throws
@@ -133,8 +119,10 @@ class SHHTTPAPI(
             .body(Gson().toJson(requestBody))
             .responseObject(SHRemoteUser.Deserializer())
 
-        println("[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
-                "response.status=${response.statusCode}")
+        println(
+            "[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
+                    "response.status=${response.statusCode}"
+        )
 
         when (result) {
             is Result.Success -> return result.component1()!!
@@ -427,5 +415,33 @@ class SHHTTPAPI(
     override suspend fun addMessages(messages: List<SHMessageInputDTO>, toGroupId: String): List<SHMessageOutputDTO> {
         TODO("Not yet implemented")
     }
+
+}
+
+fun <T> ResponseResultOf<T>.handleResponse(): T {
+    log()
+    return getOrThrow()
+}
+
+fun <T> ResponseResultOf<T>.getOrThrow(): T {
+    return when (val result = this.third) {
+        is Result.Success -> result.value
+        is Result.Failure -> {
+            val fuelError = result.error
+            throw if (fuelError.exception is HttpException) {
+                SHHTTPException(fuelError.response.statusCode, fuelError.response.responseMessage)
+            } else {
+                result.error.exception
+            }
+        }
+    }
+}
+
+fun <T> ResponseResultOf<T>.log() {
+    val (request, response, result) = this
+    println(
+        "[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
+                "response.status=${response.statusCode}"
+    )
 
 }
