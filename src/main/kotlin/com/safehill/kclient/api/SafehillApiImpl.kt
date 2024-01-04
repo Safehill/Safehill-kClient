@@ -62,17 +62,14 @@ enum class SafehillHttpStatusCode(val statusCode: Int) {
 
 data class SafehillHttpException(
     val statusCode: SafehillHttpStatusCode?,
-    override val message: String,
-    val httpException: HttpException
-) : Exception(message, httpException) {
+    override val message: String
+) : Exception(message) {
     constructor(
         statusCode: Int,
         message: String,
-        httpException: HttpException
     ) : this(
         SafehillHttpStatusCode.fromInt(statusCode),
         "$statusCode: $message",
-        httpException
     )
 }
 

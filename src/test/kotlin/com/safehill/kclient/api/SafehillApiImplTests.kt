@@ -279,7 +279,7 @@ class SafehillApiImplTests {
             try {
                 api.getUsers(listOf(localUser.shUser.identifier)).firstOrNull()
             } catch (e: SafehillHttpException) {
-                assert(e.statusCode == SafehillHttpStatusCode.UNAUTHORIZED)
+                assert(e.statusCode == SafehillHttpStatusCode.UnAuthorized)
             }
 
             createUserOnServer(this, localUser)
@@ -293,7 +293,7 @@ class SafehillApiImplTests {
             try {
                 api.getUsers(listOf(localUser.shUser.identifier)).firstOrNull()
             } catch (e: SafehillHttpException) {
-                assert(e.statusCode == SafehillHttpStatusCode.UNAUTHORIZED)
+                assert(e.statusCode == SafehillHttpStatusCode.UnAuthorized)
             }
         }
     }
@@ -307,7 +307,7 @@ class SafehillApiImplTests {
             try {
                 api.signIn()
             } catch (e: SafehillHttpException) {
-                assert(e.statusCode == SafehillHttpStatusCode.NOT_FOUND)
+                assert(e.statusCode == SafehillHttpStatusCode.NotFound)
             }
         }
     }
