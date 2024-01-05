@@ -64,14 +64,17 @@ enum class SafehillHttpStatusCode(val statusCode: Int) {
 
 data class SafehillHttpException(
     val statusCode: SafehillHttpStatusCode?,
-    override val message: String
-) : Exception(message) {
+    override val message: String,
+    val httpException: HttpException
+) : Exception(message, httpException) {
     constructor(
         statusCode: Int,
         message: String,
+        httpException: HttpException
     ) : this(
         SafehillHttpStatusCode.fromInt(statusCode),
         "$statusCode: $message",
+        httpException
     )
 }
 
@@ -230,7 +233,7 @@ class SafehillApiImpl(
     @Throws
     override suspend fun getUsers(withIdentifiers: List<String>): List<SHRemoteUser> {
         val bearerToken =
-            this.requestor.authToken ?: throw SafehillHttpException(401, "unauthorized")
+            this.requestor.authToken ?: throw HttpException(401, "unauthorized")
 
         if (withIdentifiers.isEmpty()) {
             return listOf()
@@ -403,13 +406,15 @@ class SafehillApiImpl(
             is Result.Success -> result.value
             is Result.Failure -> {
                 val fuelError = result.error
-                throw if (fuelError.exception is HttpException) {
+                val exception = fuelError.exception
+                throw if (exception is HttpException) {
                     SafehillHttpException(
                         fuelError.response.statusCode,
-                        fuelError.response.responseMessage
+                        fuelError.response.responseMessage,
+                        exception
                     )
                 } else {
-                    fuelError.exception
+                    exception
                 }
             }
         }
