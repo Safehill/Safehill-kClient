@@ -3,6 +3,8 @@ package com.safehill.kclient.api
 import com.github.kittinunf.fuel.core.FuelManager
 import com.github.kittinunf.fuel.core.HttpException
 import com.github.kittinunf.fuel.core.ResponseResultOf
+import com.github.kittinunf.fuel.core.interceptors.LogRequestInterceptor
+import com.github.kittinunf.fuel.core.interceptors.LogResponseInterceptor
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
@@ -90,6 +92,11 @@ class SafehillApiImpl(
         FuelManager.instance.baseHeaders = mapOf("Content-type" to "application/json")
         FuelManager.instance.timeoutInMillisecond = 10000
         FuelManager.instance.timeoutReadInMillisecond = 30000
+
+        // The client should control whether they want logging or not
+        // Printing for now
+        FuelManager.instance.addRequestInterceptor(LogRequestInterceptor)
+        FuelManager.instance.addResponseInterceptor(LogResponseInterceptor)
     }
 
     @Throws
@@ -103,7 +110,7 @@ class SafehillApiImpl(
         return "/users/create".httpPost()
             .body(Gson().toJson(requestBody))
             .responseObject(SHRemoteUser.Deserializer())
-            .handleResponse()
+            .getOrThrow()
     }
 
     override suspend fun sendCodeToUser(
@@ -125,7 +132,7 @@ class SafehillApiImpl(
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Gson().toJson(requestBody))
             .response()
-            .handleResponse()
+            .getOrThrow()
 
     }
 
@@ -149,7 +156,7 @@ class SafehillApiImpl(
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Gson().toJson(requestBody))
             .responseObject(SHRemoteUser.Deserializer())
-            .handleResponse()
+            .getOrThrow()
     }
 
     @Throws
@@ -164,7 +171,7 @@ class SafehillApiImpl(
         "/users/safe_delete".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .responseString()
-            .handleResponse()
+            .getOrThrow()
     }
 
     @Throws
@@ -208,7 +215,7 @@ class SafehillApiImpl(
         val authChallenge = "/signin/challenge/start".httpPost()
             .body(Gson().toJson(authRequestBody))
             .responseObject(SHAuthChallengeResponseDTO.Deserializer())
-            .handleResponse()
+            .getOrThrow()
 
 
         val solvedChallenge = this.solveChallenge(authChallenge)
@@ -216,7 +223,7 @@ class SafehillApiImpl(
         return "/signin/challenge/verify".httpPost()
             .body(Gson().toJson(solvedChallenge))
             .responseObject(SHAuthResponseDTO.Deserializer())
-            .handleResponse()
+            .getOrThrow()
 
     }
 
@@ -234,7 +241,7 @@ class SafehillApiImpl(
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Gson().toJson(getUsersRequestBody))
             .responseObject(SHRemoteUser.ListDeserializer())
-            .handleResponse()
+            .getOrThrow()
     }
 
     @Throws
@@ -246,7 +253,7 @@ class SafehillApiImpl(
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Gson().toJson(getUsersRequestBody))
             .responseObject(SHRemoteUser.ListDeserializer())
-            .handleResponse()
+            .getOrThrow()
 
     }
 
@@ -257,7 +264,7 @@ class SafehillApiImpl(
         return "/assets/descriptors/retrieve".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .responseObject(SHAssetDescriptor.ListDeserializer())
-            .handleResponse()
+            .getOrThrow()
     }
 
     @Throws
@@ -306,7 +313,7 @@ class SafehillApiImpl(
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Gson().toJson(requestBody))
             .responseObject(SHAssetOutputDTO.Deserializer())
-            .handleResponse()
+            .getOrThrow()
         return listOf(shOutput)
     }
 
@@ -342,8 +349,7 @@ class SafehillApiImpl(
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Gson().toJson(SHAssetDeleteCriteriaDTO(globalIdentifiers)))
             .response()
-        responseResult.log()
-        return responseResult.map { globalIdentifiers }
+        return responseResult.getMappingOrThrow { globalIdentifiers }
     }
 
     override suspend fun setGroupEncryptionDetails(
@@ -387,12 +393,7 @@ class SafehillApiImpl(
         TODO("Not yet implemented")
     }
 
-    private fun <T> ResponseResultOf<T>.handleResponse(): T {
-        log()
-        return getOrThrow()
-    }
-
-    private fun <T, R> ResponseResultOf<T>.map(transform: (T) -> R): R {
+    private fun <T, R> ResponseResultOf<T>.getMappingOrThrow(transform: (T) -> R): R {
         val value = getOrThrow()
         return transform(value)
     }
@@ -412,15 +413,6 @@ class SafehillApiImpl(
                 }
             }
         }
-    }
-
-    private fun <T> ResponseResultOf<T>.log() {
-        val (request, response, result) = this
-        println(
-            "[api] POST url=${request.url} with headers=${request.header()} body=${request.body} " +
-                    "response.status=${response.statusCode}"
-        )
-
     }
 
 
