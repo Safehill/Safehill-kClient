@@ -12,7 +12,7 @@ import java.util.Base64
 import java.util.Date
 import kotlin.random.Random
 
-class SHHTTPAPITests {
+class SafehillApiImplTests {
 
     private suspend fun createUserOnServer(coroutineScope: CoroutineScope, user: SHLocalUser? = null): SHLocalUser {
         val localUser: SHLocalUser = user ?: run {
@@ -29,7 +29,7 @@ class SHHTTPAPITests {
         var error: Exception? = null
         val createJob = coroutineScope.launch {
             try {
-                serverUser = SHHTTPAPI(localUser).createUser(newUserName)
+                serverUser = SafehillApiImpl(localUser).createUser(newUserName)
             } catch (err: Exception) {
                 error = err
             }
@@ -55,7 +55,7 @@ class SHHTTPAPITests {
 
         val authJob = coroutineScope.launch {
             try {
-                authResponse = SHHTTPAPI(localUser).signIn(localUser.name)
+                authResponse = SafehillApiImpl(localUser).signIn()
             } catch (err: Exception) {
                 error = err
             }
@@ -79,7 +79,7 @@ class SHHTTPAPITests {
 
         val deleteJob = coroutineScope.launch {
             try {
-                SHHTTPAPI(localUser).deleteAccount()
+                SafehillApiImpl(localUser).deleteAccount()
             } catch (err: Exception) {
                 error = err
             }
@@ -97,7 +97,7 @@ class SHHTTPAPITests {
 
         val deleteJob = coroutineScope.launch {
             try {
-                SHHTTPAPI(localUser).deleteAssets(assets.map { it.globalIdentifier })
+                SafehillApiImpl(localUser).deleteAssets(assets.map { it.globalIdentifier })
             } catch (err: Exception) {
                 error = err
             }
@@ -119,7 +119,7 @@ class SHHTTPAPITests {
             var error: Exception? = null
             var getJob = launch {
                 try {
-                    val users = SHHTTPAPI(user).getUsers(listOf(user.identifier))
+                    val users = SafehillApiImpl(user).getUsers(listOf(user.identifier))
                     assert(users.isNotEmpty())
                     val retrievedUser = users[0]
                     assert(retrievedUser.identifier == user.identifier)
@@ -142,7 +142,7 @@ class SHHTTPAPITests {
 
             val updateJob = launch {
                 try {
-                    val updatedUser = SHHTTPAPI(user).updateUser(
+                    val updatedUser = SafehillApiImpl(user).updateUser(
                         name = null,
                         phoneNumber = newPhoneNumber,
                         email = null
@@ -163,7 +163,7 @@ class SHHTTPAPITests {
 
             val authJob = launch {
                 try {
-                    val authResponse = SHHTTPAPI(user).signIn(user.name)
+                    val authResponse = SafehillApiImpl(user).signIn()
                     assert(authResponse.metadata.isPhoneNumberVerified)
                 } catch (err: Exception) {
                     error = err
@@ -179,7 +179,7 @@ class SHHTTPAPITests {
 
             getJob = launch {
                 try {
-                    val users = SHHTTPAPI(user).getUsers(listOf(user.identifier))
+                    val users = SafehillApiImpl(user).getUsers(listOf(user.identifier))
                     assert(users.isNotEmpty())
                     assert(users.count() == 1)
                     val retrievedUser = users[0]
@@ -222,7 +222,7 @@ class SHHTTPAPITests {
             val user = createUserOnServer(this)
             authenticateUser(this, user)
 
-            val api = SHHTTPAPI(user)
+            val api = SafehillApiImpl(user)
 
             var createdAsset: SHAssetOutputDTO? = null
             var error: Exception? = null
@@ -273,13 +273,13 @@ class SHHTTPAPITests {
     fun testUnauthorizedGetUsers() {
         val cryptoUser = SHLocalCryptoUser()
         val localUser = SHLocalUser(cryptoUser)
-        val api = SHHTTPAPI(localUser)
+        val api = SafehillApiImpl(localUser)
 
         runBlocking {
             try {
                 api.getUsers(listOf(localUser.shUser.identifier)).firstOrNull()
-            } catch (e: SHHTTPException) {
-                assert(e.statusCode == SHHTTPStatusCode.UNAUTHORIZED)
+            } catch (e: SafehillHttpException) {
+                assert(e.statusCode == SafehillHttpStatusCode.UnAuthorized)
             }
 
             createUserOnServer(this, localUser)
@@ -292,8 +292,8 @@ class SHHTTPAPITests {
 
             try {
                 api.getUsers(listOf(localUser.shUser.identifier)).firstOrNull()
-            } catch (e: SHHTTPException) {
-                assert(e.statusCode == SHHTTPStatusCode.UNAUTHORIZED)
+            } catch (e: SafehillHttpException) {
+                assert(e.statusCode == SafehillHttpStatusCode.UnAuthorized)
             }
         }
     }
@@ -301,13 +301,13 @@ class SHHTTPAPITests {
     @Test
     fun testAuthenticateNonExistingUser() {
         val localUser = SHLocalUser(SHLocalCryptoUser())
-        val api = SHHTTPAPI(localUser)
+        val api = SafehillApiImpl(localUser)
 
         runBlocking {
             try {
-                api.signIn("invalidUserName")
-            } catch (e: SHHTTPException) {
-                assert(e.statusCode == SHHTTPStatusCode.CONFLICT)
+                api.signIn()
+            } catch (e: SafehillHttpException) {
+                assert(e.statusCode == SafehillHttpStatusCode.NotFound)
             }
         }
     }
@@ -319,7 +319,7 @@ class SHHTTPAPITests {
             authenticateUser(this, user)
 
             var error: Exception? = null
-            val api = SHHTTPAPI(user)
+            val api = SafehillApiImpl(user)
 
             try {
                 api.sendCodeToUser(1, 4151234567, "12345", SHSendCodeToUserRequestDTO.Medium.SMS)
