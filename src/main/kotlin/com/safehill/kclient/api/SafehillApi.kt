@@ -64,6 +64,14 @@ interface SafehillApi {
     ///   - the users matching the criteria
     suspend fun getUsers(withIdentifiers: List<String>): List<SHRemoteUser>
 
+    /**
+     * Get a User's public key and public signature
+     * @param hashedPhoneNumbers: list of hashed phone numbers to retrieve the users.
+     * @return [Map] of matched users. [Map.Entry.key] is the phone number hash and [Map.Entry.value] is the corresponding user.
+     */
+
+    suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<String>): Map<String, SHRemoteUser>
+
     /// Get a User's public key and public signature
     /// - Parameters:
     ///   - query: the query string

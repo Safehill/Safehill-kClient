@@ -26,6 +26,7 @@ import com.safehill.kclient.api.dtos.SHUserIdentifiersDTO
 import com.safehill.kclient.api.dtos.SHUserInputDTO
 import com.safehill.kclient.api.dtos.SHUserSearchDTO
 import com.safehill.kclient.api.dtos.SHUserUpdateDTO
+import com.safehill.kclient.api.dtos.UserHashedPhoneNumbersDTO
 import com.safehill.kclient.api.serde.toIso8601String
 import com.safehill.kclient.models.SHAssetDescriptor
 import com.safehill.kclient.models.SHAssetDescriptorUploadState
@@ -39,6 +40,8 @@ import com.safehill.kclient.models.SHUserReaction
 import com.safehill.kcrypto.SHCypher
 import com.safehill.kcrypto.models.SHRemoteCryptoUser
 import com.safehill.kcrypto.models.SHShareablePayload
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.security.MessageDigest
 import java.util.Base64
 import java.util.Date
@@ -244,6 +247,22 @@ class SafehillApiImpl(
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Gson().toJson(getUsersRequestBody))
             .responseObject(SHRemoteUser.ListDeserializer())
+            .getOrThrow()
+    }
+
+    override suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<String>): Map<String, SHRemoteUser> {
+        val bearerToken =
+            this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+
+        if (hashedPhoneNumbers.isEmpty()) {
+            return mapOf()
+        }
+
+        val getUsersRequestBody = UserHashedPhoneNumbersDTO(phoneNumbers = hashedPhoneNumbers)
+        return "/users/retrieve/phone-number".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Json.encodeToString(getUsersRequestBody))
+            .responseObject(SHRemoteUser.MapInResultDeserializer())
             .getOrThrow()
     }
 
