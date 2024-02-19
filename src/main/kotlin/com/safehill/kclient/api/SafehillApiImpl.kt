@@ -8,6 +8,7 @@ import com.github.kittinunf.fuel.core.interceptors.LogResponseInterceptor
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
+import com.safehill.kclient.api.dtos.HashedPhoneNumber
 import com.safehill.kclient.api.dtos.SHAssetDeleteCriteriaDTO
 import com.safehill.kclient.api.dtos.SHAssetInputDTO
 import com.safehill.kclient.api.dtos.SHAssetOutputDTO
@@ -251,7 +252,7 @@ class SafehillApiImpl(
             .getOrThrow()
     }
 
-    override suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<String>): Map<String, SHRemoteUser> {
+    override suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<String>): Map<HashedPhoneNumber, SHRemoteUser> {
         val bearerToken =
             this.requestor.authToken ?: throw HttpException(401, "unauthorized")
 

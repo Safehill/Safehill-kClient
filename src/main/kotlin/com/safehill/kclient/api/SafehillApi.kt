@@ -70,7 +70,7 @@ interface SafehillApi {
      * @return [Map] of matched users. [Map.Entry.key] is the phone number hash and [Map.Entry.value] is the corresponding user.
      */
 
-    suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<String>): Map<String, SHRemoteUser>
+    suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<String>): Map<HashedPhoneNumber, SHRemoteUser>
 
     /// Get a User's public key and public signature
     /// - Parameters:
@@ -80,7 +80,7 @@ interface SafehillApi {
     suspend fun searchUsers(query: String): List<SHRemoteUser>
 
     /// Get the descriptors for all the assets the local user has access to
-    suspend  fun getAssetDescriptors(): List<SHAssetDescriptor>
+    suspend fun getAssetDescriptors(): List<SHAssetDescriptor>
 
     /// Get the descriptors for some assets given their identifiers.
     /// Only descriptors whose assets th local user has access to can be retrieved.
@@ -96,8 +96,10 @@ interface SafehillApi {
     ///   - versions: filtering by version
     /// - Returns:
     ///   - the encrypted assets from the server
-    suspend fun getAssets(globalIdentifiers: List<String>,
-                          versions: List<SHAssetQuality>?): Map<String, SHEncryptedAsset>
+    suspend fun getAssets(
+        globalIdentifiers: List<String>,
+        versions: List<SHAssetQuality>?
+    ): Map<String, SHEncryptedAsset>
 
     // MARK: Assets Write
 
@@ -108,9 +110,11 @@ interface SafehillApi {
     ///   - filterVersions: because the input `SHEncryptedAsset`, optionally specify which versions to pick up from the `assets` object
     /// - Returns:
     ///   - the list of assets created
-    suspend fun create(assets: List<SHEncryptedAsset>,
-                       groupId: String,
-                       filterVersions: List<SHAssetQuality>?): List<SHAssetOutputDTO>
+    suspend fun create(
+        assets: List<SHEncryptedAsset>,
+        groupId: String,
+        filterVersions: List<SHAssetQuality>?
+    ): List<SHAssetOutputDTO>
 
     /// Shares one or more assets with a set of users
     /// - Parameters:
