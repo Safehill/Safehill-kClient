@@ -54,7 +54,7 @@ data class SHRemoteUser(
             return Json.decodeFromString(
                 object : DeserializationStrategy<Map<String, SHRemoteUser>> {
                     override val descriptor: SerialDescriptor =
-                        buildClassSerialDescriptor("SHRemoteUserResults") {
+                        buildClassSerialDescriptor("Map<String, SHRemoteUser>") {
                             element<Map<String, SHRemoteUser>>("result")
                         }
 
