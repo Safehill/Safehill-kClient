@@ -70,7 +70,7 @@ interface SafehillApi {
      * @return [Map] of matched users. [Map.Entry.key] is the phone number hash and [Map.Entry.value] is the corresponding user.
      */
 
-    suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<String>): Map<HashedPhoneNumber, SHRemoteUser>
+    suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<HashedPhoneNumber>): Map<HashedPhoneNumber, SHRemoteUser>
 
     /// Get a User's public key and public signature
     /// - Parameters:

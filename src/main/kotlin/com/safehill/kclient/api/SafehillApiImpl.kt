@@ -252,7 +252,7 @@ class SafehillApiImpl(
             .getOrThrow()
     }
 
-    override suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<String>): Map<HashedPhoneNumber, SHRemoteUser> {
+    override suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<HashedPhoneNumber>): Map<HashedPhoneNumber, SHRemoteUser> {
         val bearerToken =
             this.requestor.authToken ?: throw HttpException(401, "unauthorized")
 
