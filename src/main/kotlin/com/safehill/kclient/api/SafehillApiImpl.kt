@@ -6,6 +6,7 @@ import com.github.kittinunf.fuel.core.ResponseResultOf
 import com.github.kittinunf.fuel.core.interceptors.LogRequestInterceptor
 import com.github.kittinunf.fuel.core.interceptors.LogResponseInterceptor
 import com.github.kittinunf.fuel.httpPost
+import com.github.kittinunf.fuel.serialization.responseObject
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
 import com.safehill.kclient.api.dtos.HashedPhoneNumber
@@ -22,13 +23,13 @@ import com.safehill.kclient.api.dtos.SHMessageInputDTO
 import com.safehill.kclient.api.dtos.SHMessageOutputDTO
 import com.safehill.kclient.api.dtos.SHReactionOutputDTO
 import com.safehill.kclient.api.dtos.SHRecipientEncryptionDetailsDTO
+import com.safehill.kclient.api.dtos.SHRemoteUserPhoneNumberMatchDto
 import com.safehill.kclient.api.dtos.SHSendCodeToUserRequestDTO
 import com.safehill.kclient.api.dtos.SHUserIdentifiersDTO
 import com.safehill.kclient.api.dtos.SHUserInputDTO
 import com.safehill.kclient.api.dtos.SHUserSearchDTO
 import com.safehill.kclient.api.dtos.SHUserUpdateDTO
 import com.safehill.kclient.api.dtos.UserPhoneNumbersDTO
-import com.safehill.kclient.api.serde.SHRemoteUserMapDeserializer
 import com.safehill.kclient.api.serde.toIso8601String
 import com.safehill.kclient.models.SHAssetDescriptor
 import com.safehill.kclient.models.SHAssetDescriptorUploadState
@@ -264,8 +265,9 @@ class SafehillApiImpl(
         return "/users/retrieve/phone-number".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Json.encodeToString(getUsersRequestBody))
-            .responseObject(SHRemoteUserMapDeserializer())
+            .responseObject<SHRemoteUserPhoneNumberMatchDto>()
             .getOrThrow()
+            .result
     }
 
     @Throws
