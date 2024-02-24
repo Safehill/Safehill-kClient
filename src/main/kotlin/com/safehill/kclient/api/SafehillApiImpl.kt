@@ -5,6 +5,7 @@ import com.github.kittinunf.fuel.core.HttpException
 import com.github.kittinunf.fuel.core.ResponseResultOf
 import com.github.kittinunf.fuel.core.interceptors.LogRequestInterceptor
 import com.github.kittinunf.fuel.core.interceptors.LogResponseInterceptor
+import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.responseObject
 import com.github.kittinunf.result.Result
@@ -23,13 +24,13 @@ import com.safehill.kclient.api.dtos.SHMessageInputDTO
 import com.safehill.kclient.api.dtos.SHMessageOutputDTO
 import com.safehill.kclient.api.dtos.SHReactionOutputDTO
 import com.safehill.kclient.api.dtos.SHRecipientEncryptionDetailsDTO
-import com.safehill.kclient.api.dtos.SHRemoteUserPhoneNumberMatchDto
 import com.safehill.kclient.api.dtos.SHSendCodeToUserRequestDTO
 import com.safehill.kclient.api.dtos.SHUserIdentifiersDTO
 import com.safehill.kclient.api.dtos.SHUserInputDTO
-import com.safehill.kclient.api.dtos.SHUserSearchDTO
 import com.safehill.kclient.api.dtos.SHUserUpdateDTO
 import com.safehill.kclient.api.dtos.UserPhoneNumbersDTO
+import com.safehill.kclient.api.dtos.response.SHRemoteUserPhoneNumberMatchDto
+import com.safehill.kclient.api.dtos.response.SHRemoteUserSearchDTO
 import com.safehill.kclient.api.serde.toIso8601String
 import com.safehill.kclient.models.SHAssetDescriptor
 import com.safehill.kclient.models.SHAssetDescriptorUploadState
@@ -271,16 +272,20 @@ class SafehillApiImpl(
     }
 
     @Throws
-    override suspend fun searchUsers(query: String): List<SHRemoteUser> {
+    override suspend fun searchUsers(query: String, per: Int, page: Int): List<SHRemoteUser> {
         val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
 
-        val getUsersRequestBody = SHUserSearchDTO(query, per = 5, page = 1)
-        return "/users/search".httpPost()
+        return "/users/search".httpGet(
+            listOf(
+                "query" to query,
+                "per" to per,
+                "page" to page
+            )
+        )
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Gson().toJson(getUsersRequestBody))
-            .responseObject(SHRemoteUser.ListDeserializer())
+            .responseObject<SHRemoteUserSearchDTO>()
             .getOrThrow()
-
+            .items
     }
 
     @Throws
