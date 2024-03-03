@@ -1,5 +1,8 @@
 package com.safehill.kclient.models
 
+import com.safehill.kclient.models.user.SHLocalUserProtocol
+import com.safehill.kclient.network.SHServerProxy
+import com.safehill.kclient.network.SHServerProxyProtocol
 import com.safehill.kcrypto.models.SHCryptoUser
 import com.safehill.kcrypto.models.SHLocalCryptoUser
 import com.safehill.kcrypto.models.SHShareablePayload
@@ -7,19 +10,20 @@ import com.safehill.kcrypto.models.SHUserContext
 import org.jetbrains.annotations.TestOnly
 
 class SHLocalUser(
-    var shUser: SHLocalCryptoUser
-) : SHServerUser {
+    override var shUser: SHLocalCryptoUser
+) : SHServerUser, SHLocalUserProtocol {
+    override val serverProxy: SHServerProxyProtocol = SHServerProxy(user = this)
     override val identifier: String
         get() = this.shUser.identifier
     override var name: String = ""
 
-    val publicKeyData: ByteArray
+    override val publicKeyData: ByteArray
         get() = this.shUser.publicKeyData
 
-    val publicSignatureData: ByteArray
+    override val publicSignatureData: ByteArray
         get() = this.shUser.publicSignatureData
 
-    var authToken: String? = null
+    override var authToken: String? = null
 
     private fun updateUserDetails(given: SHServerUser?) {
         given?.let {

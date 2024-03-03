@@ -3,13 +3,15 @@ package com.safehill.kclient.api
 import com.safehill.kclient.api.dtos.SHAuthResponse
 import com.safehill.kclient.api.dtos.SHServerAsset
 import com.safehill.kclient.models.*
+import com.safehill.kclient.models.user.SHLocalUserProtocol
+import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
 
 
 typealias AssetGlobalIdentifier = String
 
 interface SHSafehillAPI {
 
-    var requestor: SHLocalUser
+    var requestor: SHLocalUserProtocol
 
     // MARK: User Management
 
@@ -97,4 +99,6 @@ interface SHSafehillAPI {
     /// - Returns:
     ///   - the list of global identifiers that have been deleted
     suspend fun deleteAssets(globalIdentifiers: List<String>): List<String>
+
+    suspend fun listThreads(): List<ConversationThreadOutputDTO>
 }

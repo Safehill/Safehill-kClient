@@ -8,12 +8,13 @@ import com.google.gson.Gson
 import com.safehill.kclient.api.dtos.*
 import com.safehill.kclient.api.serde.toIso8601String
 import com.safehill.kclient.models.*
+import com.safehill.kclient.models.user.SHLocalUserProtocol
+import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
 import com.safehill.kcrypto.SHCypher
 import com.safehill.kcrypto.models.SHRemoteCryptoUser
 import com.safehill.kcrypto.models.SHShareablePayload
 import java.security.MessageDigest
 import java.util.*
-import javax.lang.model.type.UnionType
 
 
 enum class ServerEnvironment {
@@ -46,7 +47,7 @@ data class SHHTTPException(
 // For Fuel howto see https://www.baeldung.com/kotlin/fuel
 
 class SHHTTPAPI(
-    override var requestor: SHLocalUser,
+    override var requestor: SHLocalUserProtocol,
     private val environment: ServerEnvironment = ServerEnvironment.Development,
     hostname: String = "localhost"
 ) : SHSafehillAPI {
@@ -317,6 +318,11 @@ class SHHTTPAPI(
             200 -> return globalIdentifiers
             else -> throw SHHTTPException(response.statusCode, response.responseMessage)
         }
+    }
+
+    @Throws
+    override suspend fun listThreads(): List<ConversationThreadOutputDTO> {
+        TODO("Not yet implemented")
     }
 
 }
