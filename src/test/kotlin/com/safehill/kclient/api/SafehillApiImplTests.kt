@@ -4,8 +4,10 @@ import com.safehill.kclient.api.dtos.SHAuthResponseDTO
 import com.safehill.kclient.api.dtos.SHAssetOutputDTO
 import com.safehill.kclient.models.*
 import com.safehill.kclient.api.dtos.SHSendCodeToUserRequestDTO
+import com.safehill.kclient.network.ServerProxyInterface
 import com.safehill.kcrypto.models.SHKeyPair
 import com.safehill.kcrypto.models.SHLocalCryptoUser
+import com.safehill.mock.ServerProxySpy
 import kotlinx.coroutines.*
 import org.junit.jupiter.api.Test
 import java.util.Base64
@@ -17,7 +19,7 @@ class SafehillApiImplTests {
     private suspend fun createUserOnServer(coroutineScope: CoroutineScope, user: SHLocalUser? = null): SHLocalUser {
         val localUser: SHLocalUser = user ?: run {
             val cryptoUser = SHLocalCryptoUser()
-            SHLocalUser(cryptoUser)
+            SHLocalUser(cryptoUser) { ServerProxySpy() }
         }
 
         val charPool : List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
@@ -272,7 +274,7 @@ class SafehillApiImplTests {
     @Test
     fun testUnauthorizedGetUsers() {
         val cryptoUser = SHLocalCryptoUser()
-        val localUser = SHLocalUser(cryptoUser)
+        val localUser = SHLocalUser(cryptoUser) { ServerProxySpy() }
         val api = SafehillApiImpl(localUser)
 
         runBlocking {
@@ -300,7 +302,7 @@ class SafehillApiImplTests {
 
     @Test
     fun testAuthenticateNonExistingUser() {
-        val localUser = SHLocalUser(SHLocalCryptoUser())
+        val localUser = SHLocalUser(SHLocalCryptoUser()) { ServerProxySpy() }
         val api = SafehillApiImpl(localUser)
 
         runBlocking {

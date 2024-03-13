@@ -5,6 +5,7 @@ import com.safehill.kclient.api.dtos.SHAuthChallengeResponseDTO
 import com.safehill.kclient.api.dtos.SHAuthResolvedChallengeDTO
 import com.safehill.kclient.models.SHLocalUser
 import com.safehill.kcrypto.models.*
+import com.safehill.mock.ServerProxySpy
 import org.junit.jupiter.api.Test
 import java.util.*
 import kotlin.math.max
@@ -301,7 +302,7 @@ class CipherTests {
         )
 
         // Client solves the challenge
-        val solvedChallenge: SHAuthResolvedChallengeDTO = SafehillApiImpl(SHLocalUser(clientUser)).solveChallenge(authChallenge)
+        val solvedChallenge: SHAuthResolvedChallengeDTO = SafehillApiImpl(SHLocalUser(clientUser) { ServerProxySpy() }).solveChallenge(authChallenge)
 
         val signedChallenge = Base64.getDecoder().decode(solvedChallenge.signedChallenge)
         val digest = Base64.getDecoder().decode(solvedChallenge.digest)

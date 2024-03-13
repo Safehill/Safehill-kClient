@@ -4,10 +4,10 @@ import com.safehill.kclient.models.SHServerUser
 import com.safehill.kclient.models.user.SHLocalUserInterface
 import com.safehill.kclient.network.ServerProxyInterface
 
-class UsersController(private val localUser: SHLocalUserInterface) {
-
-    private val serverProxy: ServerProxyInterface
-        get() = localUser.serverProxy
+class UsersController(
+    private val localUser: SHLocalUserInterface,
+    private var serverProxy: ServerProxyInterface = localUser.serverProxy
+) {
 
     @Throws(Exception::class)
     suspend fun getUsers(userIdentifiers: List<String>): List<SHServerUser> {
