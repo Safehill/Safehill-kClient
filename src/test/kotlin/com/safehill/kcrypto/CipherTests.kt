@@ -302,7 +302,7 @@ class CipherTests {
         )
 
         // Client solves the challenge
-        val solvedChallenge: SHAuthResolvedChallengeDTO = SafehillApiImpl(SHLocalUser(clientUser) { ServerProxySpy() }).solveChallenge(authChallenge)
+        val solvedChallenge: SHAuthResolvedChallengeDTO = SafehillApiImpl(SHLocalUser(clientUser)).solveChallenge(authChallenge)
 
         val signedChallenge = Base64.getDecoder().decode(solvedChallenge.signedChallenge)
         val digest = Base64.getDecoder().decode(solvedChallenge.digest)

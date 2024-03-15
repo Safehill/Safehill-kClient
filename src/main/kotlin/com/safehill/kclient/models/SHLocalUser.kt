@@ -11,10 +11,7 @@ import java.security.PublicKey
 
 class SHLocalUser(
     override var shUser: SHLocalCryptoUser,
-    serverProxyFactory: (SHLocalUserInterface) -> ServerProxyInterface
 ) : SHServerUser, SHLocalUserInterface {
-
-    override val serverProxy: ServerProxyInterface = serverProxyFactory(this)
 
     override val identifier: String
         get() = this.shUser.identifier

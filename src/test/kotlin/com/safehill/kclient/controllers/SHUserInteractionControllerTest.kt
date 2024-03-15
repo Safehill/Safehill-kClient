@@ -2,7 +2,6 @@ package com.safehill.kclient.controllers
 
 import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.network.dtos.RecipientEncryptionDetailsDTO
-import com.safehill.mock.SHLocalUserSpy
 import com.safehill.mock.ServerProxySpy
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
@@ -14,7 +13,6 @@ class SHUserInteractionControllerTest {
     private val serverProxySpy = ServerProxySpy()
 
     private val sut = SHUserInteractionController(
-        user = SHLocalUserSpy(),
         serverProxy = serverProxySpy
     )
 

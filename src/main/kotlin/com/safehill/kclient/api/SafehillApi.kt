@@ -18,6 +18,7 @@ import com.safehill.kclient.models.SHShareableEncryptedAsset
 import com.safehill.kclient.models.SHUserReaction
 import com.safehill.kclient.models.user.SHLocalUserInterface
 import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
+import java.lang.IllegalStateException
 
 
 typealias AssetGlobalIdentifier = String
@@ -78,6 +79,7 @@ interface SafehillApi {
     ///   - userIdentifiers: the unique identifiers for the users. If NULL, retrieves all the connected users
     /// - Returns:
     ///   - the users matching the criteria
+    @Throws
     suspend fun getUsers(withIdentifiers: List<String>): List<SHRemoteUser>
 
     /// Get a User's public key and public signature
@@ -227,5 +229,6 @@ interface SafehillApi {
         toGroupId: String
     ): List<SHMessageOutputDTO>
 
+    @Throws(IllegalStateException::class)
     suspend fun listThreads(): List<ConversationThreadOutputDTO>
 }

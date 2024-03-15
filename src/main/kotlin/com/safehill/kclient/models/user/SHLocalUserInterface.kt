@@ -9,5 +9,4 @@ interface SHLocalUserInterface : SHServerUser {
     override val publicSignatureData: ByteArray
     override val publicKeyData: ByteArray
     val shUser: SHLocalCryptoUser
-    val serverProxy: ServerProxyInterface
 }

@@ -1,12 +1,10 @@
 package com.safehill.kclient.controllers
 
 import com.safehill.kclient.models.SHServerUser
-import com.safehill.kclient.models.user.SHLocalUserInterface
 import com.safehill.kclient.network.ServerProxyInterface
 
 class UsersController(
-    private val localUser: SHLocalUserInterface,
-    private var serverProxy: ServerProxyInterface = localUser.serverProxy
+    private var serverProxy: ServerProxyInterface
 ) {
 
     @Throws(Exception::class)

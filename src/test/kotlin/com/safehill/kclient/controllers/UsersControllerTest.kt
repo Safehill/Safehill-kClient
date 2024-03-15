@@ -1,10 +1,8 @@
 package com.safehill.kclient.controllers
 
 import com.safehill.kclient.models.SHServerUser
-import com.safehill.mock.SHLocalUserSpy
 import com.safehill.mock.ServerProxySpy
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions.*
 
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -15,7 +13,6 @@ class UsersControllerTest {
     private val serverProxySpy = ServerProxySpy()
 
     private val sut = UsersController(
-        localUser = SHLocalUserSpy(),
         serverProxy = serverProxySpy
     )
 
