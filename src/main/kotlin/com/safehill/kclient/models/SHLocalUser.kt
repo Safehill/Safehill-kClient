@@ -4,7 +4,7 @@ import com.safehill.kcrypto.models.SHCryptoUser
 import com.safehill.kcrypto.models.SHLocalCryptoUser
 import com.safehill.kcrypto.models.SHShareablePayload
 import com.safehill.kcrypto.models.SHUserContext
-import org.jetbrains.annotations.TestOnly
+import java.security.PublicKey
 
 class SHLocalUser(
     var shUser: SHLocalCryptoUser
@@ -13,10 +13,16 @@ class SHLocalUser(
         get() = this.shUser.identifier
     override var name: String = ""
 
-    val publicKeyData: ByteArray
+    override val publicKey: PublicKey
+        get() = this.shUser.publicKey
+
+    override val publicSignature: PublicKey
+        get() = this.shUser.publicSignature
+
+    override val publicKeyData: ByteArray
         get() = this.shUser.publicKeyData
 
-    val publicSignatureData: ByteArray
+    override val publicSignatureData: ByteArray
         get() = this.shUser.publicSignatureData
 
     var authToken: String? = null
@@ -38,12 +44,29 @@ class SHLocalUser(
         this.authToken = null
     }
 
-    fun shareable(data: ByteArray, with: SHCryptoUser, protocolSalt: ByteArray, iv: ByteArray): SHShareablePayload {
+    fun shareable(
+        data: ByteArray,
+        with: SHCryptoUser,
+        protocolSalt: ByteArray,
+        iv: ByteArray
+    ): SHShareablePayload {
         return SHUserContext(this.shUser).shareable(data, with, protocolSalt, iv)
     }
 
-    fun decrypted(data: ByteArray, encryptedSecret: SHShareablePayload, protocolSalt: ByteArray, iv: ByteArray, receivedFrom: SHCryptoUser): ByteArray {
-        return SHUserContext(this.shUser).decrypt(data, encryptedSecret, protocolSalt, iv, receivedFrom)
+    fun decrypted(
+        data: ByteArray,
+        encryptedSecret: SHShareablePayload,
+        protocolSalt: ByteArray,
+        iv: ByteArray,
+        receivedFrom: SHCryptoUser
+    ): ByteArray {
+        return SHUserContext(this.shUser).decrypt(
+            data,
+            encryptedSecret,
+            protocolSalt,
+            iv,
+            receivedFrom
+        )
     }
 
     fun regenerateKeys() {
