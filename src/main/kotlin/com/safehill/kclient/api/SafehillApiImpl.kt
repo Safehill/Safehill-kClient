@@ -10,6 +10,8 @@ import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.responseObject
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
+import com.safehill.kclient.api.dtos.response.ConversationThreadOutputDTO
+import com.safehill.kclient.api.dtos.CreateOrUpdateThreadDTO
 import com.safehill.kclient.api.dtos.HashedPhoneNumber
 import com.safehill.kclient.api.dtos.SHAssetDeleteCriteriaDTO
 import com.safehill.kclient.api.dtos.SHAssetInputDTO
@@ -44,6 +46,7 @@ import com.safehill.kclient.models.SHUserReaction
 import com.safehill.kcrypto.SHCypher
 import com.safehill.kcrypto.models.SHRemoteCryptoUser
 import com.safehill.kcrypto.models.SHShareablePayload
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.security.MessageDigest
@@ -354,6 +357,29 @@ class SafehillApiImpl(
 
     override suspend fun unshare(assetId: AssetGlobalIdentifier, userPublicIdentifier: String) {
         TODO("Not yet implemented")
+    }
+
+
+    @OptIn(ExperimentalSerializationApi::class)
+    override suspend fun createOrUpdateThread(
+        name: String?,
+        recipientsEncryptionDetails: List<SHRecipientEncryptionDetailsDTO>
+    ): ConversationThreadOutputDTO {
+        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+
+        val request = CreateOrUpdateThreadDTO(
+            name = name,
+            recipients = recipientsEncryptionDetails
+        )
+        val json = Json { explicitNulls = false }
+
+
+        return "/threads/upsert".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(json.encodeToString(CreateOrUpdateThreadDTO.serializer(), request))
+            .responseObject<ConversationThreadOutputDTO>(json)
+            .getOrThrow()
+
     }
 
     override suspend fun upload(

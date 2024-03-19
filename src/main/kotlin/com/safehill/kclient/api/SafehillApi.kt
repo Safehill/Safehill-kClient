@@ -1,5 +1,6 @@
 package com.safehill.kclient.api
 
+import com.safehill.kclient.api.dtos.response.ConversationThreadOutputDTO
 import com.safehill.kclient.api.dtos.HashedPhoneNumber
 import com.safehill.kclient.api.dtos.SHAssetOutputDTO
 import com.safehill.kclient.api.dtos.SHAuthResponseDTO
@@ -145,6 +146,11 @@ interface SafehillApi {
         assetId: AssetGlobalIdentifier,
         userPublicIdentifier: String
     )
+
+    suspend fun createOrUpdateThread(
+        name: String?,
+        recipientsEncryptionDetails: List<SHRecipientEncryptionDetailsDTO>
+    ): ConversationThreadOutputDTO
 
     /// Upload encrypted asset versions data to the CDN.
     suspend fun upload(
