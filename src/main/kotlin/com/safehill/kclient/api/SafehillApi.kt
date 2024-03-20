@@ -1,6 +1,5 @@
 package com.safehill.kclient.api
 
-import com.safehill.kclient.api.dtos.response.ConversationThreadOutputDTO
 import com.safehill.kclient.api.dtos.HashedPhoneNumber
 import com.safehill.kclient.api.dtos.SHAssetOutputDTO
 import com.safehill.kclient.api.dtos.SHAuthResponseDTO
@@ -10,6 +9,7 @@ import com.safehill.kclient.api.dtos.SHMessageOutputDTO
 import com.safehill.kclient.api.dtos.SHReactionOutputDTO
 import com.safehill.kclient.api.dtos.SHRecipientEncryptionDetailsDTO
 import com.safehill.kclient.api.dtos.SHSendCodeToUserRequestDTO
+import com.safehill.kclient.api.dtos.response.ConversationThreadOutputDTO
 import com.safehill.kclient.models.SHAssetDescriptor
 import com.safehill.kclient.models.SHAssetDescriptorUploadState
 import com.safehill.kclient.models.SHAssetQuality
@@ -146,6 +146,10 @@ interface SafehillApi {
         assetId: AssetGlobalIdentifier,
         userPublicIdentifier: String
     )
+
+    suspend fun retrieveThread(
+        usersIdentifiers: List<String>
+    ): ConversationThreadOutputDTO?
 
     suspend fun createOrUpdateThread(
         name: String?,

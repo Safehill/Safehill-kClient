@@ -10,9 +10,9 @@ import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.responseObject
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
-import com.safehill.kclient.api.dtos.response.ConversationThreadOutputDTO
 import com.safehill.kclient.api.dtos.CreateOrUpdateThreadDTO
 import com.safehill.kclient.api.dtos.HashedPhoneNumber
+import com.safehill.kclient.api.dtos.RetrieveThreadDTO
 import com.safehill.kclient.api.dtos.SHAssetDeleteCriteriaDTO
 import com.safehill.kclient.api.dtos.SHAssetInputDTO
 import com.safehill.kclient.api.dtos.SHAssetOutputDTO
@@ -31,6 +31,7 @@ import com.safehill.kclient.api.dtos.SHUserIdentifiersDTO
 import com.safehill.kclient.api.dtos.SHUserInputDTO
 import com.safehill.kclient.api.dtos.SHUserUpdateDTO
 import com.safehill.kclient.api.dtos.UserPhoneNumbersDTO
+import com.safehill.kclient.api.dtos.response.ConversationThreadOutputDTO
 import com.safehill.kclient.api.dtos.response.SHRemoteUserPhoneNumberMatchDto
 import com.safehill.kclient.api.dtos.response.SHRemoteUserSearchDTO
 import com.safehill.kclient.api.serde.toIso8601String
@@ -47,6 +48,7 @@ import com.safehill.kcrypto.SHCypher
 import com.safehill.kcrypto.models.SHRemoteCryptoUser
 import com.safehill.kcrypto.models.SHShareablePayload
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.security.MessageDigest
@@ -111,6 +113,7 @@ class SafehillApiImpl(
         FuelManager.instance.addRequestInterceptor(LogRequestInterceptor)
         FuelManager.instance.addResponseInterceptor(LogResponseInterceptor)
     }
+
 
     @Throws
     override suspend fun createUser(name: String): SHServerUser {
@@ -357,6 +360,27 @@ class SafehillApiImpl(
 
     override suspend fun unshare(assetId: AssetGlobalIdentifier, userPublicIdentifier: String) {
         TODO("Not yet implemented")
+    }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    override suspend fun retrieveThread(usersIdentifiers: List<String>): ConversationThreadOutputDTO? {
+        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+
+        val request = RetrieveThreadDTO(
+            byUsersPublicIdentifiers = usersIdentifiers
+        )
+
+
+        return "/threads/retrieve".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Json.encodeToString(request))
+            .responseObject(
+                ListSerializer(ConversationThreadOutputDTO.serializer()),
+                Json {
+                    explicitNulls = false
+                }
+            )
+            .getOrThrow().firstOrNull()
     }
 
 
