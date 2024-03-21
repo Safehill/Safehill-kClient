@@ -44,22 +44,16 @@ class ServerProxy(
     }
 
     private suspend fun updateLocalUserDB(serverUsers: List<SHServerUser>): List<SHServerUser> {
-        serverUsers.chunked(5).forEachIndexed { i, serverUserChunk ->
-            serverUserChunk.forEach { serverUser ->
-                try {
-                    localServer.createOrUpdateUser(
-                        identifier = serverUser.identifier,
-                        name = serverUser.name,
-                        publicKeyData = serverUser.publicKeyData,
-                        publicSignatureData = serverUser.publicSignatureData
-                    )
-                } catch (exception: Exception) {
-                    println("failed to create server user in local server: ${exception.message}")
-                }
-
-            }
-            if (serverUserChunk.isNotEmpty() && i < serverUserChunk.size - 1) {
-                delay(10) // sleep 10ms
+        serverUsers.forEach { serverUser ->
+            try {
+                localServer.createOrUpdateUser(
+                    identifier = serverUser.identifier,
+                    name = serverUser.name,
+                    publicKeyData = serverUser.publicKeyData,
+                    publicSignatureData = serverUser.publicSignatureData
+                )
+            } catch (exception: Exception) {
+                println("failed to create server user in local server: ${exception.message}")
             }
         }
 
