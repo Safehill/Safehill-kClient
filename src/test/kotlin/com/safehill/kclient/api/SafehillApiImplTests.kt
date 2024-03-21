@@ -21,13 +21,16 @@ import kotlin.random.Random
 
 class SafehillApiImplTests {
 
-    private suspend fun createUserOnServer(coroutineScope: CoroutineScope, user: SHLocalUser? = null): SHLocalUser {
+    private suspend fun createUserOnServer(
+        coroutineScope: CoroutineScope,
+        user: SHLocalUser? = null
+    ): SHLocalUser {
         val localUser: SHLocalUser = user ?: run {
             val cryptoUser = SHLocalCryptoUser()
             SHLocalUser(cryptoUser)
         }
 
-        val charPool : List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
+        val charPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
         val newUserName = (1..20)
             .map { Random.nextInt(0, charPool.size).let { charPool[it] } }
             .joinToString("")
@@ -76,7 +79,7 @@ class SafehillApiImplTests {
             authResponse?.let {
                 assert(!it.metadata.isPhoneNumberVerified)
                 println("Auth token: ${it.bearerToken}")
-                localUser.authenticate(it.user, it.bearerToken)
+                localUser.authenticate(it.user, it)
             }
         }
     }
@@ -99,7 +102,11 @@ class SafehillApiImplTests {
         }
     }
 
-    private suspend fun deleteAssets(coroutineScope: CoroutineScope, localUser: SHLocalUser,assets: List<SHAssetOutputDTO>) {
+    private suspend fun deleteAssets(
+        coroutineScope: CoroutineScope,
+        localUser: SHLocalUser,
+        assets: List<SHAssetOutputDTO>
+    ) {
         var error: Exception? = null
 
         val deleteJob = coroutineScope.launch {
@@ -131,8 +138,16 @@ class SafehillApiImplTests {
                     val retrievedUser = users[0]
                     assert(retrievedUser.identifier == user.identifier)
                     assert(retrievedUser.name == user.name)
-                    assert(Base64.getEncoder().encodeToString(retrievedUser.publicKeyData) == Base64.getEncoder().encodeToString(user.publicKeyData))
-                    assert(Base64.getEncoder().encodeToString(retrievedUser.publicSignatureData) == Base64.getEncoder().encodeToString(user.publicSignatureData))
+                    assert(
+                        Base64.getEncoder()
+                            .encodeToString(retrievedUser.publicKeyData) == Base64.getEncoder()
+                            .encodeToString(user.publicKeyData)
+                    )
+                    assert(
+                        Base64.getEncoder()
+                            .encodeToString(retrievedUser.publicSignatureData) == Base64.getEncoder()
+                            .encodeToString(user.publicSignatureData)
+                    )
                 } catch (err: Exception) {
                     error = err
                 }
@@ -192,8 +207,16 @@ class SafehillApiImplTests {
                     val retrievedUser = users[0]
                     assert(retrievedUser.identifier == user.identifier)
                     assert(retrievedUser.name == user.name)
-                    assert(Base64.getEncoder().encodeToString(retrievedUser.publicKeyData) == Base64.getEncoder().encodeToString(user.publicKeyData))
-                    assert(Base64.getEncoder().encodeToString(retrievedUser.publicSignatureData) == Base64.getEncoder().encodeToString(user.publicSignatureData))
+                    assert(
+                        Base64.getEncoder()
+                            .encodeToString(retrievedUser.publicKeyData) == Base64.getEncoder()
+                            .encodeToString(user.publicKeyData)
+                    )
+                    assert(
+                        Base64.getEncoder()
+                            .encodeToString(retrievedUser.publicSignatureData) == Base64.getEncoder()
+                            .encodeToString(user.publicSignatureData)
+                    )
                 } catch (err: Exception) {
                     error = err
                 }
@@ -213,16 +236,18 @@ class SafehillApiImplTests {
             globalIdentifier = "globalIdentifier",
             localIdentifier = null,
             creationDate = Date(0),
-            encryptedVersions = mapOf(Pair(
-                SHAssetQuality.LowResolution,
-                SHEncryptedAssetVersionImpl(
-                    quality = SHAssetQuality.LowResolution,
-                    encryptedData = "encryptedData".toByteArray(),
-                    encryptedSecret = "encryptedData".toByteArray(),
-                    publicKeyData = assetKey.public.encoded,
-                    publicSignatureData = assetSignature.public.encoded
+            encryptedVersions = mapOf(
+                Pair(
+                    SHAssetQuality.LowResolution,
+                    SHEncryptedAssetVersionImpl(
+                        quality = SHAssetQuality.LowResolution,
+                        encryptedData = "encryptedData".toByteArray(),
+                        encryptedSecret = "encryptedData".toByteArray(),
+                        publicKeyData = assetKey.public.encoded,
+                        publicSignatureData = assetSignature.public.encoded
+                    )
                 )
-            ))
+            )
         )
 
         runBlocking {
