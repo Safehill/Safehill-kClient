@@ -1,7 +1,23 @@
 package com.safehill.kclient.api
 
-import com.safehill.kclient.api.dtos.*
-import com.safehill.kclient.models.*
+import com.safehill.kclient.api.dtos.HashedPhoneNumber
+import com.safehill.kclient.api.dtos.SHAssetOutputDTO
+import com.safehill.kclient.api.dtos.SHAuthResponseDTO
+import com.safehill.kclient.api.dtos.SHInteractionsGroupDTO
+import com.safehill.kclient.api.dtos.SHMessageInputDTO
+import com.safehill.kclient.api.dtos.SHMessageOutputDTO
+import com.safehill.kclient.api.dtos.SHReactionOutputDTO
+import com.safehill.kclient.api.dtos.SHRecipientEncryptionDetailsDTO
+import com.safehill.kclient.api.dtos.SHSendCodeToUserRequestDTO
+import com.safehill.kclient.models.SHAssetDescriptor
+import com.safehill.kclient.models.SHAssetDescriptorUploadState
+import com.safehill.kclient.models.SHAssetQuality
+import com.safehill.kclient.models.SHEncryptedAsset
+import com.safehill.kclient.models.SHLocalUser
+import com.safehill.kclient.models.SHRemoteUser
+import com.safehill.kclient.models.SHServerUser
+import com.safehill.kclient.models.SHShareableEncryptedAsset
+import com.safehill.kclient.models.SHUserReaction
 
 
 typealias AssetGlobalIdentifier = String
@@ -64,15 +80,23 @@ interface SafehillApi {
     ///   - the users matching the criteria
     suspend fun getUsers(withIdentifiers: List<String>): List<SHRemoteUser>
 
+    /**
+     * Get a User's public key and public signature
+     * @param hashedPhoneNumbers: list of hashed phone numbers to retrieve the users.
+     * @return [Map] of matched users. [Map.Entry.key] is the phone number hash and [Map.Entry.value] is the corresponding user.
+     */
+
+    suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<HashedPhoneNumber>): Map<HashedPhoneNumber, SHRemoteUser>
+
     /// Get a User's public key and public signature
     /// - Parameters:
     ///   - query: the query string
     /// - Returns:
     ///   - the users matching the identifiers
-    suspend fun searchUsers(query: String): List<SHRemoteUser>
+    suspend fun searchUsers(query: String, per: Int, page: Int): List<SHRemoteUser>
 
     /// Get the descriptors for all the assets the local user has access to
-    suspend  fun getAssetDescriptors(): List<SHAssetDescriptor>
+    suspend fun getAssetDescriptors(): List<SHAssetDescriptor>
 
     /// Get the descriptors for some assets given their identifiers.
     /// Only descriptors whose assets th local user has access to can be retrieved.
@@ -88,8 +112,10 @@ interface SafehillApi {
     ///   - versions: filtering by version
     /// - Returns:
     ///   - the encrypted assets from the server
-    suspend fun getAssets(globalIdentifiers: List<String>,
-                          versions: List<SHAssetQuality>?): Map<String, SHEncryptedAsset>
+    suspend fun getAssets(
+        globalIdentifiers: List<String>,
+        versions: List<SHAssetQuality>?
+    ): Map<String, SHEncryptedAsset>
 
     // MARK: Assets Write
 
@@ -100,9 +126,11 @@ interface SafehillApi {
     ///   - filterVersions: because the input `SHEncryptedAsset`, optionally specify which versions to pick up from the `assets` object
     /// - Returns:
     ///   - the list of assets created
-    suspend fun create(assets: List<SHEncryptedAsset>,
-                       groupId: String,
-                       filterVersions: List<SHAssetQuality>?): List<SHAssetOutputDTO>
+    suspend fun create(
+        assets: List<SHEncryptedAsset>,
+        groupId: String,
+        filterVersions: List<SHAssetQuality>?
+    ): List<SHAssetOutputDTO>
 
     /// Shares one or more assets with a set of users
     /// - Parameters:
