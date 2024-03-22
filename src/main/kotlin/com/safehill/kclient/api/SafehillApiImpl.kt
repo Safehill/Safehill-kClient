@@ -39,11 +39,12 @@ import com.safehill.kclient.models.SHAssetDescriptor
 import com.safehill.kclient.models.SHAssetDescriptorUploadState
 import com.safehill.kclient.models.SHAssetQuality
 import com.safehill.kclient.models.SHEncryptedAsset
-import com.safehill.kclient.models.SHLocalUser
 import com.safehill.kclient.models.SHRemoteUser
 import com.safehill.kclient.models.SHServerUser
 import com.safehill.kclient.models.SHShareableEncryptedAsset
 import com.safehill.kclient.models.SHUserReaction
+import com.safehill.kclient.models.user.SHLocalUserInterface
+import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
 import com.safehill.kcrypto.SHCypher
 import com.safehill.kcrypto.models.SHRemoteCryptoUser
 import com.safehill.kcrypto.models.SHShareablePayload
@@ -54,7 +55,6 @@ import kotlinx.serialization.json.Json
 import java.security.MessageDigest
 import java.util.Base64
 import java.util.Date
-
 
 enum class ServerEnvironment {
     Production, Development
@@ -94,7 +94,7 @@ data class SafehillHttpException(
 // For Fuel howto see https://www.baeldung.com/kotlin/fuel
 
 class SafehillApiImpl(
-    override var requestor: SHLocalUser,
+    override var requestor: SHLocalUserInterface,
     private val environment: ServerEnvironment = ServerEnvironment.Development,
     hostname: String = "localhost"
 ) : SafehillApi {
@@ -474,6 +474,11 @@ class SafehillApiImpl(
         TODO("Not yet implemented")
     }
 
+    @Throws(IllegalStateException::class)
+    override suspend fun listThreads(): List<ConversationThreadOutputDTO> {
+        throw IllegalStateException("Not yet implemented")
+    }
+
     private fun <T, R> ResponseResultOf<T>.getMappingOrThrow(transform: (T) -> R): R {
         val value = getOrThrow()
         return transform(value)
@@ -498,6 +503,4 @@ class SafehillApiImpl(
         }
     }
 
-
 }
-

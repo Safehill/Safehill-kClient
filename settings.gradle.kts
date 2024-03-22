@@ -1,3 +1,3 @@
 
-rootProject.name = "safehill-kcrypto"
+rootProject.name = "Safehill-kCrypto"
 

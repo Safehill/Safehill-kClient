@@ -1,6 +1,7 @@
 package com.safehill.kclient.models
 
 import com.safehill.kclient.api.dtos.SHAuthResponseDTO
+import com.safehill.kclient.models.user.SHLocalUserInterface
 import com.safehill.kcrypto.models.SHCryptoUser
 import com.safehill.kcrypto.models.SHLocalCryptoUser
 import com.safehill.kcrypto.models.SHShareablePayload
@@ -9,10 +10,12 @@ import java.security.PublicKey
 import java.util.Base64
 
 class SHLocalUser(
-    var shUser: SHLocalCryptoUser
-) : SHServerUser {
+    override var shUser: SHLocalCryptoUser,
+) : SHServerUser, SHLocalUserInterface {
+
     override val identifier: String
         get() = this.shUser.identifier
+
     override var name: String = ""
 
     override val publicKey: PublicKey
