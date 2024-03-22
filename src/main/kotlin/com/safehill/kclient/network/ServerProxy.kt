@@ -5,7 +5,6 @@ import com.safehill.kclient.api.SafehillApiImpl
 import com.safehill.kclient.models.SHServerUser
 import com.safehill.kclient.models.user.SHLocalUserInterface
 import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
-import kotlinx.coroutines.delay
 
 class ServerProxy(
     user: SHLocalUserInterface,
