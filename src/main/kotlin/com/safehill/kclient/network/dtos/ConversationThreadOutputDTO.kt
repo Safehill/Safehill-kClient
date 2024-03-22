@@ -1,5 +1,8 @@
 package com.safehill.kclient.network.dtos
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class ConversationThreadOutputDTO(
     val threadId: String,
     val name: String?,

@@ -30,7 +30,7 @@ class SHLocalUser(
     override val publicSignatureData: ByteArray
         get() = this.shUser.publicSignatureData
 
-    var authToken: String? = null
+    override var authToken: String? = null
     var encryptionSalt: ByteArray = byteArrayOf()
 
     private fun updateUserDetails(given: SHServerUser?) {
