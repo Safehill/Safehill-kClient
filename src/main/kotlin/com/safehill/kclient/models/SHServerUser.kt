@@ -1,6 +1,8 @@
 package com.safehill.kclient.models
 
-interface SHServerUser {
+import com.safehill.kcrypto.models.SHCryptoUser
+
+interface SHServerUser: SHCryptoUser {
     val identifier: String
     val name: String
 }

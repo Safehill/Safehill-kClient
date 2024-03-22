@@ -13,18 +13,18 @@ import com.safehill.kclient.models.SHAssetDescriptor
 import com.safehill.kclient.models.SHAssetDescriptorUploadState
 import com.safehill.kclient.models.SHAssetQuality
 import com.safehill.kclient.models.SHEncryptedAsset
-import com.safehill.kclient.models.SHLocalUser
 import com.safehill.kclient.models.SHRemoteUser
 import com.safehill.kclient.models.SHServerUser
 import com.safehill.kclient.models.SHShareableEncryptedAsset
 import com.safehill.kclient.models.SHUserReaction
-
+import com.safehill.kclient.models.user.SHLocalUserInterface
+import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
 
 typealias AssetGlobalIdentifier = String
 
 interface SafehillApi {
 
-    var requestor: SHLocalUser
+    var requestor: SHLocalUserInterface
 
     // MARK: User Management
 
@@ -78,6 +78,7 @@ interface SafehillApi {
     ///   - userIdentifiers: the unique identifiers for the users. If NULL, retrieves all the connected users
     /// - Returns:
     ///   - the users matching the criteria
+    @Throws
     suspend fun getUsers(withIdentifiers: List<String>): List<SHRemoteUser>
 
     /**
@@ -238,4 +239,7 @@ interface SafehillApi {
         messages: List<SHMessageInputDTO>,
         toGroupId: String
     ): List<SHMessageOutputDTO>
+
+    @Throws(IllegalStateException::class)
+    suspend fun listThreads(): List<ConversationThreadOutputDTO>
 }

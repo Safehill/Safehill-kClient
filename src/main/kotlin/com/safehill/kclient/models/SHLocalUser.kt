@@ -1,25 +1,36 @@
 package com.safehill.kclient.models
 
+import com.safehill.kclient.models.user.SHLocalUserInterface
+import com.safehill.kclient.network.ServerProxyInterface
+import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
 import com.safehill.kcrypto.models.SHCryptoUser
 import com.safehill.kcrypto.models.SHLocalCryptoUser
 import com.safehill.kcrypto.models.SHShareablePayload
 import com.safehill.kcrypto.models.SHUserContext
-import org.jetbrains.annotations.TestOnly
+import java.security.PublicKey
 
 class SHLocalUser(
-    var shUser: SHLocalCryptoUser
-) : SHServerUser {
+    override var shUser: SHLocalCryptoUser,
+) : SHServerUser, SHLocalUserInterface {
+
     override val identifier: String
         get() = this.shUser.identifier
+
     override var name: String = ""
 
-    val publicKeyData: ByteArray
+    override val publicKey: PublicKey
+        get() = this.shUser.publicKey
+
+    override val publicSignature: PublicKey
+        get() = this.shUser.publicSignature
+
+    override val publicKeyData: ByteArray
         get() = this.shUser.publicKeyData
 
-    val publicSignatureData: ByteArray
+    override val publicSignatureData: ByteArray
         get() = this.shUser.publicSignatureData
 
-    var authToken: String? = null
+    override var authToken: String? = null
 
     private fun updateUserDetails(given: SHServerUser?) {
         given?.let {

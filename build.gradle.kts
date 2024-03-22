@@ -9,6 +9,7 @@ version = "0.1"
 
 repositories {
     mavenCentral()
+    google()
 }
 
 dependencies {
@@ -20,6 +21,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
     implementation("dev.turingcomplete:kotlin-onetimepassword:2.4.0")
     testImplementation(kotlin("test"))
+    testImplementation("org.mockito:mockito-core:4.8.1")
     implementation(kotlin("stdlib"))
 }
 

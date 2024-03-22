@@ -1,12 +1,19 @@
 package com.safehill.kclient.api
 
-import com.safehill.kclient.api.dtos.SHAuthResponseDTO
 import com.safehill.kclient.api.dtos.SHAssetOutputDTO
-import com.safehill.kclient.models.*
+import com.safehill.kclient.api.dtos.SHAuthResponseDTO
 import com.safehill.kclient.api.dtos.SHSendCodeToUserRequestDTO
+import com.safehill.kclient.models.SHAssetDescriptor
+import com.safehill.kclient.models.SHAssetQuality
+import com.safehill.kclient.models.SHEncryptedAssetImpl
+import com.safehill.kclient.models.SHEncryptedAssetVersionImpl
+import com.safehill.kclient.models.SHLocalUser
+import com.safehill.kclient.models.SHServerUser
 import com.safehill.kcrypto.models.SHKeyPair
 import com.safehill.kcrypto.models.SHLocalCryptoUser
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import java.util.Base64
 import java.util.Date
