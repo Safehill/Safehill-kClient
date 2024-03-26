@@ -2,7 +2,9 @@ package com.safehill.kclient.api.dtos
 
 import com.safehill.kclient.models.SHReactionType
 import com.safehill.kclient.models.SHUserReaction
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class SHReactionOutputDTO(
     override val interactionId: String,
     override val senderUserIdentifier: String,

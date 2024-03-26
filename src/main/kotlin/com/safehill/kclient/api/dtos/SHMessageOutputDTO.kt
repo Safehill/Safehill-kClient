@@ -1,6 +1,9 @@
 package com.safehill.kclient.api.dtos
 
 import com.safehill.kclient.models.SHUserMessage
+import kotlinx.serialization.Serializable
+
+@Serializable
 
 data class SHMessageOutputDTO(
     override val interactionId: String,

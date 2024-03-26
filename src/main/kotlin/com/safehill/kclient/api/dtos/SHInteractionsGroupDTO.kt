@@ -1,5 +1,8 @@
 package com.safehill.kclient.api.dtos
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class SHInteractionsGroupDTO(
     val messages: List<SHMessageOutputDTO>,
     val senderUserIdentifierreactions: List<SHReactionOutputDTO>,
