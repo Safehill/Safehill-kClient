@@ -45,9 +45,4 @@ data class SHRemoteUser(
         }
     }
 
-    class ListDeserializer : ResponseDeserializable<List<SHRemoteUser>> {
-        override fun deserialize(content: String): List<SHRemoteUser> {
-            return Json.decodeFromString(content)
-        }
-    }
 }
