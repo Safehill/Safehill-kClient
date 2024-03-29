@@ -249,6 +249,5 @@ interface SafehillApi {
         toGroupId: String
     ): List<SHMessageOutputDTO>
 
-    @Throws(IllegalStateException::class)
     suspend fun listThreads(): List<ConversationThreadOutputDTO>
 }

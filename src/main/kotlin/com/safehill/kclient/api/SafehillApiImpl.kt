@@ -97,6 +97,8 @@ data class SafehillHttpException(
 
 // For Fuel howto see https://www.baeldung.com/kotlin/fuel
 
+var alreadyInstantiated = false
+
 class SafehillApiImpl(
     override var requestor: SHLocalUserInterface,
     private val environment: ServerEnvironment = ServerEnvironment.Development,
@@ -104,20 +106,22 @@ class SafehillApiImpl(
 ) : SafehillApi {
 
     init {
-        FuelManager.instance.basePath = when (this.environment) {
-            ServerEnvironment.Development -> "http://${hostname}:8080"
-            ServerEnvironment.Production -> "https://app.safehill.io:433"
+        if (!alreadyInstantiated) {
+            FuelManager.instance.basePath = when (this.environment) {
+                ServerEnvironment.Development -> "http://${hostname}:8080"
+                ServerEnvironment.Production -> "https://app.safehill.io:433"
+            }
+            FuelManager.instance.baseHeaders = mapOf("Content-type" to "application/json")
+            FuelManager.instance.timeoutInMillisecond = 10000
+            FuelManager.instance.timeoutReadInMillisecond = 30000
+
+            // The client should control whether they want logging or not
+            // Printing for now
+            FuelManager.instance.addRequestInterceptor(LogRequestInterceptor)
+            FuelManager.instance.addResponseInterceptor(LogResponseInterceptor)
+            alreadyInstantiated = true
         }
-        FuelManager.instance.baseHeaders = mapOf("Content-type" to "application/json")
-        FuelManager.instance.timeoutInMillisecond = 10000
-        FuelManager.instance.timeoutReadInMillisecond = 30000
-
-        // The client should control whether they want logging or not
-        // Printing for now
-        FuelManager.instance.addRequestInterceptor(LogRequestInterceptor)
-        FuelManager.instance.addResponseInterceptor(LogResponseInterceptor)
     }
-
 
     @Throws
     override suspend fun createUser(name: String): SHServerUser {
@@ -201,7 +205,8 @@ class SafehillApiImpl(
             Base64.getDecoder().decode(authChallenge.publicSignature)
         )
         val encryptedChallenge = SHShareablePayload(
-            ephemeralPublicKeyData = Base64.getDecoder().decode(authChallenge.ephemeralPublicKey),
+            ephemeralPublicKeyData = Base64.getDecoder()
+                .decode(authChallenge.ephemeralPublicKey),
             ciphertext = Base64.getDecoder().decode(authChallenge.challenge),
             signature = Base64.getDecoder().decode(authChallenge.ephemeralPublicSignature),
             null
@@ -259,8 +264,13 @@ class SafehillApiImpl(
         val getUsersRequestBody = SHUserIdentifiersDTO(userIdentifiers = withIdentifiers)
         return "/users/retrieve".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Gson().toJson(getUsersRequestBody))
-            .responseObject(SHRemoteUser.ListDeserializer())
+            .body(Json.encodeToString(getUsersRequestBody))
+            .responseObject(
+                ListSerializer(SHRemoteUser.serializer()),
+                Json {
+                    this.ignoreUnknownKeys = true
+                }
+            )
             .getOrThrow()
     }
 
@@ -366,13 +376,25 @@ class SafehillApiImpl(
         TODO("Not yet implemented")
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     override suspend fun retrieveThread(usersIdentifiers: List<String>): ConversationThreadOutputDTO? {
+        return listThreads(usersIdentifiers).firstOrNull()
+    }
+
+
+    override suspend fun listThreads(): List<ConversationThreadOutputDTO> {
+        return listThreads(null)
+    }
+
+
+    @OptIn(ExperimentalSerializationApi::class)
+    private fun listThreads(usersIdentifiers: List<String>?): List<ConversationThreadOutputDTO> {
         val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
 
-        val request = RetrieveThreadDTO(
-            byUsersPublicIdentifiers = usersIdentifiers
-        )
+        val request = usersIdentifiers?.let {
+            RetrieveThreadDTO(
+                byUsersPublicIdentifiers = it
+            )
+        }
 
 
         return "/threads/retrieve".httpPost()
@@ -384,9 +406,8 @@ class SafehillApiImpl(
                     explicitNulls = false
                 }
             )
-            .getOrThrow().firstOrNull()
+            .getOrThrow()
     }
-
 
     @OptIn(ExperimentalSerializationApi::class)
     override suspend fun createOrUpdateThread(
@@ -478,10 +499,6 @@ class SafehillApiImpl(
         TODO("Not yet implemented")
     }
 
-    @Throws(IllegalStateException::class)
-    override suspend fun listThreads(): List<ConversationThreadOutputDTO> {
-        throw IllegalStateException("Not yet implemented")
-    }
 
     private fun <T, R> ResponseResultOf<T>.getMappingOrThrow(transform: (T) -> R): R {
         val value = getOrThrow()
