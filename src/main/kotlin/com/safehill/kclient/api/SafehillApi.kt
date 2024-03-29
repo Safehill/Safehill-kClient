@@ -7,7 +7,6 @@ import com.safehill.kclient.api.dtos.SHInteractionsGroupDTO
 import com.safehill.kclient.api.dtos.SHMessageInputDTO
 import com.safehill.kclient.api.dtos.SHMessageOutputDTO
 import com.safehill.kclient.api.dtos.SHReactionOutputDTO
-import com.safehill.kclient.api.dtos.SHRecipientEncryptionDetailsDTO
 import com.safehill.kclient.api.dtos.SHSendCodeToUserRequestDTO
 import com.safehill.kclient.models.SHAssetDescriptor
 import com.safehill.kclient.models.SHAssetDescriptorUploadState
@@ -19,6 +18,7 @@ import com.safehill.kclient.models.SHShareableEncryptedAsset
 import com.safehill.kclient.models.SHUserReaction
 import com.safehill.kclient.models.user.SHLocalUserInterface
 import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
+import com.safehill.kclient.network.dtos.RecipientEncryptionDetailsDTO
 
 typealias AssetGlobalIdentifier = String
 
@@ -147,6 +147,15 @@ interface SafehillApi {
         userPublicIdentifier: String
     )
 
+    suspend fun retrieveThread(
+        usersIdentifiers: List<String>
+    ): ConversationThreadOutputDTO?
+
+    suspend fun createOrUpdateThread(
+        name: String?,
+        recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>
+    ): ConversationThreadOutputDTO
+
     /// Upload encrypted asset versions data to the CDN.
     suspend fun upload(
         serverAsset: SHAssetOutputDTO,
@@ -179,7 +188,7 @@ interface SafehillApi {
     ///   - recipientsEncryptionDetails: the encryption details for each reciepient
     suspend fun setGroupEncryptionDetails(
         groupId: String,
-        recipientsEncryptionDetails: List<SHRecipientEncryptionDetailsDTO>
+        recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>
     )
 
     /// Delete a group, related messages and reactions, given its id
@@ -193,7 +202,7 @@ interface SafehillApi {
     ///   - completionHandler: the callback method
     suspend fun retrieveGroupUserEncryptionDetails(
         groupId: String,
-    ): List<SHRecipientEncryptionDetailsDTO>
+    ): List<RecipientEncryptionDetailsDTO>
 
 
     /// Adds reactions to a share (group)
