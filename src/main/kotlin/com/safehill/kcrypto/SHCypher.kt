@@ -16,7 +16,6 @@ import java.security.SecureRandom
 import java.util.Base64
 import java.util.Date
 import java.util.concurrent.TimeUnit
-import javax.crypto.AEADBadTagException
 import javax.crypto.Cipher
 import javax.crypto.KeyAgreement
 import javax.crypto.spec.GCMParameterSpec
@@ -105,10 +104,11 @@ class SHCypher {
             senderSignatureKey: KeyPair
         ): SHShareablePayload {
             // Generate a new private key (SHARED SECRET) from the key agreement
-            val keyAgreement = KeyAgreement.getInstance("ECDH")
-            keyAgreement.init(ephemeralKey.private)
-            keyAgreement.doPhase(receiverPublicKey, true)
-            val sharedSecretFromKeyAgreement = keyAgreement.generateSecret()
+
+            val sharedSecretFromKeyAgreement = generatedSharedSecret(
+                otherUserPublicKey = receiverPublicKey,
+                selfPrivateKey = ephemeralKey.private
+            )
 
             // Information to share
             val sharedInfo: ByteArray = ephemeralKey.public.encoded +
@@ -143,7 +143,6 @@ class SHCypher {
                 // If IV is null, we are expecting the IV to be the first 16 bits for the cipherText
                 //
                 val base64EncodedCypher = Base64.getEncoder().encodeToString(cipherText)
-
 
                 val ivBase64 = base64EncodedCypher.substring(0, GCM_TAG_LENGTH)
                 val cipherTextBase64 = base64EncodedCypher.substring(GCM_TAG_LENGTH)
@@ -200,10 +199,11 @@ class SHCypher {
 
             // Retrieve the shared secret from the key agreement
             val ephemeralKey: PublicKey = SHPublicKey.from(sealedMessage.ephemeralPublicKeyData)
-            val keyAgreement = KeyAgreement.getInstance("ECDH")
-            keyAgreement.init(userPrivateKey)
-            keyAgreement.doPhase(ephemeralKey, true)
-            val sharedSecret = keyAgreement.generateSecret()
+
+            val sharedSecret = generatedSharedSecret(
+                otherUserPublicKey = ephemeralKey,
+                selfPrivateKey = userPrivateKey
+            )
 
             val sharedInfo: ByteArray = ephemeralKey.encoded +
                     userPublicKey.encoded +
@@ -217,7 +217,7 @@ class SHCypher {
         }
 
 
-        fun generateSharedKey(
+        fun generatedSharedSecret(
             otherUserPublicKey: PublicKey,
             selfPrivateKey: PrivateKey
         ): ByteArray? {
