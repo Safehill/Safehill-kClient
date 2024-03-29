@@ -6,16 +6,16 @@ import org.junit.jupiter.api.Test
 class SHCypherTest {
 
     @Test
-    fun `test shared secret can be generated between 2 parties`() {
+    fun `shared secret can be generated between 2 parties`() {
         val bobKeys = SHKeyPair.generate()
         val aliceKeys = SHKeyPair.generate()
 
-        val sharedKeyForAlice = SHCypher.generateSharedKey(
+        val sharedKeyForAlice = SHCypher.generatedSharedSecret(
             otherUserPublicKey = bobKeys.public,
             selfPrivateKey = aliceKeys.private
         )
 
-        val sharedKeyForBob = SHCypher.generateSharedKey(
+        val sharedKeyForBob = SHCypher.generatedSharedSecret(
             otherUserPublicKey = aliceKeys.public,
             selfPrivateKey = bobKeys.private
         )
