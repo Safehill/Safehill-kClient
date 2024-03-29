@@ -10,7 +10,9 @@ import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.responseObject
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
+import com.safehill.kclient.api.dtos.CreateOrUpdateThreadDTO
 import com.safehill.kclient.api.dtos.HashedPhoneNumber
+import com.safehill.kclient.api.dtos.RetrieveThreadDTO
 import com.safehill.kclient.api.dtos.SHAssetDeleteCriteriaDTO
 import com.safehill.kclient.api.dtos.SHAssetInputDTO
 import com.safehill.kclient.api.dtos.SHAssetOutputDTO
@@ -23,7 +25,6 @@ import com.safehill.kclient.api.dtos.SHInteractionsGroupDTO
 import com.safehill.kclient.api.dtos.SHMessageInputDTO
 import com.safehill.kclient.api.dtos.SHMessageOutputDTO
 import com.safehill.kclient.api.dtos.SHReactionOutputDTO
-import com.safehill.kclient.api.dtos.SHRecipientEncryptionDetailsDTO
 import com.safehill.kclient.api.dtos.SHSendCodeToUserRequestDTO
 import com.safehill.kclient.api.dtos.SHUserIdentifiersDTO
 import com.safehill.kclient.api.dtos.SHUserInputDTO
@@ -42,9 +43,12 @@ import com.safehill.kclient.models.SHShareableEncryptedAsset
 import com.safehill.kclient.models.SHUserReaction
 import com.safehill.kclient.models.user.SHLocalUserInterface
 import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
+import com.safehill.kclient.network.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kcrypto.SHCypher
 import com.safehill.kcrypto.models.SHRemoteCryptoUser
 import com.safehill.kcrypto.models.SHShareablePayload
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.security.MessageDigest
@@ -108,6 +112,7 @@ class SafehillApiImpl(
         FuelManager.instance.addRequestInterceptor(LogRequestInterceptor)
         FuelManager.instance.addResponseInterceptor(LogResponseInterceptor)
     }
+
 
     @Throws
     override suspend fun createUser(name: String): SHServerUser {
@@ -356,6 +361,50 @@ class SafehillApiImpl(
         TODO("Not yet implemented")
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
+    override suspend fun retrieveThread(usersIdentifiers: List<String>): ConversationThreadOutputDTO? {
+        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+
+        val request = RetrieveThreadDTO(
+            byUsersPublicIdentifiers = usersIdentifiers
+        )
+
+
+        return "/threads/retrieve".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Json.encodeToString(request))
+            .responseObject(
+                ListSerializer(ConversationThreadOutputDTO.serializer()),
+                Json {
+                    explicitNulls = false
+                }
+            )
+            .getOrThrow().firstOrNull()
+    }
+
+
+    @OptIn(ExperimentalSerializationApi::class)
+    override suspend fun createOrUpdateThread(
+        name: String?,
+        recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>
+    ): ConversationThreadOutputDTO {
+        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+
+        val request = CreateOrUpdateThreadDTO(
+            name = name,
+            recipients = recipientsEncryptionDetails
+        )
+        val json = Json { explicitNulls = false }
+
+
+        return "/threads/upsert".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(json.encodeToString(CreateOrUpdateThreadDTO.serializer(), request))
+            .responseObject<ConversationThreadOutputDTO>(json)
+            .getOrThrow()
+
+    }
+
     override suspend fun upload(
         serverAsset: SHAssetOutputDTO,
         asset: SHEncryptedAsset,
@@ -385,7 +434,7 @@ class SafehillApiImpl(
 
     override suspend fun setGroupEncryptionDetails(
         groupId: String,
-        recipientsEncryptionDetails: List<SHRecipientEncryptionDetailsDTO>,
+        recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>,
     ) {
         TODO("Not yet implemented")
     }
@@ -394,7 +443,7 @@ class SafehillApiImpl(
         TODO("Not yet implemented")
     }
 
-    override suspend fun retrieveGroupUserEncryptionDetails(groupId: String): List<SHRecipientEncryptionDetailsDTO> {
+    override suspend fun retrieveGroupUserEncryptionDetails(groupId: String): List<RecipientEncryptionDetailsDTO> {
         TODO("Not yet implemented")
     }
 

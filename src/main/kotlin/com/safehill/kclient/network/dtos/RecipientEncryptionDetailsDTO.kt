@@ -1,5 +1,8 @@
 package com.safehill.kclient.network.dtos
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class RecipientEncryptionDetailsDTO(
     val recipientUserIdentifier: String,
     val ephemeralPublicKey: String, // base64EncodedData with the ephemeral public part of the key used for the encryption

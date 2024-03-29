@@ -1,13 +1,13 @@
 package com.safehill.kclient.models
 
+import com.safehill.kclient.api.dtos.SHAuthResponseDTO
 import com.safehill.kclient.models.user.SHLocalUserInterface
-import com.safehill.kclient.network.ServerProxyInterface
-import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
 import com.safehill.kcrypto.models.SHCryptoUser
 import com.safehill.kcrypto.models.SHLocalCryptoUser
 import com.safehill.kcrypto.models.SHShareablePayload
 import com.safehill.kcrypto.models.SHUserContext
 import java.security.PublicKey
+import java.util.Base64
 
 class SHLocalUser(
     override var shUser: SHLocalCryptoUser,
@@ -31,6 +31,7 @@ class SHLocalUser(
         get() = this.shUser.publicSignatureData
 
     override var authToken: String? = null
+    var encryptionSalt: ByteArray = byteArrayOf()
 
     private fun updateUserDetails(given: SHServerUser?) {
         given?.let {
@@ -40,21 +41,39 @@ class SHLocalUser(
         }
     }
 
-    fun authenticate(user: SHServerUser, bearerToken: String) {
+    fun authenticate(user: SHServerUser, authResponseDTO: SHAuthResponseDTO) {
         this.updateUserDetails(user)
-        this.authToken = bearerToken
+        this.authToken = authResponseDTO.bearerToken
+        this.encryptionSalt = Base64.getDecoder().decode(authResponseDTO.encryptionProtocolSalt)
     }
 
     fun deauthenticate() {
         this.authToken = null
     }
 
-    fun shareable(data: ByteArray, with: SHCryptoUser, protocolSalt: ByteArray, iv: ByteArray): SHShareablePayload {
+    fun shareable(
+        data: ByteArray,
+        with: SHCryptoUser,
+        protocolSalt: ByteArray,
+        iv: ByteArray
+    ): SHShareablePayload {
         return SHUserContext(this.shUser).shareable(data, with, protocolSalt, iv)
     }
 
-    fun decrypted(data: ByteArray, encryptedSecret: SHShareablePayload, protocolSalt: ByteArray, iv: ByteArray, receivedFrom: SHCryptoUser): ByteArray {
-        return SHUserContext(this.shUser).decrypt(data, encryptedSecret, protocolSalt, iv, receivedFrom)
+    fun decrypted(
+        data: ByteArray,
+        encryptedSecret: SHShareablePayload,
+        protocolSalt: ByteArray,
+        iv: ByteArray,
+        receivedFrom: SHCryptoUser
+    ): ByteArray {
+        return SHUserContext(this.shUser).decrypt(
+            data,
+            encryptedSecret,
+            protocolSalt,
+            iv,
+            receivedFrom
+        )
     }
 
     fun regenerateKeys() {
