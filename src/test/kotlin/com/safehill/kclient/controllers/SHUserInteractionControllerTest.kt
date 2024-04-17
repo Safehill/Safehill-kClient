@@ -7,6 +7,9 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 
 import org.junit.jupiter.api.Test
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class SHUserInteractionControllerTest {
 
@@ -28,7 +31,7 @@ class SHUserInteractionControllerTest {
                 threadId = "mockedThreadId",
                 membersPublicIdentifier = emptyList(),
                 name = null,
-                lastUpdatedAt = null,
+                lastUpdatedAt = LocalDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
                 encryptionDetails = RecipientEncryptionDetailsDTO("", "", "", "", "")
             )
         )

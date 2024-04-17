@@ -1,6 +1,5 @@
 package com.safehill.kclient.network
 
-import org.junit.jupiter.api.Test
 import com.safehill.kclient.api.SafehillApi
 import com.safehill.kclient.models.SHRemoteUser
 import com.safehill.kclient.models.SHServerUser
@@ -10,11 +9,14 @@ import com.safehill.kclient.network.dtos.RecipientEncryptionDetailsDTO
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.`when`
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 
 class ServerProxyTest {
@@ -35,19 +37,21 @@ class ServerProxyTest {
     @Test
     fun `listThreads should return threads from remote server`() = runBlocking {
         // Arrange
-        val expectedThreads = listOf(ConversationThreadOutputDTO(
-            threadId = "threadId",
-            name = null,
-            membersPublicIdentifier = listOf(),
-            lastUpdatedAt = null,
-            encryptionDetails = RecipientEncryptionDetailsDTO(
-                recipientUserIdentifier = "",
-                ephemeralPublicKey = "",
-                encryptedSecret = "",
-                secretPublicSignature = "",
-                senderPublicSignature = ""
+        val expectedThreads = listOf(
+            ConversationThreadOutputDTO(
+                threadId = "threadId",
+                name = null,
+                membersPublicIdentifier = listOf(),
+                lastUpdatedAt = LocalDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
+                encryptionDetails = RecipientEncryptionDetailsDTO(
+                    recipientUserIdentifier = "",
+                    ephemeralPublicKey = "",
+                    encryptedSecret = "",
+                    secretPublicSignature = "",
+                    senderPublicSignature = ""
+                )
             )
-        ))
+        )
         `when`(mockRemoteServer.listThreads()).thenReturn(expectedThreads)
 
         // Act
@@ -61,33 +65,36 @@ class ServerProxyTest {
     }
 
     @Test
-    fun `listThreads should return threads from local server when remote server fails`() = runBlocking {
-        // Arrange
-        val expectedThreads = listOf(ConversationThreadOutputDTO(
-            threadId = "threadId",
-            name = null,
-            membersPublicIdentifier = listOf(),
-            lastUpdatedAt = null,
-            encryptionDetails = RecipientEncryptionDetailsDTO(
-                recipientUserIdentifier = "",
-                ephemeralPublicKey = "",
-                encryptedSecret = "",
-                secretPublicSignature = "",
-                senderPublicSignature = ""
+    fun `listThreads should return threads from local server when remote server fails`() =
+        runBlocking {
+            // Arrange
+            val expectedThreads = listOf(
+                ConversationThreadOutputDTO(
+                    threadId = "threadId",
+                    name = null,
+                    membersPublicIdentifier = listOf(),
+                    lastUpdatedAt = LocalDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
+                    encryptionDetails = RecipientEncryptionDetailsDTO(
+                        recipientUserIdentifier = "",
+                        ephemeralPublicKey = "",
+                        encryptedSecret = "",
+                        secretPublicSignature = "",
+                        senderPublicSignature = ""
+                    )
+                )
             )
-        ))
-        `when`(mockRemoteServer.listThreads()).thenThrow(IllegalStateException("Remote server error"))
-        `when`(mockLocalServer.listThreads()).thenReturn(expectedThreads)
+            `when`(mockRemoteServer.listThreads()).thenThrow(IllegalStateException("Remote server error"))
+            `when`(mockLocalServer.listThreads()).thenReturn(expectedThreads)
 
-        // Act
-        val result = serverProxy.listThreads()
+            // Act
+            val result = serverProxy.listThreads()
 
-        // Assert
-        assert(expectedThreads == result)
-        verify(mockRemoteServer).listThreads()
-        verify(mockLocalServer).listThreads()
-        verifyNoInteractions(mockUser)
-    }
+            // Assert
+            assert(expectedThreads == result)
+            verify(mockRemoteServer).listThreads()
+            verify(mockLocalServer).listThreads()
+            verifyNoInteractions(mockUser)
+        }
 
     @Test
     fun `test getUsers() with empty userIdentifiersToFetch`() = runBlocking() {
@@ -101,8 +108,18 @@ class ServerProxyTest {
         val userIdentifiers = listOf("id1", "id2")
 
         val expectedUsers = listOf(
-            SHRemoteUser(identifier = "id1", name = "", publicKeyData = ByteArray(0), publicSignatureData = ByteArray(0)),
-            SHRemoteUser(identifier = "id2", name = "", publicKeyData = ByteArray(0), publicSignatureData = ByteArray(0))
+            SHRemoteUser(
+                identifier = "id1",
+                name = "",
+                publicKeyData = ByteArray(0),
+                publicSignatureData = ByteArray(0)
+            ),
+            SHRemoteUser(
+                identifier = "id2",
+                name = "",
+                publicKeyData = ByteArray(0),
+                publicSignatureData = ByteArray(0)
+            )
         )
         `when`(mockRemoteServer.getUsers(userIdentifiers)).thenReturn(expectedUsers)
         `when`(mockLocalServer.getUsers(userIdentifiers)).thenReturn(expectedUsers)
@@ -110,8 +127,18 @@ class ServerProxyTest {
         val result = serverProxy.getUsers(userIdentifiers)
 
         verify(mockRemoteServer).getUsers(userIdentifiers)
-        verify(mockLocalServer).createOrUpdateUser(identifier = "id1", name = "", publicKeyData = ByteArray(0), publicSignatureData = ByteArray(0))
-        verify(mockLocalServer).createOrUpdateUser(identifier = "id2", name = "", publicKeyData = ByteArray(0), publicSignatureData = ByteArray(0))
+        verify(mockLocalServer).createOrUpdateUser(
+            identifier = "id1",
+            name = "",
+            publicKeyData = ByteArray(0),
+            publicSignatureData = ByteArray(0)
+        )
+        verify(mockLocalServer).createOrUpdateUser(
+            identifier = "id2",
+            name = "",
+            publicKeyData = ByteArray(0),
+            publicSignatureData = ByteArray(0)
+        )
         verify(mockLocalServer).getUsers(userIdentifiers)
         assert(expectedUsers == result)
     }
@@ -121,8 +148,18 @@ class ServerProxyTest {
         val userIdentifiers = listOf("id1", "id2")
 
         val expectedUsers = listOf(
-            SHRemoteUser(identifier = "id1", name = "", publicKeyData = ByteArray(0), publicSignatureData = ByteArray(0)),
-            SHRemoteUser(identifier = "id2", name = "", publicKeyData = ByteArray(0), publicSignatureData = ByteArray(0))
+            SHRemoteUser(
+                identifier = "id1",
+                name = "",
+                publicKeyData = ByteArray(0),
+                publicSignatureData = ByteArray(0)
+            ),
+            SHRemoteUser(
+                identifier = "id2",
+                name = "",
+                publicKeyData = ByteArray(0),
+                publicSignatureData = ByteArray(0)
+            )
         )
         `when`(mockRemoteServer.getUsers(userIdentifiers)).thenThrow(IllegalStateException("Test exception"))
         `when`(mockLocalServer.getUsers(userIdentifiers)).thenReturn(expectedUsers)
@@ -131,21 +168,32 @@ class ServerProxyTest {
 
         assert(expectedUsers == result)
         verify(mockRemoteServer).getUsers(userIdentifiers)
-        verify(mockLocalServer, times(0)).createOrUpdateUser(identifier = "id1", name = "", publicKeyData = ByteArray(0), publicSignatureData = ByteArray(0))
-        verify(mockLocalServer, times(0)).createOrUpdateUser(identifier = "id2", name = "", publicKeyData = ByteArray(0), publicSignatureData = ByteArray(0))
+        verify(mockLocalServer, times(0)).createOrUpdateUser(
+            identifier = "id1",
+            name = "",
+            publicKeyData = ByteArray(0),
+            publicSignatureData = ByteArray(0)
+        )
+        verify(mockLocalServer, times(0)).createOrUpdateUser(
+            identifier = "id2",
+            name = "",
+            publicKeyData = ByteArray(0),
+            publicSignatureData = ByteArray(0)
+        )
         verify(mockLocalServer).getUsers(userIdentifiers)
         assert(expectedUsers == result)
     }
 
     @Test
-    fun `test getUsers() with failed remote call and unsuccessful local call`(): Unit = runBlocking {
-        val userIdentifiers = listOf("id1", "id2")
+    fun `test getUsers() with failed remote call and unsuccessful local call`(): Unit =
+        runBlocking {
+            val userIdentifiers = listOf("id1", "id2")
 
-        `when`(mockRemoteServer.getUsers(userIdentifiers)).thenThrow(IllegalStateException("Test exception"))
-        `when`(mockLocalServer.getUsers(userIdentifiers)).thenReturn(emptyList())
+            `when`(mockRemoteServer.getUsers(userIdentifiers)).thenThrow(IllegalStateException("Test exception"))
+            `when`(mockLocalServer.getUsers(userIdentifiers)).thenReturn(emptyList())
 
-        assertThrows(Exception::class.java) {
-            runBlocking { serverProxy.getUsers(userIdentifiers) }
+            assertThrows(Exception::class.java) {
+                runBlocking { serverProxy.getUsers(userIdentifiers) }
+            }
         }
-    }
 }
