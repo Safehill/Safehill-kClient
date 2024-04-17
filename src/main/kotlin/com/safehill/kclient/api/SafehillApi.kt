@@ -151,6 +151,10 @@ interface SafehillApi {
         usersIdentifiers: List<String>
     ): ConversationThreadOutputDTO?
 
+    suspend fun retrieveThread(
+        threadId: String
+    ): ConversationThreadOutputDTO?
+
     suspend fun createOrUpdateThread(
         name: String?,
         recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>

@@ -380,6 +380,27 @@ class SafehillApiImpl(
         return listThreads(usersIdentifiers).firstOrNull()
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
+    override suspend fun retrieveThread(threadId: String): ConversationThreadOutputDTO? {
+        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+
+        return "/threads/retrieve/".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .responseObject(
+                ConversationThreadOutputDTO.serializer(),
+                Json {
+                    explicitNulls = false
+                }
+            )
+            .getOrElseOnSafehillException {
+                if (it.statusCode == SafehillHttpStatusCode.NotFound) {
+                    null
+                } else {
+                    throw it
+                }
+            }
+    }
+
 
     override suspend fun listThreads(): List<ConversationThreadOutputDTO> {
         return listThreads(null)
@@ -503,6 +524,18 @@ class SafehillApiImpl(
     private fun <T, R> ResponseResultOf<T>.getMappingOrThrow(transform: (T) -> R): R {
         val value = getOrThrow()
         return transform(value)
+    }
+
+    private fun <T> ResponseResultOf<T>.getOrElseOnSafehillException(transform: (SafehillHttpException) -> T): T {
+        return try {
+            this.getOrThrow()
+        } catch (e: Exception) {
+            if (e is SafehillHttpException) {
+                transform(e)
+            } else {
+                throw e
+            }
+        }
     }
 
     private fun <T> ResponseResultOf<T>.getOrThrow(): T {

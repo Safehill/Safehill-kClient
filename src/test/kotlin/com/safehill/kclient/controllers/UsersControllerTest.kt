@@ -1,12 +1,10 @@
 package com.safehill.kclient.controllers
 
-import com.safehill.kclient.models.SHServerUser
+import com.safehill.kclient.models.SHRemoteUser
 import com.safehill.mock.ServerProxySpy
 import kotlinx.coroutines.runBlocking
-
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.security.PublicKey
 
 class UsersControllerTest {
 
@@ -16,21 +14,14 @@ class UsersControllerTest {
         serverProxy = serverProxySpy
     )
 
-    private val mockedResponse = listOf(object: SHServerUser {
-        override val identifier: String
-            get() = "mockedIdentifier"
-        override val name: String
-            get() = TODO("Not yet implemented")
-        override val publicKey: PublicKey
-            get() = TODO("Not yet implemented")
-        override val publicSignature: PublicKey
-            get() = TODO("Not yet implemented")
-        override val publicKeyData: ByteArray
-            get() = TODO("Not yet implemented")
-        override val publicSignatureData: ByteArray
-            get() = TODO("Not yet implemented")
-
-    })
+    private val mockedResponse = listOf(
+        SHRemoteUser(
+            identifier = "mockedIdentifier",
+            name = TODO("Not yet implemented"),
+            publicSignatureData = TODO("Not yet implemented"),
+            publicKeyData = TODO("Not yet implemented")
+        )
+    )
 
     @BeforeEach
     fun setup() {
