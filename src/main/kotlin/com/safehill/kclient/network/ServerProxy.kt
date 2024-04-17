@@ -8,10 +8,10 @@ import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
 
 class ServerProxy(
     user: SHLocalUserInterface,
-    private var localServer: LocalServerInterface
+    var localServer: LocalServerInterface
 ) : ServerProxyInterface {
 
-    internal var remoteServer: SafehillApi = SafehillApiImpl(requestor = user)
+    var remoteServer: SafehillApi = SafehillApiImpl(requestor = user)
 
     override suspend fun listThreads(): List<ConversationThreadOutputDTO> {
         return try {
