@@ -250,7 +250,7 @@ interface SafehillApi {
     ///   - the list of messages created
     suspend fun addMessages(
         messages: List<SHMessageInputDTO>,
-        toGroupId: String
+        threadId: String
     ): List<SHMessageOutputDTO>
 
     suspend fun listThreads(): List<ConversationThreadOutputDTO>

@@ -171,9 +171,11 @@ class ServerProxy(
 
     override suspend fun addMessages(
         messages: List<SHMessageInputDTO>,
-        toGroupId: String
+        threadId: String
     ): List<SHMessageOutputDTO> {
-        TODO("Not yet implemented")
+        return remoteServer.addMessages(messages, threadId).also {
+            localServer.insertMessages(it, threadId)
+        }
     }
 
     private suspend fun updateLocalUserDB(serverUsers: List<SHRemoteUser>): List<SHRemoteUser> {

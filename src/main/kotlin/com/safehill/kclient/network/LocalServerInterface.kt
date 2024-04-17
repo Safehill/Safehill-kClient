@@ -1,6 +1,7 @@
 package com.safehill.kclient.network
 
 import com.safehill.kclient.api.SafehillApi
+import com.safehill.kclient.api.dtos.SHMessageOutputDTO
 import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
 
 interface LocalServerInterface : SafehillApi {
@@ -12,4 +13,6 @@ interface LocalServerInterface : SafehillApi {
     )
 
     suspend fun insertThreads(threads: List<ConversationThreadOutputDTO>)
+
+    suspend fun insertMessages(messages: List<SHMessageOutputDTO>, threadId: String)
 }

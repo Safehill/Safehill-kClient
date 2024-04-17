@@ -513,11 +513,30 @@ class SafehillApiImpl(
         TODO("Not yet implemented")
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
     override suspend fun addMessages(
         messages: List<SHMessageInputDTO>,
-        toGroupId: String
+        threadId: String
     ): List<SHMessageOutputDTO> {
-        TODO("Not yet implemented")
+        require(messages.size == 1) {
+            "Can only add one message at a time."
+        }
+        val bearerToken =
+            this.requestor.authToken ?: throw HttpException(
+                401,
+                "unauthorized"
+            )
+
+        return "interactions/user-threads/$threadId/messages".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Json.encodeToString(messages.first()))
+            .responseObject<SHMessageOutputDTO>(
+                Json {
+                    ignoreUnknownKeys = true
+                    explicitNulls = false
+                }
+            )
+            .getOrThrow().run(::listOf)
     }
 
 
