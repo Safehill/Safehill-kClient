@@ -30,8 +30,7 @@ class ServerProxyTest {
         mockUser = mock(SHLocalUserInterface::class.java)
         mockRemoteServer = mock(SafehillApi::class.java)
         mockLocalServer = mock(LocalServerInterface::class.java)
-        serverProxy = ServerProxy(mockUser, mockLocalServer)
-        serverProxy.remoteServer = mockRemoteServer
+        serverProxy = ServerProxy(mockUser, mockLocalServer, mockRemoteServer)
     }
 
     @Test
@@ -73,7 +72,8 @@ class ServerProxyTest {
                     threadId = "threadId",
                     name = null,
                     membersPublicIdentifier = listOf(),
-                    lastUpdatedAt = LocalDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
+                    lastUpdatedAt = LocalDateTime.now()
+                        .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
                     encryptionDetails = RecipientEncryptionDetailsDTO(
                         recipientUserIdentifier = "",
                         ephemeralPublicKey = "",

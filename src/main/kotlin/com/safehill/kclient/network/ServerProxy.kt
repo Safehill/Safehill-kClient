@@ -2,7 +2,6 @@ package com.safehill.kclient.network
 
 import com.safehill.kclient.api.AssetGlobalIdentifier
 import com.safehill.kclient.api.SafehillApi
-import com.safehill.kclient.api.SafehillApiImpl
 import com.safehill.kclient.api.dtos.HashedPhoneNumber
 import com.safehill.kclient.api.dtos.SHAssetOutputDTO
 import com.safehill.kclient.api.dtos.SHAuthResponseDTO
@@ -25,10 +24,10 @@ import com.safehill.kclient.network.dtos.RecipientEncryptionDetailsDTO
 
 class ServerProxy(
     override var requestor: SHLocalUserInterface,
-    var localServer: LocalServerInterface
+    val localServer: LocalServerInterface,
+    val remoteServer: SafehillApi
 ) : ServerProxyInterface {
 
-    var remoteServer: SafehillApi = SafehillApiImpl(requestor = requestor)
 
     override suspend fun listThreads(): List<ConversationThreadOutputDTO> {
         return try {
