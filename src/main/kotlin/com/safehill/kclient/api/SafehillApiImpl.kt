@@ -11,6 +11,7 @@ import com.github.kittinunf.fuel.serialization.responseObject
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
 import com.safehill.kclient.api.dtos.CreateOrUpdateThreadDTO
+import com.safehill.kclient.api.dtos.GetInteractionDTO
 import com.safehill.kclient.api.dtos.HashedPhoneNumber
 import com.safehill.kclient.api.dtos.RetrieveThreadDTO
 import com.safehill.kclient.api.dtos.SHAssetDeleteCriteriaDTO
@@ -505,12 +506,35 @@ class SafehillApiImpl(
         TODO("Not yet implemented")
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
     override suspend fun retrieveInteractions(
         inGroupId: String,
         per: Int,
         page: Int
-    ): List<SHInteractionsGroupDTO> {
-        TODO("Not yet implemented")
+    ): SHInteractionsGroupDTO {
+        val bearerToken =
+            this.requestor.authToken ?: throw HttpException(
+                401,
+                "unauthorized"
+            )
+
+        val requestBody = GetInteractionDTO(
+            per = per,
+            page = page,
+            referencedInteractionId = null
+        )
+
+        return "interactions/user-threads/$inGroupId".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Json.encodeToString(requestBody))
+            .responseObject<SHInteractionsGroupDTO>(
+                Json {
+                    ignoreUnknownKeys = true
+                    explicitNulls = false
+                }
+            )
+            .getOrThrow()
+
     }
 
     @OptIn(ExperimentalSerializationApi::class)

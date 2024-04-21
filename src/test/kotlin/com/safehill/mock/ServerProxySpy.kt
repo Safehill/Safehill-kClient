@@ -144,7 +144,7 @@ class ServerProxySpy() : ServerProxyInterface {
         inGroupId: String,
         per: Int,
         page: Int
-    ): List<SHInteractionsGroupDTO> {
+    ): SHInteractionsGroupDTO {
         TODO("Not yet implemented")
     }
 

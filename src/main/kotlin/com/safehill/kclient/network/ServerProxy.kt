@@ -165,8 +165,24 @@ class ServerProxy(
         inGroupId: String,
         per: Int,
         page: Int
-    ): List<SHInteractionsGroupDTO> {
-        TODO("Not yet implemented")
+    ): SHInteractionsGroupDTO {
+        return localServer.retrieveInteractions(
+            inGroupId = inGroupId,
+            per = per,
+            page = page
+        )
+    }
+
+    suspend fun retrieveRemoteInteractions(
+        inGroupId: String,
+        per: Int,
+        page: Int
+    ): SHInteractionsGroupDTO {
+        return remoteServer.retrieveInteractions(
+            inGroupId = inGroupId,
+            per = per,
+            page = page
+        )
     }
 
     override suspend fun addMessages(

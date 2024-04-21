@@ -240,7 +240,7 @@ interface SafehillApi {
         inGroupId: String,
         per: Int,
         page: Int
-    ): List<SHInteractionsGroupDTO>
+    ): SHInteractionsGroupDTO
 
     /// Adds a messages to a share (group)
     /// - Parameters:
