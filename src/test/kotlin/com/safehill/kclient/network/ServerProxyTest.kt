@@ -50,7 +50,8 @@ class ServerProxyTest {
                     secretPublicSignature = "",
                     senderPublicSignature = ""
                 ),
-                creatorPublicIdentifier = UUID.randomUUID().toString()
+                creatorPublicIdentifier = UUID.randomUUID().toString(),
+                createdAt = LocalDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
             )
         )
         `when`(mockRemoteServer.listThreads()).thenReturn(expectedThreads)
@@ -83,7 +84,8 @@ class ServerProxyTest {
                         secretPublicSignature = "",
                         senderPublicSignature = ""
                     ),
-                    creatorPublicIdentifier = UUID.randomUUID().toString()
+                    creatorPublicIdentifier = UUID.randomUUID().toString(),
+                    createdAt = LocalDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
                 )
             )
             `when`(mockRemoteServer.listThreads()).thenThrow(IllegalStateException("Remote server error"))

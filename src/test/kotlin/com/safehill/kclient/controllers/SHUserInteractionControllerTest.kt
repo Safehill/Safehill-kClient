@@ -34,7 +34,8 @@ class SHUserInteractionControllerTest {
                 name = null,
                 lastUpdatedAt = LocalDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
                 encryptionDetails = RecipientEncryptionDetailsDTO("", "", "", "", ""),
-                creatorPublicIdentifier = UUID.randomUUID().toString()
+                creatorPublicIdentifier = UUID.randomUUID().toString(),
+                createdAt = LocalDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
             )
         )
         serverProxySpy.listThreadResponse = mockedResponse

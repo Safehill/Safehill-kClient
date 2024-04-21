@@ -14,6 +14,7 @@ data class ConversationThreadOutputDTO(
     val membersPublicIdentifier: List<String>,
     val lastUpdatedAt: String,
     val creatorPublicIdentifier: String,
+    val createdAt: String,
     val encryptionDetails: RecipientEncryptionDetailsDTO // for the user making the request
 ) {
     fun getSymmetricKey(currentUser: SHLocalUser) = SHSymmetricKey(
