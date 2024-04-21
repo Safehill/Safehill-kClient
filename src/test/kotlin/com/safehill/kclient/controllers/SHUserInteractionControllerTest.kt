@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 
 class SHUserInteractionControllerTest {
 
@@ -32,7 +33,8 @@ class SHUserInteractionControllerTest {
                 membersPublicIdentifier = emptyList(),
                 name = null,
                 lastUpdatedAt = LocalDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
-                encryptionDetails = RecipientEncryptionDetailsDTO("", "", "", "", "")
+                encryptionDetails = RecipientEncryptionDetailsDTO("", "", "", "", ""),
+                creatorPublicIdentifier = UUID.randomUUID().toString()
             )
         )
         serverProxySpy.listThreadResponse = mockedResponse

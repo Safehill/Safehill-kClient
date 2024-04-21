@@ -17,6 +17,7 @@ import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.`when`
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 
 
 class ServerProxyTest {
@@ -48,7 +49,8 @@ class ServerProxyTest {
                     encryptedSecret = "",
                     secretPublicSignature = "",
                     senderPublicSignature = ""
-                )
+                ),
+                creatorPublicIdentifier = UUID.randomUUID().toString()
             )
         )
         `when`(mockRemoteServer.listThreads()).thenReturn(expectedThreads)
@@ -80,7 +82,8 @@ class ServerProxyTest {
                         encryptedSecret = "",
                         secretPublicSignature = "",
                         senderPublicSignature = ""
-                    )
+                    ),
+                    creatorPublicIdentifier = UUID.randomUUID().toString()
                 )
             )
             `when`(mockRemoteServer.listThreads()).thenThrow(IllegalStateException("Remote server error"))
