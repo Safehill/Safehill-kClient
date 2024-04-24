@@ -38,11 +38,11 @@ import com.safehill.kclient.models.SHAssetDescriptor
 import com.safehill.kclient.models.SHAssetDescriptorUploadState
 import com.safehill.kclient.models.SHAssetQuality
 import com.safehill.kclient.models.SHEncryptedAsset
+import com.safehill.kclient.models.SHLocalUser
 import com.safehill.kclient.models.SHRemoteUser
 import com.safehill.kclient.models.SHServerUser
 import com.safehill.kclient.models.SHShareableEncryptedAsset
 import com.safehill.kclient.models.SHUserReaction
-import com.safehill.kclient.models.user.SHLocalUserInterface
 import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.network.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kcrypto.SHCypher
@@ -96,12 +96,12 @@ data class SafehillHttpException(
 }
 
 
-// For Fuel howto see https://www.baeldung.com/kotlin/fuel
+// For Fuel how to see https://www.baeldung.com/kotlin/fuel
 
 var alreadyInstantiated = false
 
 class SafehillApiImpl(
-    override var requestor: SHLocalUserInterface,
+    override var requestor: SHLocalUser,
     private val environment: ServerEnvironment = ServerEnvironment.Development,
     hostname: String = "localhost"
 ) : SafehillApi {

@@ -1,7 +1,6 @@
 package com.safehill.kclient.models
 
 import com.safehill.kclient.api.dtos.SHAuthResponseDTO
-import com.safehill.kclient.models.user.SHLocalUserInterface
 import com.safehill.kcrypto.models.SHCryptoUser
 import com.safehill.kcrypto.models.SHLocalCryptoUser
 import com.safehill.kcrypto.models.SHShareablePayload
@@ -10,8 +9,8 @@ import java.security.PublicKey
 import java.util.Base64
 
 class SHLocalUser(
-    override var shUser: SHLocalCryptoUser,
-) : SHServerUser, SHLocalUserInterface {
+    var shUser: SHLocalCryptoUser,
+) : SHServerUser {
 
     override val identifier: String
         get() = this.shUser.identifier
@@ -30,7 +29,7 @@ class SHLocalUser(
     override val publicSignatureData: ByteArray
         get() = this.shUser.publicSignatureData
 
-    override var authToken: String? = null
+    var authToken: String? = null
     var encryptionSalt: ByteArray = byteArrayOf()
 
     private fun updateUserDetails(given: SHServerUser?) {

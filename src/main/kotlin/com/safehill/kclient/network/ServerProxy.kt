@@ -14,18 +14,18 @@ import com.safehill.kclient.models.SHAssetDescriptor
 import com.safehill.kclient.models.SHAssetDescriptorUploadState
 import com.safehill.kclient.models.SHAssetQuality
 import com.safehill.kclient.models.SHEncryptedAsset
+import com.safehill.kclient.models.SHLocalUser
 import com.safehill.kclient.models.SHRemoteUser
 import com.safehill.kclient.models.SHServerUser
 import com.safehill.kclient.models.SHShareableEncryptedAsset
 import com.safehill.kclient.models.SHUserReaction
-import com.safehill.kclient.models.user.SHLocalUserInterface
 import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.network.dtos.RecipientEncryptionDetailsDTO
 
 class ServerProxy(
-    override var requestor: SHLocalUserInterface,
     val localServer: LocalServerInterface,
-    val remoteServer: SafehillApi
+    val remoteServer: SafehillApi,
+    override var requestor: SHLocalUser,
 ) : ServerProxyInterface {
 
 
@@ -178,27 +178,13 @@ class ServerProxy(
             )
         } catch (e: Exception) {
             println("failed to fetch interactions from server. Returning local version. $e ${e.message}")
-            retrieveLocalInteractions(
+            localServer.retrieveInteractions(
                 inGroupId = inGroupId,
                 per = per,
                 page = page,
                 before = before
             )
         }
-    }
-
-    suspend fun retrieveLocalInteractions(
-        inGroupId: String,
-        per: Int,
-        page: Int,
-        before: String?
-    ): SHInteractionsGroupDTO {
-        return localServer.retrieveInteractions(
-            inGroupId = inGroupId,
-            per = per,
-            page = page,
-            before = before
-        )
     }
 
     suspend fun retrieveRemoteInteractions(
