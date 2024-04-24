@@ -6,5 +6,6 @@ import kotlinx.serialization.Serializable
 data class GetInteractionDTO(
     val per: Int,
     val page: Int,
-    val referencedInteractionId: String?
+    val referencedInteractionId: String?,
+    val before: String?
 )

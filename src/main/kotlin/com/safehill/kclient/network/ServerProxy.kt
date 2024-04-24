@@ -160,27 +160,58 @@ class ServerProxy(
         TODO("Not yet implemented")
     }
 
+    /***
+     * This function will try to fetch interactions from remote server and if it fails, retrieves locally.
+     */
     override suspend fun retrieveInteractions(
         inGroupId: String,
         per: Int,
-        page: Int
+        page: Int,
+        before: String?
+    ): SHInteractionsGroupDTO {
+        return try {
+            retrieveRemoteInteractions(
+                inGroupId = inGroupId,
+                per = per,
+                page = page,
+                before = before
+            )
+        } catch (e: Exception) {
+            println("failed to fetch interactions from server. Returning local version. $e ${e.message}")
+            retrieveLocalInteractions(
+                inGroupId = inGroupId,
+                per = per,
+                page = page,
+                before = before
+            )
+        }
+    }
+
+    suspend fun retrieveLocalInteractions(
+        inGroupId: String,
+        per: Int,
+        page: Int,
+        before: String?
     ): SHInteractionsGroupDTO {
         return localServer.retrieveInteractions(
             inGroupId = inGroupId,
             per = per,
-            page = page
+            page = page,
+            before = before
         )
     }
 
     suspend fun retrieveRemoteInteractions(
         inGroupId: String,
         per: Int,
-        page: Int
+        page: Int,
+        before: String?
     ): SHInteractionsGroupDTO {
         return remoteServer.retrieveInteractions(
             inGroupId = inGroupId,
             per = per,
-            page = page
+            page = page,
+            before = before
         )
     }
 
@@ -203,7 +234,7 @@ class ServerProxy(
                     publicSignatureData = serverUser.publicSignatureData
                 )
             } catch (exception: Exception) {
-                println("failed to create server user in local server: ${exception.message}")
+                println("failed to create server user in local server: $exception ${exception.message}")
             }
         }
 

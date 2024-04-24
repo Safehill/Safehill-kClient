@@ -510,7 +510,8 @@ class SafehillApiImpl(
     override suspend fun retrieveInteractions(
         inGroupId: String,
         per: Int,
-        page: Int
+        page: Int,
+        before: String?
     ): SHInteractionsGroupDTO {
         val bearerToken =
             this.requestor.authToken ?: throw HttpException(
@@ -521,7 +522,8 @@ class SafehillApiImpl(
         val requestBody = GetInteractionDTO(
             per = per,
             page = page,
-            referencedInteractionId = null
+            referencedInteractionId = null,
+            before = before
         )
 
         return "interactions/user-threads/$inGroupId".httpPost()

@@ -143,7 +143,8 @@ class ServerProxySpy() : ServerProxyInterface {
     override suspend fun retrieveInteractions(
         inGroupId: String,
         per: Int,
-        page: Int
+        page: Int,
+        before: String?
     ): SHInteractionsGroupDTO {
         TODO("Not yet implemented")
     }

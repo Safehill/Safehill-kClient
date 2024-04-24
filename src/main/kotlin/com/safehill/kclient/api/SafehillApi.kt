@@ -239,7 +239,8 @@ interface SafehillApi {
     suspend fun retrieveInteractions(
         inGroupId: String,
         per: Int,
-        page: Int
+        page: Int,
+        before: String?
     ): SHInteractionsGroupDTO
 
     /// Adds a messages to a share (group)
