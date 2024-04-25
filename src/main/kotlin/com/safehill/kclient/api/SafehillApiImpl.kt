@@ -98,6 +98,8 @@ data class SafehillHttpException(
 
 // For Fuel how to see https://www.baeldung.com/kotlin/fuel
 
+
+// todo properly setup fuel configurations only once
 var alreadyInstantiated = false
 
 class SafehillApiImpl(
