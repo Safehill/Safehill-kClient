@@ -542,7 +542,7 @@ class SafehillApiImpl(
     @OptIn(ExperimentalSerializationApi::class)
     override suspend fun addMessages(
         messages: List<SHMessageInputDTO>,
-        threadId: String
+        groupId: String
     ): List<SHMessageOutputDTO> {
         require(messages.size == 1) {
             "Can only add one message at a time."
@@ -553,7 +553,7 @@ class SafehillApiImpl(
                 "unauthorized"
             )
 
-        return "interactions/user-threads/$threadId/messages".httpPost()
+        return "interactions/user-threads/$groupId/messages".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Json.encodeToString(messages.first()))
             .responseObject<SHMessageOutputDTO>(

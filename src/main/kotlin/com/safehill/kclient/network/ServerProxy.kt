@@ -203,10 +203,10 @@ class ServerProxy(
 
     override suspend fun addMessages(
         messages: List<SHMessageInputDTO>,
-        threadId: String
+        groupId: String
     ): List<SHMessageOutputDTO> {
-        return remoteServer.addMessages(messages, threadId).also {
-            localServer.insertMessages(it, threadId)
+        return remoteServer.addMessages(messages, groupId).also {
+            localServer.insertMessages(it, groupId)
         }
     }
 
