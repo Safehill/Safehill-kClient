@@ -54,24 +54,21 @@ class SHLocalUser(
     fun shareable(
         data: ByteArray,
         with: SHCryptoUser,
-        protocolSalt: ByteArray,
-        iv: ByteArray
+        protocolSalt: ByteArray
     ): SHShareablePayload {
-        return SHUserContext(this.shUser).shareable(data, with, protocolSalt, iv)
+        return SHUserContext(this.shUser).shareable(data, with, protocolSalt)
     }
 
     fun decrypted(
         data: ByteArray,
         encryptedSecret: SHShareablePayload,
         protocolSalt: ByteArray,
-        iv: ByteArray,
         receivedFrom: SHCryptoUser
     ): ByteArray {
         return SHUserContext(this.shUser).decrypt(
             data,
             encryptedSecret,
             protocolSalt,
-            iv,
             receivedFrom
         )
     }

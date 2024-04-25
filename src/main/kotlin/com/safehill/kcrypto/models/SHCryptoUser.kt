@@ -1,9 +1,7 @@
 package com.safehill.kcrypto.models
 
 import com.safehill.kcrypto.SHCypher
-import java.math.BigInteger
 import java.security.KeyPair
-import java.security.MessageDigest
 import java.security.PublicKey
 
 
@@ -15,16 +13,19 @@ interface SHCryptoUser {
     val publicSignatureData: ByteArray
 }
 
-class SHRemoteCryptoUser(override val publicKeyData: ByteArray, override val publicSignatureData: ByteArray) :
+class SHRemoteCryptoUser(
+    override val publicKeyData: ByteArray,
+    override val publicSignatureData: ByteArray
+) :
     SHCryptoUser {
 
     override val publicKey: PublicKey
-        get()  {
+        get() {
             return SHPublicKey.from(this.publicKeyData)
         }
 
     override val publicSignature: PublicKey
-        get()  {
+        get() {
             return SHPublicKey.from(this.publicSignatureData)
         }
 
@@ -39,7 +40,7 @@ class SHLocalCryptoUser(val key: KeyPair, val signature: KeyPair) : SHCryptoUser
     constructor() : this(SHKeyPair.generate(), SHKeyPair.generate())
 
     override val publicKey: PublicKey
-        get()  {
+        get() {
             return key.public
         }
 
@@ -49,7 +50,7 @@ class SHLocalCryptoUser(val key: KeyPair, val signature: KeyPair) : SHCryptoUser
         }
 
     override val publicSignature: PublicKey
-        get()  {
+        get() {
             return signature.public
         }
 
@@ -71,14 +72,41 @@ class SHLocalCryptoUser(val key: KeyPair, val signature: KeyPair) : SHCryptoUser
 
 
 class SHUserContext(private val user: SHLocalCryptoUser) {
-    fun shareable(data: ByteArray, with: SHCryptoUser, protocolSalt: ByteArray, iv: ByteArray): SHShareablePayload {
+
+    fun shareable(
+        data: ByteArray,
+        with: SHCryptoUser,
+        protocolSalt: ByteArray
+    ): SHShareablePayload {
+
         val ephemeralKey = SHKeyPair.generate()
-        val encrypted = SHCypher.encrypt(data, with.publicKey, ephemeralKey, protocolSalt, iv, this.user.signature)
-        return SHShareablePayload(ephemeralKey.public.encoded, encrypted.ciphertext, encrypted.signature, user)
+        val encrypted = SHCypher.encrypt(
+            data,
+            with.publicKey,
+            ephemeralKey,
+            protocolSalt,
+            this.user.signature
+        )
+        return SHShareablePayload(
+            ephemeralKey.public.encoded,
+            encrypted.ciphertext,
+            encrypted.signature,
+            with
+        )
     }
 
-    fun decrypt(data: ByteArray, encryptedSecret: SHShareablePayload, protocolSalt: ByteArray, iv: ByteArray, sender: SHCryptoUser): ByteArray {
-        val secretData = SHCypher.decrypt(encryptedSecret, this.user.key, protocolSalt, iv, sender.publicSignature)
+    fun decrypt(
+        data: ByteArray,
+        encryptedSecret: SHShareablePayload,
+        protocolSalt: ByteArray,
+        sender: SHCryptoUser
+    ): ByteArray {
+        val secretData = SHCypher.decrypt(
+            encryptedSecret,
+            this.user.key,
+            protocolSalt,
+            sender.publicSignature
+        )
         return SHCypher.decrypt(data, secretData)
     }
 }

@@ -4,19 +4,18 @@ import at.favre.lib.hkdf.HKDF
 import com.safehill.kcrypto.models.SHPublicKey
 import com.safehill.kcrypto.models.SHShareablePayload
 import com.safehill.kcrypto.models.SHSignature
+import com.safehill.kcrypto.models.SHSymmetricKey
 import com.safehill.kcrypto.models.SignatureVerificationError
 import dev.turingcomplete.kotlinonetimepassword.HmacAlgorithm
 import dev.turingcomplete.kotlinonetimepassword.TimeBasedOneTimePasswordConfig
 import dev.turingcomplete.kotlinonetimepassword.TimeBasedOneTimePasswordGenerator
-import java.security.DrbgParameters.Instantiation
 import java.security.KeyPair
 import java.security.PrivateKey
 import java.security.PublicKey
 import java.security.SecureRandom
-import java.time.Instant
-import java.util.*
+import java.util.Base64
+import java.util.Date
 import java.util.concurrent.TimeUnit
-import javax.crypto.AEADBadTagException
 import javax.crypto.Cipher
 import javax.crypto.KeyAgreement
 import javax.crypto.spec.GCMParameterSpec
@@ -46,35 +45,47 @@ class SHCypher {
          * @param timeStepInSeconds the duration of each step
          * @return a Pair holding the code and the number of milliseconds the current TOTP is still valid
          */
-        fun generateOTPCode(secret: ByteArray, digits: Int = 6, timeStepInSeconds: Long = 30): Pair<String, Long> {
+        fun generateOTPCode(
+            secret: ByteArray,
+            digits: Int = 6,
+            timeStepInSeconds: Long = 30
+        ): Pair<String, Long> {
             val config = TimeBasedOneTimePasswordConfig(
                 codeDigits = digits,
                 hmacAlgorithm = HmacAlgorithm.SHA1,
                 timeStep = timeStepInSeconds,
                 timeStepUnit = TimeUnit.SECONDS
             )
-            val timeBasedOneTimePasswordGenerator = TimeBasedOneTimePasswordGenerator(secret, config)
+            val timeBasedOneTimePasswordGenerator =
+                TimeBasedOneTimePasswordGenerator(secret, config)
 
             val code = timeBasedOneTimePasswordGenerator.generate(Date().toInstant().toEpochMilli())
 
             val counter = timeBasedOneTimePasswordGenerator.counter()
             // the start of next time slot minus 1ms
-            val endEpochMillis = timeBasedOneTimePasswordGenerator.timeslotStart(counter+1)-1
+            val endEpochMillis = timeBasedOneTimePasswordGenerator.timeslotStart(counter + 1) - 1
             // number of milliseconds the current TOTP is still valid
             val millisValid = endEpochMillis - Date().toInstant().toEpochMilli()
 
             return code to millisValid
         }
 
-        fun encrypt(message: ByteArray, key: ByteArray, iv: ByteArray): ByteArray {
+        fun encrypt(message: ByteArray, key: SHSymmetricKey, iv: ByteArray? = null): ByteArray {
+            return this.encrypt(message, key.secretKeySpec.encoded, iv)
+        }
+
+        // Similar to swift in which iv is prepended at the beginning
+        fun encrypt(message: ByteArray, key: ByteArray, iv: ByteArray? = null): ByteArray {
             // Get Cipher Instance
             val cipher = Cipher.getInstance("AES_256/GCM/NoPadding")
+
+            val finalIV = iv ?: generateRandomIV()
 
             // Create SecretKeySpec
             val keySpec = SecretKeySpec(key, "AES")
 
             // Create GCMParameterSpec
-            val gcmParameterSpec = GCMParameterSpec(GCM_TAG_LENGTH * 8, iv)
+            val gcmParameterSpec = GCMParameterSpec(GCM_TAG_LENGTH * 8, finalIV)
             // Initialize Cipher for ENCRYPT_MODE
             cipher.init(Cipher.ENCRYPT_MODE, keySpec, gcmParameterSpec)
 
@@ -82,7 +93,7 @@ class SHCypher {
             val cipherText = ByteArray(cipher.getOutputSize(message.size))
             var ctLength = cipher.update(message, 0, message.size, cipherText, 0)
             ctLength += cipher.doFinal(cipherText, ctLength)
-            return cipherText
+            return finalIV + cipherText
         }
 
         fun encrypt(
@@ -90,15 +101,14 @@ class SHCypher {
             receiverPublicKey: PublicKey,
             ephemeralKey: KeyPair,
             protocolSalt: ByteArray,
-            iv: ByteArray,
             senderSignatureKey: KeyPair
-        ) : SHShareablePayload
-        {
+        ): SHShareablePayload {
             // Generate a new private key (SHARED SECRET) from the key agreement
-            val keyAgreement = KeyAgreement.getInstance("ECDH")
-            keyAgreement.init(ephemeralKey.private)
-            keyAgreement.doPhase(receiverPublicKey, true)
-            val sharedSecretFromKeyAgreement = keyAgreement.generateSecret()
+
+            val sharedSecretFromKeyAgreement = generatedSharedSecret(
+                otherUserPublicKey = receiverPublicKey,
+                selfPrivateKey = ephemeralKey.private
+            )
 
             // Information to share
             val sharedInfo: ByteArray = ephemeralKey.public.encoded +
@@ -110,7 +120,7 @@ class SHCypher {
             val pseudoRandomKey = hkdf.extract(protocolSalt, sharedSecretFromKeyAgreement)
             val derivedSymmetricKey = hkdf.expand(pseudoRandomKey, sharedInfo, 32)
 
-            val cypher = encrypt(message, derivedSymmetricKey, iv)
+            val cypher = encrypt(message, derivedSymmetricKey)
 
             // Signs the message
             val signature = SHSignature.sign(
@@ -121,6 +131,9 @@ class SHCypher {
             return SHShareablePayload(ephemeralKey.public.encoded, cypher, signature, null)
         }
 
+        fun decrypt(cipherText: ByteArray, key: SHSymmetricKey, iv: ByteArray? = null) =
+            this.decrypt(cipherText, key.secretKeySpec.encoded, iv)
+
         fun decrypt(cipherText: ByteArray, key: ByteArray, iv: ByteArray? = null): ByteArray {
             val nonOptionalIV: ByteArray
             val encryptedData: ByteArray
@@ -130,9 +143,6 @@ class SHCypher {
                 // If IV is null, we are expecting the IV to be the first 16 bits for the cipherText
                 //
                 val base64EncodedCypher = Base64.getEncoder().encodeToString(cipherText)
-                if (base64EncodedCypher.length < 60) {
-                    throw AEADBadTagException()
-                }
 
                 val ivBase64 = base64EncodedCypher.substring(0, GCM_TAG_LENGTH)
                 val cipherTextBase64 = base64EncodedCypher.substring(GCM_TAG_LENGTH)
@@ -159,8 +169,8 @@ class SHCypher {
             sealedMessage: SHShareablePayload,
             encryptionKey: KeyPair,
             protocolSalt: ByteArray,
+            signedBy: PublicKey,
             iv: ByteArray? = null,
-            signedBy: PublicKey
         ): ByteArray {
             return this.decrypt(
                 sealedMessage,
@@ -181,17 +191,19 @@ class SHCypher {
             signedBy: PublicKey
         ): ByteArray {
             // Verify the signature matches
-            val data = sealedMessage.ciphertext + sealedMessage.ephemeralPublicKeyData + userPublicKey.encoded
+            val data =
+                sealedMessage.ciphertext + sealedMessage.ephemeralPublicKeyData + userPublicKey.encoded
             if (!SHSignature.verify(data, sealedMessage.signature, signedBy)) {
                 throw SignatureVerificationError("Invalid signature")
             }
 
             // Retrieve the shared secret from the key agreement
             val ephemeralKey: PublicKey = SHPublicKey.from(sealedMessage.ephemeralPublicKeyData)
-            val keyAgreement = KeyAgreement.getInstance("ECDH")
-            keyAgreement.init(userPrivateKey)
-            keyAgreement.doPhase(ephemeralKey, true)
-            val sharedSecret = keyAgreement.generateSecret()
+
+            val sharedSecret = generatedSharedSecret(
+                otherUserPublicKey = ephemeralKey,
+                selfPrivateKey = userPrivateKey
+            )
 
             val sharedInfo: ByteArray = ephemeralKey.encoded +
                     userPublicKey.encoded +
@@ -202,6 +214,17 @@ class SHCypher {
             val derivedSymmetricKey = hkdf.expand(pseudoRandomKey, sharedInfo, 32)
 
             return decrypt(sealedMessage.ciphertext, derivedSymmetricKey, iv)
+        }
+
+
+        fun generatedSharedSecret(
+            otherUserPublicKey: PublicKey,
+            selfPrivateKey: PrivateKey
+        ): ByteArray? {
+            val keyAgreement = KeyAgreement.getInstance("ECDH")
+            keyAgreement.init(selfPrivateKey)
+            keyAgreement.doPhase(otherUserPublicKey, true)
+            return keyAgreement.generateSecret()
         }
     }
 }
