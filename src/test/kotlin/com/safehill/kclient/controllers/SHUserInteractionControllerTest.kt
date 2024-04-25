@@ -1,17 +1,5 @@
 package com.safehill.kclient.controllers
 
-import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
-import com.safehill.kclient.network.dtos.RecipientEncryptionDetailsDTO
-import com.safehill.mock.ServerProxySpy
-import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.BeforeEach
-
-import org.junit.jupiter.api.Test
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util.UUID
-
 class SHUserInteractionControllerTest {
 
     // todo fix tests for implementation change

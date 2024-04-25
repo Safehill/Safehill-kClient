@@ -1,11 +1,5 @@
 package com.safehill.kclient.controllers
 
-import com.safehill.kclient.models.SHRemoteUser
-import com.safehill.mock.ServerProxySpy
-import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-
 class UsersControllerTest {
     // todo fix tests for implementation change
 
