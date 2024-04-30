@@ -13,7 +13,7 @@ interface LocalServerInterface : SafehillApi {
         publicSignatureData: ByteArray
     )
 
-    suspend fun insertThreads(threads: List<ConversationThreadOutputDTO>)
+    suspend fun createOrUpdateThread(threads: List<ConversationThreadOutputDTO>)
 
     suspend fun insertMessages(messages: List<SHMessageOutputDTO>, threadId: String)
 

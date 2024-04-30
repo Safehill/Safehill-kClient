@@ -98,12 +98,16 @@ class ServerProxy(
     }
 
     override suspend fun retrieveThread(usersIdentifiers: List<String>): ConversationThreadOutputDTO? {
-        TODO("Not yet implemented")
+        return localServer.retrieveThread(usersIdentifiers) ?: remoteServer.retrieveThread(
+            usersIdentifiers
+        )?.also {
+            localServer.createOrUpdateThread(listOf(it))
+        }
     }
 
     override suspend fun retrieveThread(threadId: String): ConversationThreadOutputDTO? {
         return localServer.retrieveThread(threadId) ?: remoteServer.retrieveThread(threadId)?.also {
-            localServer.insertThreads(listOf(it))
+            localServer.createOrUpdateThread(listOf(it))
         }
     }
 
@@ -111,7 +115,12 @@ class ServerProxy(
         name: String?,
         recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>
     ): ConversationThreadOutputDTO {
-        TODO("Not yet implemented")
+        return remoteServer.createOrUpdateThread(
+            name = name,
+            recipientsEncryptionDetails = recipientsEncryptionDetails
+        ).also {
+            localServer.createOrUpdateThread(listOf(it))
+        }
     }
 
     override suspend fun upload(
