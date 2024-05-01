@@ -10,7 +10,7 @@ import java.security.PublicKey
 import java.util.Base64
 
 class SHLocalUser(
-    override var shUser: SHLocalCryptoUser,
+    override var shUser: SHLocalCryptoUser, override val keychainPrefix: String,
 ) : SHServerUser, SHLocalUserInterface {
 
     override val identifier: String
@@ -31,7 +31,7 @@ class SHLocalUser(
         get() = this.shUser.publicSignatureData
 
     override var authToken: String? = null
-    var encryptionSalt: ByteArray = byteArrayOf()
+    override var maybeEncryptionProtocolSalt: ByteArray = byteArrayOf()
 
     private fun updateUserDetails(given: SHServerUser?) {
         given?.let {
@@ -44,7 +44,7 @@ class SHLocalUser(
     fun authenticate(user: SHServerUser, authResponseDTO: SHAuthResponseDTO) {
         this.updateUserDetails(user)
         this.authToken = authResponseDTO.bearerToken
-        this.encryptionSalt = Base64.getDecoder().decode(authResponseDTO.encryptionProtocolSalt)
+        this.maybeEncryptionProtocolSalt = Base64.getDecoder().decode(authResponseDTO.encryptionProtocolSalt)
     }
 
     fun deauthenticate() {

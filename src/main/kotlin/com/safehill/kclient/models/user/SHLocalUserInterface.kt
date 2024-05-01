@@ -1,7 +1,6 @@
 package com.safehill.kclient.models.user
 
 import com.safehill.kclient.models.SHServerUser
-import com.safehill.kclient.network.ServerProxyInterface
 import com.safehill.kcrypto.models.SHLocalCryptoUser
 
 interface SHLocalUserInterface : SHServerUser {
@@ -9,4 +8,6 @@ interface SHLocalUserInterface : SHServerUser {
     override val publicSignatureData: ByteArray
     override val publicKeyData: ByteArray
     val shUser: SHLocalCryptoUser
+    val maybeEncryptionProtocolSalt: ByteArray?
+    val keychainPrefix: String
 }

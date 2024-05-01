@@ -1,6 +1,7 @@
 package com.safehill.kclient.tasks.outbound
 
 import com.safehill.kclient.models.SHServerUser
+import com.safehill.kclient.models.user.AuthenticatedLocalUser
 import com.safehill.kclient.tasks.AbstractBackgroundOperation
 import com.safehill.kclient.tasks.BackgroundOperation
 import java.util.logging.Logger
