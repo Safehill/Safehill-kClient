@@ -73,6 +73,11 @@ enum class SafehillHttpStatusCode(val statusCode: Int) {
     }
 }
 
+val UnAuthorizedException = SafehillHttpException(
+    statusCode = 401,
+    message = "unauthorized",
+)
+
 data class SafehillHttpException(
     val statusCode: SafehillHttpStatusCode?,
     override val message: String,
@@ -81,7 +86,7 @@ data class SafehillHttpException(
     constructor(
         statusCode: Int,
         message: String,
-        httpException: HttpException
+        httpException: HttpException = HttpException(statusCode, message)
     ) : this(
         SafehillHttpStatusCode.fromInt(statusCode),
         "$statusCode: $message",
@@ -134,7 +139,7 @@ class SafehillApiImpl(
         code: String,
         medium: SHSendCodeToUserRequestDTO.Medium,
     ) {
-        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+        val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
 
         val requestBody = SHSendCodeToUserRequestDTO(
             countryCode = countryCode,
@@ -157,7 +162,7 @@ class SafehillApiImpl(
         phoneNumber: String?,
         email: String?,
     ): SHServerUser {
-        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+        val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
 
         val requestBody = SHUserUpdateDTO(
             identifier = null,
@@ -181,7 +186,7 @@ class SafehillApiImpl(
 
     @Throws
     override suspend fun deleteAccount() {
-        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+        val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
 
         "/users/safe_delete".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
@@ -245,7 +250,7 @@ class SafehillApiImpl(
     @Throws
     override suspend fun getUsers(withIdentifiers: List<String>): List<SHRemoteUser> {
         val bearerToken =
-            this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+            this.requestor.authToken ?: throw UnAuthorizedException
 
         if (withIdentifiers.isEmpty()) {
             return listOf()
@@ -261,7 +266,7 @@ class SafehillApiImpl(
 
     override suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<HashedPhoneNumber>): Map<HashedPhoneNumber, SHRemoteUser> {
         val bearerToken =
-            this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+            this.requestor.authToken ?: throw UnAuthorizedException
 
         if (hashedPhoneNumbers.isEmpty()) {
             return mapOf()
@@ -278,7 +283,7 @@ class SafehillApiImpl(
 
     @Throws
     override suspend fun searchUsers(query: String, per: Int, page: Int): List<SHRemoteUser> {
-        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+        val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
 
         return "/users/search".httpGet(
             listOf(
@@ -295,7 +300,7 @@ class SafehillApiImpl(
 
     @Throws
     override suspend fun getAssetDescriptors(): List<SHAssetDescriptor> {
-        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+        val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
 
         return "/assets/descriptors/retrieve".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
@@ -327,7 +332,7 @@ class SafehillApiImpl(
         }
         val asset = assets.first()
 
-        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+        val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
 
         val assetCreatedAt = asset.creationDate ?: run { Date(0) }
         val requestBody = SHAssetInputDTO(
@@ -423,7 +428,7 @@ class SafehillApiImpl(
 
     @Throws
     override suspend fun deleteAssets(globalIdentifiers: List<String>): List<String> {
-        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+        val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
 
         val responseResult = "/assets/delete".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
