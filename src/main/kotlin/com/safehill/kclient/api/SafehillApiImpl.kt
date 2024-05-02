@@ -112,7 +112,7 @@ class SafehillApiImpl(
         if (!alreadyInstantiated) {
             FuelManager.instance.basePath = when (this.environment) {
                 ServerEnvironment.Development -> "http://${hostname}:8080"
-                ServerEnvironment.Production -> "https://app.safehill.io:433"
+                ServerEnvironment.Production -> "https://app.safehill.io:443"
             }
             FuelManager.instance.baseHeaders = mapOf("Content-type" to "application/json")
             FuelManager.instance.timeoutInMillisecond = 10000
