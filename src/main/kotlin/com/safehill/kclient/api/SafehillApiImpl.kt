@@ -11,6 +11,7 @@ import com.github.kittinunf.fuel.serialization.responseObject
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
 import com.safehill.kclient.api.dtos.CreateOrUpdateThreadDTO
+import com.safehill.kclient.api.dtos.GetInteractionDTO
 import com.safehill.kclient.api.dtos.HashedPhoneNumber
 import com.safehill.kclient.api.dtos.RetrieveThreadDTO
 import com.safehill.kclient.api.dtos.SHAssetDeleteCriteriaDTO
@@ -37,11 +38,11 @@ import com.safehill.kclient.models.SHAssetDescriptor
 import com.safehill.kclient.models.SHAssetDescriptorUploadState
 import com.safehill.kclient.models.SHAssetQuality
 import com.safehill.kclient.models.SHEncryptedAsset
+import com.safehill.kclient.models.SHLocalUser
 import com.safehill.kclient.models.SHRemoteUser
 import com.safehill.kclient.models.SHServerUser
 import com.safehill.kclient.models.SHShareableEncryptedAsset
 import com.safehill.kclient.models.SHUserReaction
-import com.safehill.kclient.models.user.SHLocalUserInterface
 import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.network.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kcrypto.SHCypher
@@ -95,29 +96,35 @@ data class SafehillHttpException(
 }
 
 
-// For Fuel howto see https://www.baeldung.com/kotlin/fuel
+// For Fuel how to see https://www.baeldung.com/kotlin/fuel
+
+
+// todo properly setup fuel configurations only once
+var alreadyInstantiated = false
 
 class SafehillApiImpl(
-    override var requestor: SHLocalUserInterface,
+    override var requestor: SHLocalUser,
     private val environment: ServerEnvironment = ServerEnvironment.Development,
     hostname: String = "localhost"
 ) : SafehillApi {
 
     init {
-        FuelManager.instance.basePath = when (this.environment) {
-            ServerEnvironment.Development -> "http://${hostname}:8080"
-            ServerEnvironment.Production -> "https://app.safehill.io:433"
+        if (!alreadyInstantiated) {
+            FuelManager.instance.basePath = when (this.environment) {
+                ServerEnvironment.Development -> "http://${hostname}:8080"
+                ServerEnvironment.Production -> "https://app.safehill.io:433"
+            }
+            FuelManager.instance.baseHeaders = mapOf("Content-type" to "application/json")
+            FuelManager.instance.timeoutInMillisecond = 10000
+            FuelManager.instance.timeoutReadInMillisecond = 30000
+
+            // The client should control whether they want logging or not
+            // Printing for now
+            FuelManager.instance.addRequestInterceptor(LogRequestInterceptor)
+            FuelManager.instance.addResponseInterceptor(LogResponseInterceptor)
+            alreadyInstantiated = true
         }
-        FuelManager.instance.baseHeaders = mapOf("Content-type" to "application/json")
-        FuelManager.instance.timeoutInMillisecond = 10000
-        FuelManager.instance.timeoutReadInMillisecond = 30000
-
-        // The client should control whether they want logging or not
-        // Printing for now
-        FuelManager.instance.addRequestInterceptor(LogRequestInterceptor)
-        FuelManager.instance.addResponseInterceptor(LogResponseInterceptor)
     }
-
 
     @Throws
     override suspend fun createUser(name: String): SHServerUser {
@@ -201,7 +208,8 @@ class SafehillApiImpl(
             Base64.getDecoder().decode(authChallenge.publicSignature)
         )
         val encryptedChallenge = SHShareablePayload(
-            ephemeralPublicKeyData = Base64.getDecoder().decode(authChallenge.ephemeralPublicKey),
+            ephemeralPublicKeyData = Base64.getDecoder()
+                .decode(authChallenge.ephemeralPublicKey),
             ciphertext = Base64.getDecoder().decode(authChallenge.challenge),
             signature = Base64.getDecoder().decode(authChallenge.ephemeralPublicSignature),
             null
@@ -259,8 +267,13 @@ class SafehillApiImpl(
         val getUsersRequestBody = SHUserIdentifiersDTO(userIdentifiers = withIdentifiers)
         return "/users/retrieve".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Gson().toJson(getUsersRequestBody))
-            .responseObject(SHRemoteUser.ListDeserializer())
+            .body(Json.encodeToString(getUsersRequestBody))
+            .responseObject(
+                ListSerializer(SHRemoteUser.serializer()),
+                Json {
+                    this.ignoreUnknownKeys = true
+                }
+            )
             .getOrThrow()
     }
 
@@ -366,13 +379,46 @@ class SafehillApiImpl(
         TODO("Not yet implemented")
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     override suspend fun retrieveThread(usersIdentifiers: List<String>): ConversationThreadOutputDTO? {
+        return listThreads(usersIdentifiers).firstOrNull()
+    }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    override suspend fun retrieveThread(threadId: String): ConversationThreadOutputDTO? {
         val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
 
-        val request = RetrieveThreadDTO(
-            byUsersPublicIdentifiers = usersIdentifiers
-        )
+        return "/threads/retrieve/".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .responseObject(
+                ConversationThreadOutputDTO.serializer(),
+                Json {
+                    explicitNulls = false
+                }
+            )
+            .getOrElseOnSafehillException {
+                if (it.statusCode == SafehillHttpStatusCode.NotFound) {
+                    null
+                } else {
+                    throw it
+                }
+            }
+    }
+
+
+    override suspend fun listThreads(): List<ConversationThreadOutputDTO> {
+        return listThreads(null)
+    }
+
+
+    @OptIn(ExperimentalSerializationApi::class)
+    private fun listThreads(usersIdentifiers: List<String>?): List<ConversationThreadOutputDTO> {
+        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+
+        val request = usersIdentifiers?.let {
+            RetrieveThreadDTO(
+                byUsersPublicIdentifiers = it
+            )
+        }
 
 
         return "/threads/retrieve".httpPost()
@@ -384,9 +430,8 @@ class SafehillApiImpl(
                     explicitNulls = false
                 }
             )
-            .getOrThrow().firstOrNull()
+            .getOrThrow()
     }
-
 
     @OptIn(ExperimentalSerializationApi::class)
     override suspend fun createOrUpdateThread(
@@ -463,29 +508,81 @@ class SafehillApiImpl(
         TODO("Not yet implemented")
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
     override suspend fun retrieveInteractions(
         inGroupId: String,
         per: Int,
-        page: Int
-    ): List<SHInteractionsGroupDTO> {
-        TODO("Not yet implemented")
+        page: Int,
+        before: String?
+    ): SHInteractionsGroupDTO {
+        val bearerToken =
+            this.requestor.authToken ?: throw HttpException(
+                401,
+                "unauthorized"
+            )
+
+        val requestBody = GetInteractionDTO(
+            per = per,
+            page = page,
+            referencedInteractionId = null,
+            before = before
+        )
+
+        return "interactions/user-threads/$inGroupId".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Json.encodeToString(requestBody))
+            .responseObject<SHInteractionsGroupDTO>(
+                Json {
+                    ignoreUnknownKeys = true
+                    explicitNulls = false
+                }
+            )
+            .getOrThrow()
+
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
     override suspend fun addMessages(
         messages: List<SHMessageInputDTO>,
-        toGroupId: String
+        groupId: String
     ): List<SHMessageOutputDTO> {
-        TODO("Not yet implemented")
+        require(messages.size == 1) {
+            "Can only add one message at a time."
+        }
+        val bearerToken =
+            this.requestor.authToken ?: throw HttpException(
+                401,
+                "unauthorized"
+            )
+
+        return "interactions/user-threads/$groupId/messages".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Json.encodeToString(messages.first()))
+            .responseObject<SHMessageOutputDTO>(
+                Json {
+                    ignoreUnknownKeys = true
+                    explicitNulls = false
+                }
+            )
+            .getOrThrow().run(::listOf)
     }
 
-    @Throws(IllegalStateException::class)
-    override suspend fun listThreads(): List<ConversationThreadOutputDTO> {
-        throw IllegalStateException("Not yet implemented")
-    }
 
     private fun <T, R> ResponseResultOf<T>.getMappingOrThrow(transform: (T) -> R): R {
         val value = getOrThrow()
         return transform(value)
+    }
+
+    private fun <T> ResponseResultOf<T>.getOrElseOnSafehillException(transform: (SafehillHttpException) -> T): T {
+        return try {
+            this.getOrThrow()
+        } catch (e: Exception) {
+            if (e is SafehillHttpException) {
+                transform(e)
+            } else {
+                throw e
+            }
+        }
     }
 
     private fun <T> ResponseResultOf<T>.getOrThrow(): T {

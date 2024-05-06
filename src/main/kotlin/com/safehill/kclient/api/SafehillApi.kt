@@ -12,11 +12,11 @@ import com.safehill.kclient.models.SHAssetDescriptor
 import com.safehill.kclient.models.SHAssetDescriptorUploadState
 import com.safehill.kclient.models.SHAssetQuality
 import com.safehill.kclient.models.SHEncryptedAsset
+import com.safehill.kclient.models.SHLocalUser
 import com.safehill.kclient.models.SHRemoteUser
 import com.safehill.kclient.models.SHServerUser
 import com.safehill.kclient.models.SHShareableEncryptedAsset
 import com.safehill.kclient.models.SHUserReaction
-import com.safehill.kclient.models.user.SHLocalUserInterface
 import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.network.dtos.RecipientEncryptionDetailsDTO
 
@@ -24,7 +24,7 @@ typealias AssetGlobalIdentifier = String
 
 interface SafehillApi {
 
-    var requestor: SHLocalUserInterface
+    var requestor: SHLocalUser
 
     // MARK: User Management
 
@@ -151,6 +151,10 @@ interface SafehillApi {
         usersIdentifiers: List<String>
     ): ConversationThreadOutputDTO?
 
+    suspend fun retrieveThread(
+        threadId: String
+    ): ConversationThreadOutputDTO?
+
     suspend fun createOrUpdateThread(
         name: String?,
         recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>
@@ -235,8 +239,9 @@ interface SafehillApi {
     suspend fun retrieveInteractions(
         inGroupId: String,
         per: Int,
-        page: Int
-    ): List<SHInteractionsGroupDTO>
+        page: Int,
+        before: String?
+    ): SHInteractionsGroupDTO
 
     /// Adds a messages to a share (group)
     /// - Parameters:
@@ -246,9 +251,8 @@ interface SafehillApi {
     ///   - the list of messages created
     suspend fun addMessages(
         messages: List<SHMessageInputDTO>,
-        toGroupId: String
+        groupId: String
     ): List<SHMessageOutputDTO>
 
-    @Throws(IllegalStateException::class)
     suspend fun listThreads(): List<ConversationThreadOutputDTO>
 }
