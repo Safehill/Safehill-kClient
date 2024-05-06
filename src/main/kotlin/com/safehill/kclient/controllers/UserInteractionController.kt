@@ -4,11 +4,14 @@ import com.safehill.kclient.api.dtos.SHInteractionsGroupDTO
 import com.safehill.kclient.api.dtos.SHMessageInputDTO
 import com.safehill.kclient.api.dtos.SHMessageOutputDTO
 import com.safehill.kclient.models.SHLocalUser
+import com.safehill.kclient.models.SHServerUser
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
+import com.safehill.kclient.network.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kcrypto.base64.base64EncodedString
 import com.safehill.kcrypto.models.SHEncryptedData
 import com.safehill.kcrypto.models.SHSymmetricKey
+import java.util.Base64
 
 class UserInteractionController(
     private val serverProxy: ServerProxy,
@@ -76,6 +79,49 @@ class UserInteractionController(
         }
     }
 
+
+    suspend fun setUpThread(withUsers: List<SHServerUser>): ConversationThreadOutputDTO {
+        val usersAndSelf = (withUsers + currentUser).distinctBy { it.identifier }
+
+        val existingThread = serverProxy.retrieveThread(
+            usersIdentifiers = usersAndSelf.map { it.identifier }
+        )
+
+        return if (existingThread != null) {
+            existingThread
+        } else {
+            val encryptionDetails = getRecipientEncryptionDetails(
+                usersAndSelf = usersAndSelf
+            )
+            serverProxy.createOrUpdateThread(
+                name = null,
+                recipientsEncryptionDetails = encryptionDetails
+            )
+        }
+    }
+
+    private fun getRecipientEncryptionDetails(
+        usersAndSelf: List<SHServerUser>
+    ): List<RecipientEncryptionDetailsDTO> {
+        val secretKey = SHSymmetricKey()
+        return usersAndSelf.map { user ->
+            val shareable = currentUser.shareable(
+                data = secretKey.secretKeySpec.encoded,
+                with = user,
+                protocolSalt = currentUser.encryptionSalt
+            )
+
+            RecipientEncryptionDetailsDTO(
+                recipientUserIdentifier = user.identifier,
+                ephemeralPublicKey = Base64.getEncoder()
+                    .encodeToString(shareable.ephemeralPublicKeyData),
+                encryptedSecret = Base64.getEncoder().encodeToString(shareable.ciphertext),
+                secretPublicSignature = Base64.getEncoder().encodeToString(shareable.signature),
+                senderPublicSignature = Base64.getEncoder()
+                    .encodeToString(currentUser.publicSignatureData)
+            )
+        }
+    }
 
     private suspend fun getSymmetricKey(threadId: String): SHSymmetricKey? {
         val encryptionDetails = serverProxy.retrieveThread(threadId = threadId)
