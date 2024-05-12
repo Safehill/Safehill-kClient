@@ -1,10 +1,10 @@
 package com.safehill.kclient.controllers
 
-import com.safehill.kclient.api.dtos.SHInteractionsGroupDTO
-import com.safehill.kclient.api.dtos.SHMessageInputDTO
-import com.safehill.kclient.api.dtos.SHMessageOutputDTO
-import com.safehill.kclient.models.SHLocalUser
-import com.safehill.kclient.models.SHServerUser
+import com.safehill.kclient.api.dtos.InteractionsGroupDTO
+import com.safehill.kclient.api.dtos.MessageInputDTO
+import com.safehill.kclient.api.dtos.MessageOutputDTO
+import com.safehill.kclient.models.users.LocalUser
+import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.network.dtos.RecipientEncryptionDetailsDTO
@@ -15,7 +15,7 @@ import java.util.Base64
 
 class UserInteractionController(
     private val serverProxy: ServerProxy,
-    private val currentUser: SHLocalUser,
+    private val currentUser: LocalUser,
 ) {
 
     suspend fun listThreads(): List<ConversationThreadOutputDTO> {
@@ -24,21 +24,21 @@ class UserInteractionController(
 
     suspend fun retrieveLastMessage(
         threadId: String
-    ): SHMessageOutputDTO? {
+    ): MessageOutputDTO? {
         return serverProxy.localServer.retrieveLastMessage(threadId)
     }
 
     suspend fun sendMessage(
         message: String,
         threadId: String
-    ): Result<SHMessageOutputDTO> {
+    ): Result<MessageOutputDTO> {
         return runCatching {
             val symmetricKey = getSymmetricKey(threadId) ?: return Result.failure(
                 InteractionErrors.MissingE2EEDetails(threadId)
             )
             val encryptedMessage =
                 SHEncryptedData(data = message.toByteArray(), symmetricKey).encryptedData
-            val messageDTO = SHMessageInputDTO(
+            val messageDTO = MessageInputDTO(
                 encryptedMessage = encryptedMessage.base64EncodedString(),
                 senderPublicSignature = currentUser.publicSignatureData.base64EncodedString(),
                 inReplyToAssetGlobalIdentifier = null,
@@ -53,7 +53,7 @@ class UserInteractionController(
         before: String?,
         threadId: String,
         limit: Int
-    ): Result<SHInteractionsGroupDTO> {
+    ): Result<InteractionsGroupDTO> {
         return runCatching {
             serverProxy.retrieveInteractions(
                 inGroupId = threadId,
@@ -68,7 +68,7 @@ class UserInteractionController(
         threadId: String,
         limit: Int,
         before: String?
-    ): Result<List<SHMessageOutputDTO>> {
+    ): Result<List<MessageOutputDTO>> {
         return runCatching {
             serverProxy.localServer.retrieveInteractions(
                 inGroupId = threadId,
@@ -80,7 +80,7 @@ class UserInteractionController(
     }
 
 
-    suspend fun setUpThread(withUsers: List<SHServerUser>): ConversationThreadOutputDTO {
+    suspend fun setUpThread(withUsers: List<ServerUser>): ConversationThreadOutputDTO {
         val usersAndSelf = (withUsers + currentUser).distinctBy { it.identifier }
 
         val existingThread = serverProxy.retrieveThread(
@@ -101,7 +101,7 @@ class UserInteractionController(
     }
 
     private fun getRecipientEncryptionDetails(
-        usersAndSelf: List<SHServerUser>
+        usersAndSelf: List<ServerUser>
     ): List<RecipientEncryptionDetailsDTO> {
         val secretKey = SHSymmetricKey()
         return usersAndSelf.map { user ->

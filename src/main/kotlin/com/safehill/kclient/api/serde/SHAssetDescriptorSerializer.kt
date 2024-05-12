@@ -1,7 +1,7 @@
 package com.safehill.kclient.api.serde
 
-import com.safehill.kclient.models.SHAssetDescriptor
-import com.safehill.kclient.models.SHAssetDescriptorImpl
+import com.safehill.kclient.models.assets.AssetDescriptor
+import com.safehill.kclient.models.assets.AssetDescriptorImpl
 import kotlinx.serialization.*
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
@@ -11,23 +11,23 @@ import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.encoding.*
 import java.util.Date
 
-object SHAssetDescriptorSerializer : KSerializer<SHAssetDescriptor> {
-    object SharingInfoSerializer : KSerializer<SHAssetDescriptor.SharingInfo> {
+object SHAssetDescriptorSerializer : KSerializer<AssetDescriptor> {
+    object SharingInfoSerializer : KSerializer<AssetDescriptor.SharingInfo> {
 
-        object GroupInfoSerializer : KSerializer<SHAssetDescriptor.SharingInfo.GroupInfo> {
+        object GroupInfoSerializer : KSerializer<AssetDescriptor.SharingInfo.GroupInfo> {
             override val descriptor: SerialDescriptor = buildClassSerialDescriptor("SHAssetDescriptor.SharingInfo.GroupInfo") {
                 element<String>("name")
                 element<String>("createdAt")
             }
 
-            override fun serialize(encoder: Encoder, value: SHAssetDescriptor.SharingInfo.GroupInfo) {
+            override fun serialize(encoder: Encoder, value: AssetDescriptor.SharingInfo.GroupInfo) {
                 encoder.encodeStructure(descriptor) {
                     value.name?.let { encodeStringElement(descriptor, 0, it) }
                     value.createdAt?.let { encodeSerializableElement(SharingInfoSerializer.descriptor, 1, ISO8601DateSerializer, it) }
                 }
             }
 
-            override fun deserialize(decoder: Decoder): SHAssetDescriptor.SharingInfo.GroupInfo {
+            override fun deserialize(decoder: Decoder): AssetDescriptor.SharingInfo.GroupInfo {
                 return decoder.decodeStructure(descriptor) {
                     var name: String? = null
                     var createdAt: Date? = null
@@ -43,7 +43,7 @@ object SHAssetDescriptorSerializer : KSerializer<SHAssetDescriptor> {
                         }
                     }
 
-                    SHAssetDescriptorImpl.SharingInfoImpl.GroupInfoImpl(
+                    AssetDescriptorImpl.SharingInfoImpl.GroupInfoImpl(
                         name = name,
                         createdAt = createdAt
                     )
@@ -55,10 +55,10 @@ object SHAssetDescriptorSerializer : KSerializer<SHAssetDescriptor> {
         override val descriptor: SerialDescriptor = buildClassSerialDescriptor("SHAssetDescriptor.SharingInfo") {
             element<String>("sharedByUserIdentifier")
             element<Map<String, String>>("sharedWithUserIdentifiersInGroup")
-            element<Map<String, SHAssetDescriptor.SharingInfo.GroupInfo>>("groupInfoById")
+            element<Map<String, AssetDescriptor.SharingInfo.GroupInfo>>("groupInfoById")
         }
 
-        override fun serialize(encoder: Encoder, value: SHAssetDescriptor.SharingInfo) {
+        override fun serialize(encoder: Encoder, value: AssetDescriptor.SharingInfo) {
             encoder.encodeStructure(descriptor) {
                 encodeStringElement(descriptor, 0, value.sharedByUserIdentifier)
                 encodeSerializableElement(descriptor, 1, MapSerializer(String.serializer(), String.serializer()), value.sharedWithUserIdentifiersInGroup)
@@ -66,11 +66,11 @@ object SHAssetDescriptorSerializer : KSerializer<SHAssetDescriptor> {
             }
         }
 
-        override fun deserialize(decoder: Decoder): SHAssetDescriptor.SharingInfo {
+        override fun deserialize(decoder: Decoder): AssetDescriptor.SharingInfo {
             return decoder.decodeStructure(descriptor) {
                 var sharedByUserIdentifier: String? = null
                 var sharedWithUserIdentifiersInGroup: Map<String, String>? = null
-                var groupInfoById: Map<String, SHAssetDescriptor.SharingInfo.GroupInfo>? = null
+                var groupInfoById: Map<String, AssetDescriptor.SharingInfo.GroupInfo>? = null
 
                 loop@ while (true) {
                     when (val index = decodeElementIndex(descriptor)) {
@@ -84,7 +84,7 @@ object SHAssetDescriptorSerializer : KSerializer<SHAssetDescriptor> {
                     }
                 }
 
-                SHAssetDescriptorImpl.SharingInfoImpl(
+                AssetDescriptorImpl.SharingInfoImpl(
                     requireNotNull(sharedByUserIdentifier),
                     requireNotNull(sharedWithUserIdentifiersInGroup),
                     requireNotNull(groupInfoById)
@@ -98,11 +98,11 @@ object SHAssetDescriptorSerializer : KSerializer<SHAssetDescriptor> {
         element<String>("globalIdentifier")
         element<String>("localIdentifier")
         element<String>("creationDate")
-        element<SHAssetDescriptor.UploadState>("uploadState")
-        element<SHAssetDescriptor.SharingInfo>("sharingInfo")
+        element<AssetDescriptor.UploadState>("uploadState")
+        element<AssetDescriptor.SharingInfo>("sharingInfo")
     }
 
-    override fun serialize(encoder: Encoder, value: SHAssetDescriptor) {
+    override fun serialize(encoder: Encoder, value: AssetDescriptor) {
         encoder.encodeStructure(descriptor) {
             encodeStringElement(descriptor, 0, value.globalIdentifier)
             value.localIdentifier?.let { encodeStringElement(descriptor, 1, it) }
@@ -114,13 +114,13 @@ object SHAssetDescriptorSerializer : KSerializer<SHAssetDescriptor> {
         }
     }
 
-    override fun deserialize(decoder: Decoder): SHAssetDescriptor {
+    override fun deserialize(decoder: Decoder): AssetDescriptor {
         return decoder.decodeStructure(descriptor) {
             var globalIdentifier: String? = null
             var localIdentifier: String? = null
             var creationDate: Date? = null
-            var uploadState: SHAssetDescriptor.UploadState? = null
-            var sharingInfo: SHAssetDescriptor.SharingInfo? = null
+            var uploadState: AssetDescriptor.UploadState? = null
+            var sharingInfo: AssetDescriptor.SharingInfo? = null
 
             loop@ while (true) {
                 when (val index = decodeElementIndex(descriptor)) {
@@ -129,14 +129,14 @@ object SHAssetDescriptorSerializer : KSerializer<SHAssetDescriptor> {
                     0 -> globalIdentifier = decodeStringElement(descriptor, 0)
                     1 -> localIdentifier = decodeStringElement(descriptor, 1)
                     2 -> creationDate = decodeSerializableElement(descriptor, 2, ISO8601DateSerializer)
-                    3 -> uploadState = SHAssetDescriptor.UploadState.entries.firstOrNull { it.toString() == decodeStringElement(descriptor, 3) }
+                    3 -> uploadState = AssetDescriptor.UploadState.entries.firstOrNull { it.toString() == decodeStringElement(descriptor, 3) }
                     4 -> sharingInfo = decodeSerializableElement(descriptor, 4, SharingInfoSerializer)
 
                     else -> throw SerializationException("unexpected index $index")
                 }
             }
 
-            SHAssetDescriptorImpl(
+            AssetDescriptorImpl(
                 requireNotNull(globalIdentifier),
                 localIdentifier,
                 creationDate,

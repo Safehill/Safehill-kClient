@@ -1,7 +1,7 @@
 package com.safehill.kclient.api.serde
 
-import com.safehill.kclient.api.dtos.SHAssetOutputDTO
-import com.safehill.kclient.api.dtos.SHAssetVersionOutputDTO
+import com.safehill.kclient.api.dtos.AssetOutputDTO
+import com.safehill.kclient.api.dtos.AssetVersionOutputDTO
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
@@ -11,9 +11,9 @@ import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.encoding.*
 import java.util.Date
 
-object SHServerAssetSerializer : KSerializer<SHAssetOutputDTO> {
+object SHServerAssetSerializer : KSerializer<AssetOutputDTO> {
 
-    object SHServerAssetVersionSerializer : KSerializer<SHAssetVersionOutputDTO> {
+    object SHServerAssetVersionSerializer : KSerializer<AssetVersionOutputDTO> {
         override val descriptor: SerialDescriptor= buildClassSerialDescriptor("SHServerAsset") {
             element<String>("versionName")
             element<ByteArray>("ephemeralPublicKey")
@@ -23,7 +23,7 @@ object SHServerAssetSerializer : KSerializer<SHAssetOutputDTO> {
             element<Int?>("presignedURLExpiresInMinutes")
         }
 
-        override fun deserialize(decoder: Decoder): SHAssetVersionOutputDTO {
+        override fun deserialize(decoder: Decoder): AssetVersionOutputDTO {
             return decoder.decodeStructure(descriptor) {
                 var versionName: String? = null
                 var ephemeralPublicKey: ByteArray? = null
@@ -47,7 +47,7 @@ object SHServerAssetSerializer : KSerializer<SHAssetOutputDTO> {
                     }
                 }
 
-                SHAssetVersionOutputDTO(
+                AssetVersionOutputDTO(
                     requireNotNull(versionName),
                     publicKeyData = requireNotNull(ephemeralPublicKey),
                     publicSignatureData = requireNotNull(publicSignature),
@@ -58,7 +58,7 @@ object SHServerAssetSerializer : KSerializer<SHAssetOutputDTO> {
             }
         }
 
-        override fun serialize(encoder: Encoder, value: SHAssetVersionOutputDTO) {
+        override fun serialize(encoder: Encoder, value: AssetVersionOutputDTO) {
             encoder.encodeStructure(descriptor) {
                 encodeStringElement(descriptor, 0, value.versionName)
                 encodeSerializableElement(descriptor, 1, Base64DataSerializer, value.publicKeyData)
@@ -75,10 +75,10 @@ object SHServerAssetSerializer : KSerializer<SHAssetOutputDTO> {
         element<String>("localIdentifier")
         element<String>("creationDate")
         element<String>("groupId")
-        element<List<SHAssetVersionOutputDTO>>("versions")
+        element<List<AssetVersionOutputDTO>>("versions")
     }
 
-    override fun serialize(encoder: Encoder, value: SHAssetOutputDTO) {
+    override fun serialize(encoder: Encoder, value: AssetOutputDTO) {
         encoder.encodeStructure(descriptor) {
             encodeStringElement(descriptor, 0, value.globalIdentifier)
             value.localIdentifier?.let { encodeStringElement(descriptor, 1, it) }
@@ -88,13 +88,13 @@ object SHServerAssetSerializer : KSerializer<SHAssetOutputDTO> {
         }
     }
 
-    override fun deserialize(decoder: Decoder): SHAssetOutputDTO {
+    override fun deserialize(decoder: Decoder): AssetOutputDTO {
         return decoder.decodeStructure(descriptor) {
             var globalIdentifier: String? = null
             var localIdentifier: String? = null
             var creationDate: Date? = null
             var groupId: String? = null
-            var versions: List<SHAssetVersionOutputDTO>? = null
+            var versions: List<AssetVersionOutputDTO>? = null
 
             loop@ while (true) {
                 when (val index = decodeElementIndex(descriptor)) {
@@ -110,7 +110,7 @@ object SHServerAssetSerializer : KSerializer<SHAssetOutputDTO> {
                 }
             }
 
-            SHAssetOutputDTO(
+            AssetOutputDTO(
                 requireNotNull(globalIdentifier),
                 localIdentifier,
                 creationDate,

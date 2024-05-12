@@ -14,35 +14,35 @@ import com.safehill.kclient.api.dtos.CreateOrUpdateThreadDTO
 import com.safehill.kclient.api.dtos.GetInteractionDTO
 import com.safehill.kclient.api.dtos.HashedPhoneNumber
 import com.safehill.kclient.api.dtos.RetrieveThreadDTO
-import com.safehill.kclient.api.dtos.SHAssetDeleteCriteriaDTO
-import com.safehill.kclient.api.dtos.SHAssetInputDTO
-import com.safehill.kclient.api.dtos.SHAssetOutputDTO
-import com.safehill.kclient.api.dtos.SHAssetVersionInputDTO
-import com.safehill.kclient.api.dtos.SHAuthChallengeRequestDTO
-import com.safehill.kclient.api.dtos.SHAuthChallengeResponseDTO
-import com.safehill.kclient.api.dtos.SHAuthResolvedChallengeDTO
-import com.safehill.kclient.api.dtos.SHAuthResponseDTO
-import com.safehill.kclient.api.dtos.SHInteractionsGroupDTO
-import com.safehill.kclient.api.dtos.SHMessageInputDTO
-import com.safehill.kclient.api.dtos.SHMessageOutputDTO
-import com.safehill.kclient.api.dtos.SHReactionOutputDTO
-import com.safehill.kclient.api.dtos.SHSendCodeToUserRequestDTO
-import com.safehill.kclient.api.dtos.SHUserIdentifiersDTO
-import com.safehill.kclient.api.dtos.SHUserInputDTO
-import com.safehill.kclient.api.dtos.SHUserUpdateDTO
+import com.safehill.kclient.api.dtos.AssetDeleteCriteriaDTO
+import com.safehill.kclient.api.dtos.AssetInputDTO
+import com.safehill.kclient.api.dtos.AssetOutputDTO
+import com.safehill.kclient.api.dtos.AssetVersionInputDTO
+import com.safehill.kclient.api.dtos.AuthChallengeRequestDTO
+import com.safehill.kclient.api.dtos.AuthChallengeResponseDTO
+import com.safehill.kclient.api.dtos.AuthResolvedChallengeDTO
+import com.safehill.kclient.api.dtos.AuthResponseDTO
+import com.safehill.kclient.api.dtos.InteractionsGroupDTO
+import com.safehill.kclient.api.dtos.MessageInputDTO
+import com.safehill.kclient.api.dtos.MessageOutputDTO
+import com.safehill.kclient.api.dtos.ReactionOutputDTO
+import com.safehill.kclient.api.dtos.SendCodeToUserRequestDTO
+import com.safehill.kclient.api.dtos.UserIdentifiersDTO
+import com.safehill.kclient.api.dtos.UserInputDTO
+import com.safehill.kclient.api.dtos.UserUpdateDTO
 import com.safehill.kclient.api.dtos.UserPhoneNumbersDTO
 import com.safehill.kclient.api.dtos.response.SHRemoteUserPhoneNumberMatchDto
 import com.safehill.kclient.api.dtos.response.SHRemoteUserSearchDTO
 import com.safehill.kclient.api.serde.toIso8601String
-import com.safehill.kclient.models.SHAssetDescriptor
-import com.safehill.kclient.models.SHAssetDescriptorUploadState
-import com.safehill.kclient.models.SHAssetQuality
-import com.safehill.kclient.models.SHEncryptedAsset
-import com.safehill.kclient.models.SHLocalUser
-import com.safehill.kclient.models.SHRemoteUser
-import com.safehill.kclient.models.SHServerUser
-import com.safehill.kclient.models.SHShareableEncryptedAsset
-import com.safehill.kclient.models.SHUserReaction
+import com.safehill.kclient.models.assets.AssetDescriptor
+import com.safehill.kclient.models.assets.AssetDescriptorUploadState
+import com.safehill.kclient.models.assets.AssetQuality
+import com.safehill.kclient.models.assets.EncryptedAsset
+import com.safehill.kclient.models.users.LocalUser
+import com.safehill.kclient.models.users.RemoteUser
+import com.safehill.kclient.models.users.ServerUser
+import com.safehill.kclient.models.assets.ShareableEncryptedAsset
+import com.safehill.kclient.models.interactions.UserReaction
 import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.network.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kcrypto.SHCypher
@@ -103,7 +103,7 @@ data class SafehillHttpException(
 var alreadyInstantiated = false
 
 class SafehillApiImpl(
-    override var requestor: SHLocalUser,
+    override var requestor: LocalUser,
     private val environment: ServerEnvironment = ServerEnvironment.Development,
     hostname: String = "localhost"
 ) : SafehillApi {
@@ -127,8 +127,8 @@ class SafehillApiImpl(
     }
 
     @Throws
-    override suspend fun createUser(name: String): SHServerUser {
-        val requestBody = SHUserInputDTO(
+    override suspend fun createUser(name: String): ServerUser {
+        val requestBody = UserInputDTO(
             identifier = requestor.identifier,
             publicKey = Base64.getEncoder().encodeToString(requestor.publicKeyData),
             publicSignature = Base64.getEncoder().encodeToString(requestor.publicSignatureData),
@@ -136,7 +136,7 @@ class SafehillApiImpl(
         )
         return "/users/create".httpPost()
             .body(Gson().toJson(requestBody))
-            .responseObject(SHRemoteUser.Deserializer())
+            .responseObject(RemoteUser.Deserializer())
             .getOrThrow()
     }
 
@@ -144,11 +144,11 @@ class SafehillApiImpl(
         countryCode: Int,
         phoneNumber: Long,
         code: String,
-        medium: SHSendCodeToUserRequestDTO.Medium,
+        medium: SendCodeToUserRequestDTO.Medium,
     ) {
         val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
 
-        val requestBody = SHSendCodeToUserRequestDTO(
+        val requestBody = SendCodeToUserRequestDTO(
             countryCode = countryCode,
             phoneNumber = phoneNumber,
             code = code,
@@ -168,10 +168,10 @@ class SafehillApiImpl(
         name: String?,
         phoneNumber: String?,
         email: String?,
-    ): SHServerUser {
+    ): ServerUser {
         val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
 
-        val requestBody = SHUserUpdateDTO(
+        val requestBody = UserUpdateDTO(
             identifier = null,
             name = name,
             phoneNumber = phoneNumber,
@@ -182,7 +182,7 @@ class SafehillApiImpl(
         return "/users/update".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Gson().toJson(requestBody))
-            .responseObject(SHRemoteUser.Deserializer())
+            .responseObject(RemoteUser.Deserializer())
             .getOrThrow()
     }
 
@@ -202,7 +202,7 @@ class SafehillApiImpl(
     }
 
     @Throws
-    fun solveChallenge(authChallenge: SHAuthChallengeResponseDTO): SHAuthResolvedChallengeDTO {
+    fun solveChallenge(authChallenge: AuthChallengeResponseDTO): AuthResolvedChallengeDTO {
         val serverCrypto = SHRemoteCryptoUser(
             Base64.getDecoder().decode(authChallenge.publicKey),
             Base64.getDecoder().decode(authChallenge.publicSignature)
@@ -227,7 +227,7 @@ class SafehillApiImpl(
         val digest512 = md.digest(decryptedChallenge)
         val signatureForDigest = this.requestor.shUser.sign(digest512)
 
-        return SHAuthResolvedChallengeDTO(
+        return AuthResolvedChallengeDTO(
             userIdentifier = requestor.identifier,
             signedChallenge = Base64.getEncoder().encodeToString(signatureForChallenge),
             digest = Base64.getEncoder().encodeToString(digest512),
@@ -236,13 +236,13 @@ class SafehillApiImpl(
     }
 
     @Throws
-    override suspend fun signIn(): SHAuthResponseDTO {
-        val authRequestBody = SHAuthChallengeRequestDTO(
+    override suspend fun signIn(): AuthResponseDTO {
+        val authRequestBody = AuthChallengeRequestDTO(
             identifier = requestor.identifier,
         )
         val authChallenge = "/signin/challenge/start".httpPost()
             .body(Gson().toJson(authRequestBody))
-            .responseObject(SHAuthChallengeResponseDTO.Deserializer())
+            .responseObject(AuthChallengeResponseDTO.Deserializer())
             .getOrThrow()
 
 
@@ -250,13 +250,13 @@ class SafehillApiImpl(
 
         return "/signin/challenge/verify".httpPost()
             .body(Gson().toJson(solvedChallenge))
-            .responseObject(SHAuthResponseDTO.Deserializer())
+            .responseObject(AuthResponseDTO.Deserializer())
             .getOrThrow()
 
     }
 
     @Throws
-    override suspend fun getUsers(withIdentifiers: List<String>): List<SHRemoteUser> {
+    override suspend fun getUsers(withIdentifiers: List<String>): List<RemoteUser> {
         val bearerToken =
             this.requestor.authToken ?: throw UnAuthorizedException
 
@@ -264,12 +264,12 @@ class SafehillApiImpl(
             return listOf()
         }
 
-        val getUsersRequestBody = SHUserIdentifiersDTO(userIdentifiers = withIdentifiers)
+        val getUsersRequestBody = UserIdentifiersDTO(userIdentifiers = withIdentifiers)
         return "/users/retrieve".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Json.encodeToString(getUsersRequestBody))
             .responseObject(
-                ListSerializer(SHRemoteUser.serializer()),
+                ListSerializer(RemoteUser.serializer()),
                 Json {
                     this.ignoreUnknownKeys = true
                 }
@@ -277,7 +277,7 @@ class SafehillApiImpl(
             .getOrThrow()
     }
 
-    override suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<HashedPhoneNumber>): Map<HashedPhoneNumber, SHRemoteUser> {
+    override suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<HashedPhoneNumber>): Map<HashedPhoneNumber, RemoteUser> {
         val bearerToken =
             this.requestor.authToken ?: throw UnAuthorizedException
 
@@ -295,7 +295,7 @@ class SafehillApiImpl(
     }
 
     @Throws
-    override suspend fun searchUsers(query: String, per: Int, page: Int): List<SHRemoteUser> {
+    override suspend fun searchUsers(query: String, per: Int, page: Int): List<RemoteUser> {
         val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
 
         return "/users/search".httpGet(
@@ -312,34 +312,34 @@ class SafehillApiImpl(
     }
 
     @Throws
-    override suspend fun getAssetDescriptors(): List<SHAssetDescriptor> {
+    override suspend fun getAssetDescriptors(): List<AssetDescriptor> {
         val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
 
         return "/assets/descriptors/retrieve".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .responseObject(SHAssetDescriptor.ListDeserializer())
+            .responseObject(AssetDescriptor.ListDeserializer())
             .getOrThrow()
     }
 
     @Throws
-    override suspend fun getAssetDescriptors(assetGlobalIdentifiers: List<AssetGlobalIdentifier>): List<SHAssetDescriptor> {
+    override suspend fun getAssetDescriptors(assetGlobalIdentifiers: List<AssetGlobalIdentifier>): List<AssetDescriptor> {
         TODO("Not yet implemented")
     }
 
     @Throws
     override suspend fun getAssets(
         globalIdentifiers: List<String>,
-        versions: List<SHAssetQuality>?,
-    ): Map<String, SHEncryptedAsset> {
+        versions: List<AssetQuality>?,
+    ): Map<String, EncryptedAsset> {
         TODO("Not yet implemented")
     }
 
     @Throws
     override suspend fun create(
-        assets: List<SHEncryptedAsset>,
+        assets: List<EncryptedAsset>,
         groupId: String,
-        filterVersions: List<SHAssetQuality>?,
-    ): List<SHAssetOutputDTO> {
+        filterVersions: List<AssetQuality>?,
+    ): List<AssetOutputDTO> {
         if (assets.size > 1) {
             throw NotImplementedError("Current API only supports creating one asset per request")
         }
@@ -348,13 +348,13 @@ class SafehillApiImpl(
         val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
 
         val assetCreatedAt = asset.creationDate ?: run { Date(0) }
-        val requestBody = SHAssetInputDTO(
+        val requestBody = AssetInputDTO(
             asset.globalIdentifier,
             asset.localIdentifier,
             assetCreatedAt.toIso8601String(),
             groupId,
             asset.encryptedVersions.map {
-                SHAssetVersionInputDTO(
+                AssetVersionInputDTO(
                     it.key.toString(),
                     Base64.getEncoder().encodeToString(it.value.publicKeyData),
                     Base64.getEncoder().encodeToString(it.value.publicSignatureData),
@@ -366,12 +366,12 @@ class SafehillApiImpl(
         val shOutput = "/assets/create".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Gson().toJson(requestBody))
-            .responseObject(SHAssetOutputDTO.Deserializer())
+            .responseObject(AssetOutputDTO.Deserializer())
             .getOrThrow()
         return listOf(shOutput)
     }
 
-    override suspend fun share(asset: SHShareableEncryptedAsset) {
+    override suspend fun share(asset: ShareableEncryptedAsset) {
         TODO("Not yet implemented")
     }
 
@@ -456,17 +456,17 @@ class SafehillApiImpl(
     }
 
     override suspend fun upload(
-        serverAsset: SHAssetOutputDTO,
-        asset: SHEncryptedAsset,
-        filterVersions: List<SHAssetQuality>,
+        serverAsset: AssetOutputDTO,
+        asset: EncryptedAsset,
+        filterVersions: List<AssetQuality>,
     ) {
         TODO("Not yet implemented")
     }
 
     override suspend fun markAsset(
         assetGlobalIdentifier: AssetGlobalIdentifier,
-        quality: SHAssetQuality,
-        asState: SHAssetDescriptorUploadState,
+        quality: AssetQuality,
+        asState: AssetDescriptorUploadState,
     ) {
         TODO("Not yet implemented")
     }
@@ -477,7 +477,7 @@ class SafehillApiImpl(
 
         val responseResult = "/assets/delete".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Gson().toJson(SHAssetDeleteCriteriaDTO(globalIdentifiers)))
+            .body(Gson().toJson(AssetDeleteCriteriaDTO(globalIdentifiers)))
             .response()
         return responseResult.getMappingOrThrow { globalIdentifiers }
     }
@@ -498,13 +498,13 @@ class SafehillApiImpl(
     }
 
     override suspend fun addReactions(
-        reactions: List<SHUserReaction>,
+        reactions: List<UserReaction>,
         toGroupId: String
-    ): List<SHReactionOutputDTO> {
+    ): List<ReactionOutputDTO> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun removeReaction(reaction: SHUserReaction, fromGroupId: String) {
+    override suspend fun removeReaction(reaction: UserReaction, fromGroupId: String) {
         TODO("Not yet implemented")
     }
 
@@ -514,7 +514,7 @@ class SafehillApiImpl(
         per: Int,
         page: Int,
         before: String?
-    ): SHInteractionsGroupDTO {
+    ): InteractionsGroupDTO {
         val bearerToken =
             this.requestor.authToken ?: throw HttpException(
                 401,
@@ -531,7 +531,7 @@ class SafehillApiImpl(
         return "interactions/user-threads/$inGroupId".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Json.encodeToString(requestBody))
-            .responseObject<SHInteractionsGroupDTO>(
+            .responseObject<InteractionsGroupDTO>(
                 Json {
                     ignoreUnknownKeys = true
                     explicitNulls = false
@@ -543,9 +543,9 @@ class SafehillApiImpl(
 
     @OptIn(ExperimentalSerializationApi::class)
     override suspend fun addMessages(
-        messages: List<SHMessageInputDTO>,
+        messages: List<MessageInputDTO>,
         groupId: String
-    ): List<SHMessageOutputDTO> {
+    ): List<MessageOutputDTO> {
         require(messages.size == 1) {
             "Can only add one message at a time."
         }
@@ -558,7 +558,7 @@ class SafehillApiImpl(
         return "interactions/user-threads/$groupId/messages".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Json.encodeToString(messages.first()))
-            .responseObject<SHMessageOutputDTO>(
+            .responseObject<MessageOutputDTO>(
                 Json {
                     ignoreUnknownKeys = true
                     explicitNulls = false

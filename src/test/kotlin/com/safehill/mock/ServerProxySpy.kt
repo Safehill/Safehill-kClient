@@ -1,26 +1,5 @@
 package com.safehill.mock
 
-import com.safehill.kclient.api.AssetGlobalIdentifier
-import com.safehill.kclient.api.dtos.HashedPhoneNumber
-import com.safehill.kclient.api.dtos.SHAssetOutputDTO
-import com.safehill.kclient.api.dtos.SHAuthResponseDTO
-import com.safehill.kclient.api.dtos.SHInteractionsGroupDTO
-import com.safehill.kclient.api.dtos.SHMessageInputDTO
-import com.safehill.kclient.api.dtos.SHMessageOutputDTO
-import com.safehill.kclient.api.dtos.SHReactionOutputDTO
-import com.safehill.kclient.api.dtos.SHSendCodeToUserRequestDTO
-import com.safehill.kclient.models.SHAssetDescriptor
-import com.safehill.kclient.models.SHAssetDescriptorUploadState
-import com.safehill.kclient.models.SHAssetQuality
-import com.safehill.kclient.models.SHEncryptedAsset
-import com.safehill.kclient.models.SHRemoteUser
-import com.safehill.kclient.models.SHServerUser
-import com.safehill.kclient.models.SHShareableEncryptedAsset
-import com.safehill.kclient.models.SHUserReaction
-import com.safehill.kclient.network.ServerProxyInterface
-import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
-import com.safehill.kclient.network.dtos.RecipientEncryptionDetailsDTO
-
 // todo fix tests for implementation change
 
 //class ServerProxySpy() : ServerProxyInterface {

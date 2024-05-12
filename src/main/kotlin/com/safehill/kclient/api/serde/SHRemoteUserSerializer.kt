@@ -1,13 +1,13 @@
 package com.safehill.kclient.api.serde
 
-import com.safehill.kclient.models.SHRemoteUser
+import com.safehill.kclient.models.users.RemoteUser
 import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.encoding.*
 
-object SHRemoteUserSerializer : KSerializer<SHRemoteUser> {
+object SHRemoteUserSerializer : KSerializer<RemoteUser> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("SHRemoteUser") {
         element<String>("identifier")
         element<String>("name")
@@ -15,7 +15,7 @@ object SHRemoteUserSerializer : KSerializer<SHRemoteUser> {
         element<ByteArray>("publicSignature")
     }
 
-    override fun serialize(encoder: Encoder, value: SHRemoteUser) {
+    override fun serialize(encoder: Encoder, value: RemoteUser) {
         encoder.encodeStructure(descriptor) {
             encodeStringElement(descriptor, 0, value.identifier)
             encodeStringElement(descriptor, 1, value.name)
@@ -24,7 +24,7 @@ object SHRemoteUserSerializer : KSerializer<SHRemoteUser> {
         }
     }
 
-    override fun deserialize(decoder: Decoder): SHRemoteUser {
+    override fun deserialize(decoder: Decoder): RemoteUser {
         return decoder.decodeStructure(descriptor) {
             var identifier: String? = null
             var name: String? = null
@@ -44,7 +44,7 @@ object SHRemoteUserSerializer : KSerializer<SHRemoteUser> {
                 }
             }
 
-            SHRemoteUser(
+            RemoteUser(
                 requireNotNull(identifier),
                 requireNotNull(name),
                 requireNotNull(publicKeyData),

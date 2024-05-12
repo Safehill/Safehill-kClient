@@ -1,8 +1,8 @@
 package com.safehill.kclient.network
 
 import com.safehill.kclient.api.SafehillApi
-import com.safehill.kclient.api.dtos.SHMessageOutputDTO
-import com.safehill.kclient.models.SHRemoteUser
+import com.safehill.kclient.api.dtos.MessageOutputDTO
+import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
 
 interface LocalServerInterface : SafehillApi {
@@ -15,11 +15,11 @@ interface LocalServerInterface : SafehillApi {
 
     suspend fun createOrUpdateThread(threads: List<ConversationThreadOutputDTO>)
 
-    suspend fun insertMessages(messages: List<SHMessageOutputDTO>, threadId: String)
+    suspend fun insertMessages(messages: List<MessageOutputDTO>, threadId: String)
 
-    suspend fun retrieveLastMessage(threadId: String): SHMessageOutputDTO?
+    suspend fun retrieveLastMessage(threadId: String): MessageOutputDTO?
 
-    suspend fun upsertUsers(remoteUsers: List<SHRemoteUser>)
+    suspend fun upsertUsers(remoteUsers: List<RemoteUser>)
 
     suspend fun deleteThreads(threadIds: List<String>)
 

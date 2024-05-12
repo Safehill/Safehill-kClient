@@ -1,6 +1,6 @@
 package com.safehill.kclient.network.dtos
 
-import com.safehill.kclient.models.SHLocalUser
+import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kcrypto.SHCypher
 import com.safehill.kcrypto.base64.decodeBase64
 import com.safehill.kcrypto.models.SHPublicKey
@@ -17,7 +17,7 @@ data class ConversationThreadOutputDTO(
     val createdAt: String,
     val encryptionDetails: RecipientEncryptionDetailsDTO // for the user making the request
 ) {
-    fun getSymmetricKey(currentUser: SHLocalUser) = SHSymmetricKey(
+    fun getSymmetricKey(currentUser: LocalUser) = SHSymmetricKey(
         SHCypher.decrypt(
             sealedMessage = this.encryptionDetails.toShareablePayload(),
             encryptionKey = currentUser.shUser.key,
