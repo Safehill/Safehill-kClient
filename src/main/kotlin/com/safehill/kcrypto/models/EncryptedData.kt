@@ -1,15 +1,15 @@
 package com.safehill.kcrypto.models
 
-import com.safehill.kcrypto.SHCypher
+import com.safehill.kcrypto.SafehillCypher
 
-class SHEncryptedData(
+class EncryptedData(
     data: ByteArray,
-    key: SHSymmetricKey
+    key: SymmetricKey
 ) {
 
     val privateSecret = key
 
-    val encryptedData = SHCypher.encrypt(
+    val encryptedData = SafehillCypher.encrypt(
         data, key
     )
 
@@ -17,7 +17,7 @@ class SHEncryptedData(
         data: ByteArray
     ) : this(
         data,
-        SHSymmetricKey()
+        SymmetricKey()
     )
 
 

@@ -1,4 +1,4 @@
-package com.safehill.kclient.api.dtos.response
+package com.safehill.kclient.api.dtos
 
 import kotlinx.serialization.Serializable
 

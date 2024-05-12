@@ -31,8 +31,8 @@ import com.safehill.kclient.api.dtos.UserIdentifiersDTO
 import com.safehill.kclient.api.dtos.UserInputDTO
 import com.safehill.kclient.api.dtos.UserUpdateDTO
 import com.safehill.kclient.api.dtos.UserPhoneNumbersDTO
-import com.safehill.kclient.api.dtos.response.SHRemoteUserPhoneNumberMatchDto
-import com.safehill.kclient.api.dtos.response.SHRemoteUserSearchDTO
+import com.safehill.kclient.api.dtos.RemoteUserPhoneNumberMatchDto
+import com.safehill.kclient.api.dtos.RemoteUserSearchDTO
 import com.safehill.kclient.api.serde.toIso8601String
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetDescriptorUploadState
@@ -45,9 +45,9 @@ import com.safehill.kclient.models.assets.ShareableEncryptedAsset
 import com.safehill.kclient.models.interactions.UserReaction
 import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.network.dtos.RecipientEncryptionDetailsDTO
-import com.safehill.kcrypto.SHCypher
-import com.safehill.kcrypto.models.SHRemoteCryptoUser
-import com.safehill.kcrypto.models.SHShareablePayload
+import com.safehill.kcrypto.SafehillCypher
+import com.safehill.kcrypto.models.RemoteCryptoUser
+import com.safehill.kcrypto.models.ShareablePayload
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
@@ -203,11 +203,11 @@ class SafehillApiImpl(
 
     @Throws
     fun solveChallenge(authChallenge: AuthChallengeResponseDTO): AuthResolvedChallengeDTO {
-        val serverCrypto = SHRemoteCryptoUser(
+        val serverCrypto = RemoteCryptoUser(
             Base64.getDecoder().decode(authChallenge.publicKey),
             Base64.getDecoder().decode(authChallenge.publicSignature)
         )
-        val encryptedChallenge = SHShareablePayload(
+        val encryptedChallenge = ShareablePayload(
             ephemeralPublicKeyData = Base64.getDecoder()
                 .decode(authChallenge.ephemeralPublicKey),
             ciphertext = Base64.getDecoder().decode(authChallenge.challenge),
@@ -215,7 +215,7 @@ class SafehillApiImpl(
             null
         )
 
-        val decryptedChallenge = SHCypher.decrypt(
+        val decryptedChallenge = SafehillCypher.decrypt(
             sealedMessage = encryptedChallenge,
             encryptionKey = this.requestor.shUser.key,
             signedBy = serverCrypto.publicSignature,
@@ -289,7 +289,7 @@ class SafehillApiImpl(
         return "/users/retrieve/phone-number".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Json.encodeToString(getUsersRequestBody))
-            .responseObject<SHRemoteUserPhoneNumberMatchDto>()
+            .responseObject<RemoteUserPhoneNumberMatchDto>()
             .getOrThrow()
             .result
     }
@@ -306,7 +306,7 @@ class SafehillApiImpl(
             )
         )
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .responseObject<SHRemoteUserSearchDTO>()
+            .responseObject<RemoteUserSearchDTO>()
             .getOrThrow()
             .items
     }

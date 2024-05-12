@@ -1,7 +1,7 @@
 package com.safehill.kclient.network.dtos
 
 import com.safehill.kcrypto.base64.decodeBase64
-import com.safehill.kcrypto.models.SHShareablePayload
+import com.safehill.kcrypto.models.ShareablePayload
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -12,7 +12,7 @@ data class RecipientEncryptionDetailsDTO(
     val secretPublicSignature: String, // base64EncodedData with the public signature used for the encryption of the secret
     val senderPublicSignature: String // base64EncodedData with the public signature of the user sending it
 ) {
-    fun toShareablePayload() = SHShareablePayload(
+    fun toShareablePayload() = ShareablePayload(
         ephemeralPublicKeyData = this.ephemeralPublicKey.toByteArray().decodeBase64(),
         ciphertext = this.encryptedSecret.toByteArray().decodeBase64(),
         signature = this.secretPublicSignature.toByteArray().decodeBase64(),

@@ -1,11 +1,11 @@
 package com.safehill.kcrypto
 
-import com.safehill.kcrypto.models.SHHash
+import com.safehill.kcrypto.models.SafehillHash
 import org.junit.jupiter.api.Test
 import java.util.*
 import kotlin.test.assertEquals
 
-class SHCryptoUserTests {
+class CryptoUserTests {
 
     @Test
     fun testPrivateKeyEncodeDecode() {
@@ -13,6 +13,6 @@ class SHCryptoUserTests {
             "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEFp2uNurkYUh3U7O9m/wO+Oqcwnisxs97I7EmYuuGh3z4t72rNyI/WZcB+5DITlS4L0ydZhF8FAzv5FLMPmE5lw=="
         val data = Base64.getDecoder().decode(dataBase64)
 
-        assertEquals(SHHash.stringDigest_legacyVersion(data), SHHash.stringDigest(data))
+        assertEquals(SafehillHash.stringDigest_legacyVersion(data), SafehillHash.stringDigest(data))
     }
 }

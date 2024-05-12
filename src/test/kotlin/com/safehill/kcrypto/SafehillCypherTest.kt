@@ -1,21 +1,21 @@
 package com.safehill.kcrypto
 
-import com.safehill.kcrypto.models.SHKeyPair
+import com.safehill.kcrypto.models.SafehillKeyPair
 import org.junit.jupiter.api.Test
 
-class SHCypherTest {
+class SafehillCypherTest {
 
     @Test
     fun `shared secret can be generated between 2 parties`() {
-        val bobKeys = SHKeyPair.generate()
-        val aliceKeys = SHKeyPair.generate()
+        val bobKeys = SafehillKeyPair.generate()
+        val aliceKeys = SafehillKeyPair.generate()
 
-        val sharedKeyForAlice = SHCypher.generatedSharedSecret(
+        val sharedKeyForAlice = SafehillCypher.generatedSharedSecret(
             otherUserPublicKey = bobKeys.public,
             selfPrivateKey = aliceKeys.private
         )
 
-        val sharedKeyForBob = SHCypher.generatedSharedSecret(
+        val sharedKeyForBob = SafehillCypher.generatedSharedSecret(
             otherUserPublicKey = aliceKeys.public,
             selfPrivateKey = bobKeys.private
         )

@@ -11,7 +11,7 @@ import java.security.spec.EncodedKeySpec
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 
-class SHKeyPair {
+class SafehillKeyPair {
     companion object {
         fun generate(): KeyPair {
             val g = KeyPairGenerator.getInstance("EC")
@@ -22,7 +22,7 @@ class SHKeyPair {
     }
 }
 
-class SHPrivateKey {
+class SafehillPrivateKey {
 
     companion object {
         fun from(bytes: ByteArray): PrivateKey {
@@ -33,7 +33,7 @@ class SHPrivateKey {
     }
 }
 
-class SHPublicKey {
+class SafehillPublicKey {
     companion object {
         fun from(bytes: ByteArray): PublicKey {
             val keyFactory = KeyFactory.getInstance("EC")

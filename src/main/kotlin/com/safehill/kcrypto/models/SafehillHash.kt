@@ -3,8 +3,7 @@ package com.safehill.kcrypto.models
 import java.math.BigInteger
 import java.security.MessageDigest
 
-class SHHash {
-
+class SafehillHash {
     companion object {
 
         fun stringDigest_legacyVersion(data: ByteArray): String {

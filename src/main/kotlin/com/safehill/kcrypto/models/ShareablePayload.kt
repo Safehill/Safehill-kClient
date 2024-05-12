@@ -1,16 +1,16 @@
 package com.safehill.kcrypto.models
 
-data class SHShareablePayload(
+data class ShareablePayload(
     val ephemeralPublicKeyData: ByteArray,
     val ciphertext: ByteArray,
     val signature: ByteArray,
-    val recipient: SHCryptoUser?
+    val recipient: CryptoUser?
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as SHShareablePayload
+        other as ShareablePayload
 
         if (!ephemeralPublicKeyData.contentEquals(other.ephemeralPublicKeyData)) return false
         if (!ciphertext.contentEquals(other.ciphertext)) return false

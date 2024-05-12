@@ -1,11 +1,11 @@
 package com.safehill.kcrypto.models
 
-import com.safehill.kcrypto.SHCypher
+import com.safehill.kcrypto.SafehillCypher
 import java.security.KeyPair
 import java.security.PublicKey
 
 
-interface SHCryptoUser {
+interface CryptoUser {
     val publicKey: PublicKey
     val publicSignature: PublicKey
 
@@ -13,31 +13,31 @@ interface SHCryptoUser {
     val publicSignatureData: ByteArray
 }
 
-class SHRemoteCryptoUser(
+class RemoteCryptoUser(
     override val publicKeyData: ByteArray,
     override val publicSignatureData: ByteArray
 ) :
-    SHCryptoUser {
+    CryptoUser {
 
     override val publicKey: PublicKey
         get() {
-            return SHPublicKey.from(this.publicKeyData)
+            return SafehillPublicKey.from(this.publicKeyData)
         }
 
     override val publicSignature: PublicKey
         get() {
-            return SHPublicKey.from(this.publicSignatureData)
+            return SafehillPublicKey.from(this.publicSignatureData)
         }
 
     fun isValidSignature(signature: ByteArray, data: ByteArray): Boolean {
-        return SHSignature.verify(data, signature, this.publicSignature)
+        return SafehillSignature.verify(data, signature, this.publicSignature)
     }
 
 }
 
-class SHLocalCryptoUser(val key: KeyPair, val signature: KeyPair) : SHCryptoUser {
+class LocalCryptoUser(val key: KeyPair, val signature: KeyPair) : CryptoUser {
 
-    constructor() : this(SHKeyPair.generate(), SHKeyPair.generate())
+    constructor() : this(SafehillKeyPair.generate(), SafehillKeyPair.generate())
 
     override val publicKey: PublicKey
         get() {
@@ -61,33 +61,33 @@ class SHLocalCryptoUser(val key: KeyPair, val signature: KeyPair) : SHCryptoUser
 
     val identifier: String
         get() {
-            return SHHash.stringDigest(this.publicSignatureData)
+            return SafehillHash.stringDigest(this.publicSignatureData)
         }
 
     fun sign(data: ByteArray): ByteArray {
-        return SHSignature.sign(data, this.signature.private)
+        return SafehillSignature.sign(data, this.signature.private)
     }
 
 }
 
 
-class SHUserContext(private val user: SHLocalCryptoUser) {
+class SHUserContext(private val user: LocalCryptoUser) {
 
     fun shareable(
         data: ByteArray,
-        with: SHCryptoUser,
+        with: CryptoUser,
         protocolSalt: ByteArray
-    ): SHShareablePayload {
+    ): ShareablePayload {
 
-        val ephemeralKey = SHKeyPair.generate()
-        val encrypted = SHCypher.encrypt(
+        val ephemeralKey = SafehillKeyPair.generate()
+        val encrypted = SafehillCypher.encrypt(
             data,
             with.publicKey,
             ephemeralKey,
             protocolSalt,
             this.user.signature
         )
-        return SHShareablePayload(
+        return ShareablePayload(
             ephemeralKey.public.encoded,
             encrypted.ciphertext,
             encrypted.signature,
@@ -97,16 +97,16 @@ class SHUserContext(private val user: SHLocalCryptoUser) {
 
     fun decrypt(
         data: ByteArray,
-        encryptedSecret: SHShareablePayload,
+        encryptedSecret: ShareablePayload,
         protocolSalt: ByteArray,
-        sender: SHCryptoUser
+        sender: CryptoUser
     ): ByteArray {
-        val secretData = SHCypher.decrypt(
+        val secretData = SafehillCypher.decrypt(
             encryptedSecret,
             this.user.key,
             protocolSalt,
             sender.publicSignature
         )
-        return SHCypher.decrypt(data, secretData)
+        return SafehillCypher.decrypt(data, secretData)
     }
 }

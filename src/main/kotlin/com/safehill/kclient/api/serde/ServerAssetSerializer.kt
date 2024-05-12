@@ -11,9 +11,9 @@ import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.encoding.*
 import java.util.Date
 
-object SHServerAssetSerializer : KSerializer<AssetOutputDTO> {
+object ServerAssetSerializer : KSerializer<AssetOutputDTO> {
 
-    object SHServerAssetVersionSerializer : KSerializer<AssetVersionOutputDTO> {
+    object ServerAssetVersionSerializer : KSerializer<AssetVersionOutputDTO> {
         override val descriptor: SerialDescriptor= buildClassSerialDescriptor("SHServerAsset") {
             element<String>("versionName")
             element<ByteArray>("ephemeralPublicKey")
@@ -84,7 +84,7 @@ object SHServerAssetSerializer : KSerializer<AssetOutputDTO> {
             value.localIdentifier?.let { encodeStringElement(descriptor, 1, it) }
             value.creationDate?.let { encodeSerializableElement(descriptor, 2, ISO8601DateSerializer, it) }
             encodeStringElement(descriptor, 3, value.groupId)
-            encodeSerializableElement(descriptor, 4, ListSerializer(SHServerAssetVersionSerializer), value.versions)
+            encodeSerializableElement(descriptor, 4, ListSerializer(ServerAssetVersionSerializer), value.versions)
         }
     }
 
@@ -104,7 +104,7 @@ object SHServerAssetSerializer : KSerializer<AssetOutputDTO> {
                     1 -> localIdentifier = decodeStringElement(descriptor, 1)
                     2 -> creationDate = decodeSerializableElement(descriptor, 2, ISO8601DateSerializer)
                     3 -> groupId = decodeStringElement(descriptor, 3)
-                    4 -> versions = decodeSerializableElement(descriptor, 4, ListSerializer(SHServerAssetVersionSerializer))
+                    4 -> versions = decodeSerializableElement(descriptor, 4, ListSerializer(ServerAssetVersionSerializer))
 
                     else -> throw SerializationException("unexpected index $index")
                 }

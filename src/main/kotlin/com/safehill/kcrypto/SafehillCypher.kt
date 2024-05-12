@@ -1,10 +1,10 @@
 package com.safehill.kcrypto
 
 import at.favre.lib.hkdf.HKDF
-import com.safehill.kcrypto.models.SHPublicKey
-import com.safehill.kcrypto.models.SHShareablePayload
-import com.safehill.kcrypto.models.SHSignature
-import com.safehill.kcrypto.models.SHSymmetricKey
+import com.safehill.kcrypto.models.SafehillPublicKey
+import com.safehill.kcrypto.models.ShareablePayload
+import com.safehill.kcrypto.models.SafehillSignature
+import com.safehill.kcrypto.models.SymmetricKey
 import com.safehill.kcrypto.models.SignatureVerificationError
 import dev.turingcomplete.kotlinonetimepassword.HmacAlgorithm
 import dev.turingcomplete.kotlinonetimepassword.TimeBasedOneTimePasswordConfig
@@ -24,7 +24,7 @@ import javax.crypto.spec.SecretKeySpec
 // https://stackoverflow.com/questions/59577317/ios-cryptokit-in-java/59658891#59658891
 // https://stackoverflow.com/questions/61332076/cross-platform-aes-encryption-between-ios-and-kotlin-java-using-apples-cryptokit
 
-class SHCypher {
+class SafehillCypher {
 
     companion object {
 
@@ -70,7 +70,7 @@ class SHCypher {
             return code to millisValid
         }
 
-        fun encrypt(message: ByteArray, key: SHSymmetricKey, iv: ByteArray? = null): ByteArray {
+        fun encrypt(message: ByteArray, key: SymmetricKey, iv: ByteArray? = null): ByteArray {
             return this.encrypt(message, key.secretKeySpec.encoded, iv)
         }
 
@@ -102,7 +102,7 @@ class SHCypher {
             ephemeralKey: KeyPair,
             protocolSalt: ByteArray,
             senderSignatureKey: KeyPair
-        ): SHShareablePayload {
+        ): ShareablePayload {
             // Generate a new private key (SHARED SECRET) from the key agreement
 
             val sharedSecretFromKeyAgreement = generatedSharedSecret(
@@ -123,15 +123,15 @@ class SHCypher {
             val cypher = encrypt(message, derivedSymmetricKey)
 
             // Signs the message
-            val signature = SHSignature.sign(
+            val signature = SafehillSignature.sign(
                 cypher + ephemeralKey.public.encoded + receiverPublicKey.encoded,
                 senderSignatureKey.private
             )
 
-            return SHShareablePayload(ephemeralKey.public.encoded, cypher, signature, null)
+            return ShareablePayload(ephemeralKey.public.encoded, cypher, signature, null)
         }
 
-        fun decrypt(cipherText: ByteArray, key: SHSymmetricKey, iv: ByteArray? = null) =
+        fun decrypt(cipherText: ByteArray, key: SymmetricKey, iv: ByteArray? = null) =
             this.decrypt(cipherText, key.secretKeySpec.encoded, iv)
 
         fun decrypt(cipherText: ByteArray, key: ByteArray, iv: ByteArray? = null): ByteArray {
@@ -166,7 +166,7 @@ class SHCypher {
         }
 
         fun decrypt(
-            sealedMessage: SHShareablePayload,
+            sealedMessage: ShareablePayload,
             encryptionKey: KeyPair,
             protocolSalt: ByteArray,
             signedBy: PublicKey,
@@ -183,7 +183,7 @@ class SHCypher {
         }
 
         fun decrypt(
-            sealedMessage: SHShareablePayload,
+            sealedMessage: ShareablePayload,
             userPrivateKey: PrivateKey,
             userPublicKey: PublicKey,
             protocolSalt: ByteArray,
@@ -193,12 +193,12 @@ class SHCypher {
             // Verify the signature matches
             val data =
                 sealedMessage.ciphertext + sealedMessage.ephemeralPublicKeyData + userPublicKey.encoded
-            if (!SHSignature.verify(data, sealedMessage.signature, signedBy)) {
+            if (!SafehillSignature.verify(data, sealedMessage.signature, signedBy)) {
                 throw SignatureVerificationError("Invalid signature")
             }
 
             // Retrieve the shared secret from the key agreement
-            val ephemeralKey: PublicKey = SHPublicKey.from(sealedMessage.ephemeralPublicKeyData)
+            val ephemeralKey: PublicKey = SafehillPublicKey.from(sealedMessage.ephemeralPublicKeyData)
 
             val sharedSecret = generatedSharedSecret(
                 otherUserPublicKey = ephemeralKey,

@@ -9,8 +9,8 @@ import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.network.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kcrypto.base64.base64EncodedString
-import com.safehill.kcrypto.models.SHEncryptedData
-import com.safehill.kcrypto.models.SHSymmetricKey
+import com.safehill.kcrypto.models.EncryptedData
+import com.safehill.kcrypto.models.SymmetricKey
 import java.util.Base64
 
 class UserInteractionController(
@@ -37,7 +37,7 @@ class UserInteractionController(
                 InteractionErrors.MissingE2EEDetails(threadId)
             )
             val encryptedMessage =
-                SHEncryptedData(data = message.toByteArray(), symmetricKey).encryptedData
+                EncryptedData(data = message.toByteArray(), symmetricKey).encryptedData
             val messageDTO = MessageInputDTO(
                 encryptedMessage = encryptedMessage.base64EncodedString(),
                 senderPublicSignature = currentUser.publicSignatureData.base64EncodedString(),
@@ -103,7 +103,7 @@ class UserInteractionController(
     private fun getRecipientEncryptionDetails(
         usersAndSelf: List<ServerUser>
     ): List<RecipientEncryptionDetailsDTO> {
-        val secretKey = SHSymmetricKey()
+        val secretKey = SymmetricKey()
         return usersAndSelf.map { user ->
             val shareable = currentUser.shareable(
                 data = secretKey.secretKeySpec.encoded,
@@ -123,7 +123,7 @@ class UserInteractionController(
         }
     }
 
-    private suspend fun getSymmetricKey(threadId: String): SHSymmetricKey? {
+    private suspend fun getSymmetricKey(threadId: String): SymmetricKey? {
         val encryptionDetails = serverProxy.retrieveThread(threadId = threadId)
         return encryptionDetails?.getSymmetricKey(currentUser)
     }

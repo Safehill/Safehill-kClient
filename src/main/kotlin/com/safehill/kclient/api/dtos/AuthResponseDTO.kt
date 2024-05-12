@@ -1,5 +1,4 @@
 package com.safehill.kclient.api.dtos
-
 import com.github.kittinunf.fuel.core.ResponseDeserializable
 import com.google.gson.Gson
 import com.safehill.kclient.models.users.RemoteUser

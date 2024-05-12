@@ -1,15 +1,15 @@
 package com.safehill.kclient.models.users
 
 import com.safehill.kclient.api.dtos.AuthResponseDTO
-import com.safehill.kcrypto.models.SHCryptoUser
-import com.safehill.kcrypto.models.SHLocalCryptoUser
-import com.safehill.kcrypto.models.SHShareablePayload
+import com.safehill.kcrypto.models.CryptoUser
+import com.safehill.kcrypto.models.LocalCryptoUser
+import com.safehill.kcrypto.models.ShareablePayload
 import com.safehill.kcrypto.models.SHUserContext
 import java.security.PublicKey
 import java.util.Base64
 
 class LocalUser(
-    var shUser: SHLocalCryptoUser,
+    var shUser: LocalCryptoUser,
 ) : ServerUser {
 
     override val identifier: String
@@ -52,17 +52,17 @@ class LocalUser(
 
     fun shareable(
         data: ByteArray,
-        with: SHCryptoUser,
+        with: CryptoUser,
         protocolSalt: ByteArray
-    ): SHShareablePayload {
+    ): ShareablePayload {
         return SHUserContext(this.shUser).shareable(data, with, protocolSalt)
     }
 
     fun decrypted(
         data: ByteArray,
-        encryptedSecret: SHShareablePayload,
+        encryptedSecret: ShareablePayload,
         protocolSalt: ByteArray,
-        receivedFrom: SHCryptoUser
+        receivedFrom: CryptoUser
     ): ByteArray {
         return SHUserContext(this.shUser).decrypt(
             data,
@@ -74,6 +74,6 @@ class LocalUser(
 
     fun regenerateKeys() {
         this.deauthenticate()
-        this.shUser = SHLocalCryptoUser()
+        this.shUser = LocalCryptoUser()
     }
 }

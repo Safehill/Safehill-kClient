@@ -1,6 +1,6 @@
 package com.safehill.kclient.controllers
 
-class SHUserInteractionControllerTest {
+class UserInteractionControllerTest {
 
     // todo fix tests for implementation change
 //    private val serverProxySpy = ServerProxySpy()

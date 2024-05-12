@@ -1,12 +1,12 @@
 package com.safehill.kclient.api.dtos
 
 import com.github.kittinunf.fuel.core.ResponseDeserializable
-import com.safehill.kclient.api.serde.SHServerAssetSerializer
+import com.safehill.kclient.api.serde.ServerAssetSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-@Serializable(with = SHServerAssetSerializer.SHServerAssetVersionSerializer::class)
+@Serializable(with = ServerAssetSerializer.ServerAssetVersionSerializer::class)
 data class AssetVersionOutputDTO(
     val versionName: String,
     @SerialName("ephemeralPublicKey")

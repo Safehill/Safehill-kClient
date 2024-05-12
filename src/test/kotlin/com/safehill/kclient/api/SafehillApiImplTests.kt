@@ -9,8 +9,8 @@ import com.safehill.kclient.models.assets.EncryptedAssetImpl
 import com.safehill.kclient.models.assets.EncryptedAssetVersionImpl
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
-import com.safehill.kcrypto.models.SHKeyPair
-import com.safehill.kcrypto.models.SHLocalCryptoUser
+import com.safehill.kcrypto.models.SafehillKeyPair
+import com.safehill.kcrypto.models.LocalCryptoUser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -26,7 +26,7 @@ class SafehillApiImplTests {
         user: LocalUser? = null
     ): LocalUser {
         val localUser: LocalUser = user ?: run {
-            val cryptoUser = SHLocalCryptoUser()
+            val cryptoUser = LocalCryptoUser()
             LocalUser(cryptoUser)
         }
 
@@ -230,8 +230,8 @@ class SafehillApiImplTests {
     @Test
     fun testAssetAndDescriptorCRUD() {
         val groupId = "sampleGroupId"
-        val assetKey = SHKeyPair.generate()
-        val assetSignature = SHKeyPair.generate()
+        val assetKey = SafehillKeyPair.generate()
+        val assetSignature = SafehillKeyPair.generate()
         val encryptedAsset = EncryptedAssetImpl(
             globalIdentifier = "globalIdentifier",
             localIdentifier = null,
@@ -303,7 +303,7 @@ class SafehillApiImplTests {
 
     @Test
     fun testUnauthorizedGetUsers() {
-        val cryptoUser = SHLocalCryptoUser()
+        val cryptoUser = LocalCryptoUser()
         val localUser = LocalUser(cryptoUser)
         val api = SafehillApiImpl(localUser)
 
@@ -332,7 +332,7 @@ class SafehillApiImplTests {
 
     @Test
     fun testAuthenticateNonExistingUser() {
-        val localUser = LocalUser(SHLocalCryptoUser())
+        val localUser = LocalUser(LocalCryptoUser())
         val api = SafehillApiImpl(localUser)
 
         runBlocking {

@@ -1,6 +1,5 @@
 package com.safehill.kcrypto.models
 
-import java.security.KeyPair
 import java.security.PrivateKey
 import java.security.PublicKey
 import java.security.Signature
@@ -10,7 +9,7 @@ import java.security.Signature
 class SignatureVerificationError(override val message: String) : Error(message) {
 }
 
-class SHSignature {
+class SafehillSignature {
 
     companion object {
         fun sign(message: ByteArray, signaturePrivateKey: PrivateKey): ByteArray {

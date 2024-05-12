@@ -1,14 +1,14 @@
 package com.safehill.kclient.models.users
 
 import com.github.kittinunf.fuel.core.ResponseDeserializable
-import com.safehill.kclient.api.serde.SHRemoteUserSerializer
-import com.safehill.kcrypto.models.SHPublicKey
+import com.safehill.kclient.api.serde.RemoteUserSerializer
+import com.safehill.kcrypto.models.SafehillPublicKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.security.PublicKey
 
-@Serializable(with = SHRemoteUserSerializer::class)
+@Serializable(with = RemoteUserSerializer::class)
 data class RemoteUser(
     override val identifier: String,
     override val name: String,
@@ -18,10 +18,10 @@ data class RemoteUser(
     override val publicSignatureData: ByteArray
 ) : ServerUser {
     override val publicKey: PublicKey
-        get() = SHPublicKey.from(publicKeyData)
+        get() = SafehillPublicKey.from(publicKeyData)
 
     override val publicSignature: PublicKey
-        get() = SHPublicKey.from(publicSignatureData)
+        get() = SafehillPublicKey.from(publicSignatureData)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

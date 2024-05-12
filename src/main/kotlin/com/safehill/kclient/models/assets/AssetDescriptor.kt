@@ -1,12 +1,12 @@
 package com.safehill.kclient.models.assets
 
 import com.github.kittinunf.fuel.core.ResponseDeserializable
-import com.safehill.kclient.api.serde.SHAssetDescriptorSerializer
+import com.safehill.kclient.api.serde.AssetDescriptorSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.util.*
 
-@Serializable(with = SHAssetDescriptorSerializer::class)
+@Serializable(with = AssetDescriptorSerializer::class)
 interface AssetDescriptor : RemoteAssetIdentifiable {
 
     enum class UploadState {
@@ -22,10 +22,10 @@ interface AssetDescriptor : RemoteAssetIdentifiable {
         }
     }
 
-    @Serializable(with = SHAssetDescriptorSerializer.SharingInfoSerializer::class)
+    @Serializable(with = AssetDescriptorSerializer.SharingInfoSerializer::class)
     interface SharingInfo {
 
-        @Serializable(with = SHAssetDescriptorSerializer.SharingInfoSerializer.GroupInfoSerializer::class)
+        @Serializable(with = AssetDescriptorSerializer.SharingInfoSerializer.GroupInfoSerializer::class)
         interface GroupInfo {
             /// The name of the asset group (optional)
             val name: String?

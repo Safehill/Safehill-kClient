@@ -7,7 +7,7 @@ import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.encoding.*
 
-object SHRemoteUserSerializer : KSerializer<RemoteUser> {
+object RemoteUserSerializer : KSerializer<RemoteUser> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("SHRemoteUser") {
         element<String>("identifier")
         element<String>("name")

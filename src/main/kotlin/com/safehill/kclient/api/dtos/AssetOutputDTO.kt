@@ -1,12 +1,12 @@
 package com.safehill.kclient.api.dtos
 
 import com.github.kittinunf.fuel.core.ResponseDeserializable
-import com.safehill.kclient.api.serde.SHServerAssetSerializer
+import com.safehill.kclient.api.serde.ServerAssetSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.util.Date
 
-@Serializable(with = SHServerAssetSerializer::class)
+@Serializable(with = ServerAssetSerializer::class)
 data class AssetOutputDTO(
     val globalIdentifier: String,
     val localIdentifier: String?,

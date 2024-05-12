@@ -11,7 +11,7 @@ import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.encoding.*
 import java.util.Date
 
-object SHAssetDescriptorSerializer : KSerializer<AssetDescriptor> {
+object AssetDescriptorSerializer : KSerializer<AssetDescriptor> {
     object SharingInfoSerializer : KSerializer<AssetDescriptor.SharingInfo> {
 
         object GroupInfoSerializer : KSerializer<AssetDescriptor.SharingInfo.GroupInfo> {
