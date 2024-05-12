@@ -10,6 +10,7 @@ import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.responseObject
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
+import com.safehill.kclient.models.assets.*
 import com.safehill.kclient.models.dtos.CreateOrUpdateThreadDTO
 import com.safehill.kclient.models.dtos.GetInteractionDTO
 import com.safehill.kclient.models.dtos.HashedPhoneNumber
@@ -30,14 +31,9 @@ import com.safehill.kclient.models.dtos.UserPhoneNumbersDTO
 import com.safehill.kclient.models.dtos.RemoteUserPhoneNumberMatchDto
 import com.safehill.kclient.models.dtos.RemoteUserSearchDTO
 import com.safehill.kclient.models.serde.toIso8601String
-import com.safehill.kclient.models.assets.AssetDescriptor
-import com.safehill.kclient.models.assets.AssetDescriptorUploadState
-import com.safehill.kclient.models.assets.AssetQuality
-import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
-import com.safehill.kclient.models.assets.ShareableEncryptedAsset
 import com.safehill.kclient.models.interactions.UserReaction
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO

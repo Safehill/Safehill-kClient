@@ -10,7 +10,7 @@ import java.security.PublicKey
 
 @Serializable(with = RemoteUserSerializer::class)
 data class RemoteUser(
-    override val identifier: String,
+    override val identifier: UserIdentifier,
     override val name: String,
     @SerialName("public_key")
     override val publicKeyData: ByteArray,

@@ -1,6 +1,7 @@
 package com.safehill.kclient.models.users
 
 import com.safehill.kclient.models.dtos.AuthResponseDTO
+import com.safehill.kclient.models.dtos.BearerToken
 import com.safehill.kcrypto.models.CryptoUser
 import com.safehill.kcrypto.models.LocalCryptoUser
 import com.safehill.kcrypto.models.ShareablePayload
@@ -12,7 +13,7 @@ class LocalUser(
     var shUser: LocalCryptoUser,
 ) : ServerUser {
 
-    override val identifier: String
+    override val identifier: UserIdentifier
         get() = this.shUser.identifier
 
     override var name: String = ""
@@ -29,7 +30,7 @@ class LocalUser(
     override val publicSignatureData: ByteArray
         get() = this.shUser.publicSignatureData
 
-    var authToken: String? = null
+    var authToken: BearerToken? = null
     var encryptionSalt: ByteArray = byteArrayOf()
 
     private fun updateUserDetails(given: ServerUser?) {
