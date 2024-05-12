@@ -1,6 +1,6 @@
 package com.safehill.kclient.models.users
 
-import com.safehill.kclient.api.dtos.AuthResponseDTO
+import com.safehill.kclient.models.dtos.AuthResponseDTO
 import com.safehill.kcrypto.models.CryptoUser
 import com.safehill.kcrypto.models.LocalCryptoUser
 import com.safehill.kcrypto.models.ShareablePayload

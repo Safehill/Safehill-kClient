@@ -2,14 +2,14 @@ package com.safehill.kclient.network
 
 import com.safehill.kclient.api.AssetGlobalIdentifier
 import com.safehill.kclient.api.SafehillApi
-import com.safehill.kclient.api.dtos.HashedPhoneNumber
-import com.safehill.kclient.api.dtos.AssetOutputDTO
-import com.safehill.kclient.api.dtos.AuthResponseDTO
-import com.safehill.kclient.api.dtos.InteractionsGroupDTO
-import com.safehill.kclient.api.dtos.MessageInputDTO
-import com.safehill.kclient.api.dtos.MessageOutputDTO
-import com.safehill.kclient.api.dtos.ReactionOutputDTO
-import com.safehill.kclient.api.dtos.SendCodeToUserRequestDTO
+import com.safehill.kclient.models.dtos.HashedPhoneNumber
+import com.safehill.kclient.models.dtos.AssetOutputDTO
+import com.safehill.kclient.models.dtos.AuthResponseDTO
+import com.safehill.kclient.models.dtos.InteractionsGroupDTO
+import com.safehill.kclient.models.dtos.MessageInputDTO
+import com.safehill.kclient.models.dtos.MessageOutputDTO
+import com.safehill.kclient.models.dtos.ReactionOutputDTO
+import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetDescriptorUploadState
 import com.safehill.kclient.models.assets.AssetQuality
@@ -85,7 +85,7 @@ class ServerProxy(
         assets: List<EncryptedAsset>,
         groupId: String,
         filterVersions: List<AssetQuality>?
-    ): List<AssetOutputDTO> {
+    ): List<com.safehill.kclient.models.dtos.AssetOutputDTO> {
         TODO("Not yet implemented")
     }
 
@@ -124,7 +124,7 @@ class ServerProxy(
     }
 
     override suspend fun upload(
-        serverAsset: AssetOutputDTO,
+        serverAsset: com.safehill.kclient.models.dtos.AssetOutputDTO,
         asset: EncryptedAsset,
         filterVersions: List<AssetQuality>
     ) {

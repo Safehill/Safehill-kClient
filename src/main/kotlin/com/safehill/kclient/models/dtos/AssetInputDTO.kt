@@ -1,4 +1,4 @@
-package com.safehill.kclient.api.dtos
+package com.safehill.kclient.models.dtos
 
 import kotlinx.serialization.Serializable
 
@@ -14,7 +14,7 @@ data class AssetInputDTO(
     // Sending this information in this payload avoids an extra unnecessary call to /share with sefl
     // If  no groupId was provided, it was a single-asset upload, so the identifier can be safely generated on server
     val groupId: String?,
-    val versions: List<AssetVersionInputDTO>,
+    val versions: List<com.safehill.kclient.models.dtos.AssetVersionInputDTO>,
     // If set to true destroys all sharing information for the existing asset version, if one with the same name exists
     val forceUpdateVersions: Boolean? = false
 )

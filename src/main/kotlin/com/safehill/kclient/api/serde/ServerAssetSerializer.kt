@@ -1,7 +1,7 @@
 package com.safehill.kclient.api.serde
 
-import com.safehill.kclient.api.dtos.AssetOutputDTO
-import com.safehill.kclient.api.dtos.AssetVersionOutputDTO
+import com.safehill.kclient.models.dtos.AssetOutputDTO
+import com.safehill.kclient.models.dtos.AssetVersionOutputDTO
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
@@ -11,7 +11,7 @@ import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.encoding.*
 import java.util.Date
 
-object ServerAssetSerializer : KSerializer<AssetOutputDTO> {
+object ServerAssetSerializer : KSerializer<com.safehill.kclient.models.dtos.AssetOutputDTO> {
 
     object ServerAssetVersionSerializer : KSerializer<AssetVersionOutputDTO> {
         override val descriptor: SerialDescriptor= buildClassSerialDescriptor("SHServerAsset") {
@@ -78,7 +78,7 @@ object ServerAssetSerializer : KSerializer<AssetOutputDTO> {
         element<List<AssetVersionOutputDTO>>("versions")
     }
 
-    override fun serialize(encoder: Encoder, value: AssetOutputDTO) {
+    override fun serialize(encoder: Encoder, value: com.safehill.kclient.models.dtos.AssetOutputDTO) {
         encoder.encodeStructure(descriptor) {
             encodeStringElement(descriptor, 0, value.globalIdentifier)
             value.localIdentifier?.let { encodeStringElement(descriptor, 1, it) }
@@ -88,7 +88,7 @@ object ServerAssetSerializer : KSerializer<AssetOutputDTO> {
         }
     }
 
-    override fun deserialize(decoder: Decoder): AssetOutputDTO {
+    override fun deserialize(decoder: Decoder): com.safehill.kclient.models.dtos.AssetOutputDTO {
         return decoder.decodeStructure(descriptor) {
             var globalIdentifier: String? = null
             var localIdentifier: String? = null
@@ -110,7 +110,7 @@ object ServerAssetSerializer : KSerializer<AssetOutputDTO> {
                 }
             }
 
-            AssetOutputDTO(
+            com.safehill.kclient.models.dtos.AssetOutputDTO(
                 requireNotNull(globalIdentifier),
                 localIdentifier,
                 creationDate,

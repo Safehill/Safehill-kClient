@@ -1,8 +1,8 @@
 package com.safehill.kcrypto
 
 import com.safehill.kclient.api.SafehillApiImpl
-import com.safehill.kclient.api.dtos.AuthChallengeResponseDTO
-import com.safehill.kclient.api.dtos.AuthResolvedChallengeDTO
+import com.safehill.kclient.models.dtos.AuthChallengeResponseDTO
+import com.safehill.kclient.models.dtos.AuthResolvedChallengeDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kcrypto.models.SafehillKeyPair
 import com.safehill.kcrypto.models.LocalCryptoUser

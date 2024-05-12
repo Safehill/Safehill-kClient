@@ -1,4 +1,4 @@
-package com.safehill.kclient.api.dtos
+package com.safehill.kclient.models.dtos
 
 import com.google.gson.annotations.SerializedName
 import kotlinx.serialization.Serializable

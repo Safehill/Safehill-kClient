@@ -1,8 +1,8 @@
 package com.safehill.kclient.api
 
-import com.safehill.kclient.api.dtos.AssetOutputDTO
-import com.safehill.kclient.api.dtos.AuthResponseDTO
-import com.safehill.kclient.api.dtos.SendCodeToUserRequestDTO
+import com.safehill.kclient.models.dtos.AssetOutputDTO
+import com.safehill.kclient.models.dtos.AuthResponseDTO
+import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAssetImpl
@@ -105,7 +105,7 @@ class SafehillApiImplTests {
     private suspend fun deleteAssets(
         coroutineScope: CoroutineScope,
         localUser: LocalUser,
-        assets: List<AssetOutputDTO>
+        assets: List<com.safehill.kclient.models.dtos.AssetOutputDTO>
     ) {
         var error: Exception? = null
 
@@ -256,7 +256,7 @@ class SafehillApiImplTests {
 
             val api = SafehillApiImpl(user)
 
-            var createdAsset: AssetOutputDTO? = null
+            var createdAsset: com.safehill.kclient.models.dtos.AssetOutputDTO? = null
             var error: Exception? = null
             val createJob = launch {
                 try {

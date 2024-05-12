@@ -1,7 +1,7 @@
 package com.safehill.kclient.network
 
 import com.safehill.kclient.api.SafehillApi
-import com.safehill.kclient.api.dtos.MessageOutputDTO
+import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
 

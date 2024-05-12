@@ -10,29 +10,25 @@ import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.responseObject
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
-import com.safehill.kclient.api.dtos.CreateOrUpdateThreadDTO
-import com.safehill.kclient.api.dtos.GetInteractionDTO
-import com.safehill.kclient.api.dtos.HashedPhoneNumber
-import com.safehill.kclient.api.dtos.RetrieveThreadDTO
-import com.safehill.kclient.api.dtos.AssetDeleteCriteriaDTO
-import com.safehill.kclient.api.dtos.AssetInputDTO
-import com.safehill.kclient.api.dtos.AssetOutputDTO
-import com.safehill.kclient.api.dtos.AssetVersionInputDTO
-import com.safehill.kclient.api.dtos.AuthChallengeRequestDTO
-import com.safehill.kclient.api.dtos.AuthChallengeResponseDTO
-import com.safehill.kclient.api.dtos.AuthResolvedChallengeDTO
-import com.safehill.kclient.api.dtos.AuthResponseDTO
-import com.safehill.kclient.api.dtos.InteractionsGroupDTO
-import com.safehill.kclient.api.dtos.MessageInputDTO
-import com.safehill.kclient.api.dtos.MessageOutputDTO
-import com.safehill.kclient.api.dtos.ReactionOutputDTO
-import com.safehill.kclient.api.dtos.SendCodeToUserRequestDTO
-import com.safehill.kclient.api.dtos.UserIdentifiersDTO
-import com.safehill.kclient.api.dtos.UserInputDTO
-import com.safehill.kclient.api.dtos.UserUpdateDTO
-import com.safehill.kclient.api.dtos.UserPhoneNumbersDTO
-import com.safehill.kclient.api.dtos.RemoteUserPhoneNumberMatchDto
-import com.safehill.kclient.api.dtos.RemoteUserSearchDTO
+import com.safehill.kclient.models.dtos.CreateOrUpdateThreadDTO
+import com.safehill.kclient.models.dtos.GetInteractionDTO
+import com.safehill.kclient.models.dtos.HashedPhoneNumber
+import com.safehill.kclient.models.dtos.RetrieveThreadDTO
+import com.safehill.kclient.models.dtos.AuthChallengeRequestDTO
+import com.safehill.kclient.models.dtos.AuthChallengeResponseDTO
+import com.safehill.kclient.models.dtos.AuthResolvedChallengeDTO
+import com.safehill.kclient.models.dtos.AuthResponseDTO
+import com.safehill.kclient.models.dtos.InteractionsGroupDTO
+import com.safehill.kclient.models.dtos.MessageInputDTO
+import com.safehill.kclient.models.dtos.MessageOutputDTO
+import com.safehill.kclient.models.dtos.ReactionOutputDTO
+import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
+import com.safehill.kclient.models.dtos.UserIdentifiersDTO
+import com.safehill.kclient.models.dtos.UserInputDTO
+import com.safehill.kclient.models.dtos.UserUpdateDTO
+import com.safehill.kclient.models.dtos.UserPhoneNumbersDTO
+import com.safehill.kclient.models.dtos.RemoteUserPhoneNumberMatchDto
+import com.safehill.kclient.models.dtos.RemoteUserSearchDTO
 import com.safehill.kclient.api.serde.toIso8601String
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetDescriptorUploadState
@@ -339,7 +335,7 @@ class SafehillApiImpl(
         assets: List<EncryptedAsset>,
         groupId: String,
         filterVersions: List<AssetQuality>?,
-    ): List<AssetOutputDTO> {
+    ): List<com.safehill.kclient.models.dtos.AssetOutputDTO> {
         if (assets.size > 1) {
             throw NotImplementedError("Current API only supports creating one asset per request")
         }
@@ -348,13 +344,13 @@ class SafehillApiImpl(
         val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
 
         val assetCreatedAt = asset.creationDate ?: run { Date(0) }
-        val requestBody = AssetInputDTO(
+        val requestBody = com.safehill.kclient.models.dtos.AssetInputDTO(
             asset.globalIdentifier,
             asset.localIdentifier,
             assetCreatedAt.toIso8601String(),
             groupId,
             asset.encryptedVersions.map {
-                AssetVersionInputDTO(
+                com.safehill.kclient.models.dtos.AssetVersionInputDTO(
                     it.key.toString(),
                     Base64.getEncoder().encodeToString(it.value.publicKeyData),
                     Base64.getEncoder().encodeToString(it.value.publicSignatureData),
@@ -366,7 +362,7 @@ class SafehillApiImpl(
         val shOutput = "/assets/create".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Gson().toJson(requestBody))
-            .responseObject(AssetOutputDTO.Deserializer())
+            .responseObject(com.safehill.kclient.models.dtos.AssetOutputDTO.Deserializer())
             .getOrThrow()
         return listOf(shOutput)
     }
@@ -456,7 +452,7 @@ class SafehillApiImpl(
     }
 
     override suspend fun upload(
-        serverAsset: AssetOutputDTO,
+        serverAsset: com.safehill.kclient.models.dtos.AssetOutputDTO,
         asset: EncryptedAsset,
         filterVersions: List<AssetQuality>,
     ) {
@@ -477,7 +473,7 @@ class SafehillApiImpl(
 
         val responseResult = "/assets/delete".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Gson().toJson(AssetDeleteCriteriaDTO(globalIdentifiers)))
+            .body(Gson().toJson(com.safehill.kclient.models.dtos.AssetDeleteCriteriaDTO(globalIdentifiers)))
             .response()
         return responseResult.getMappingOrThrow { globalIdentifiers }
     }

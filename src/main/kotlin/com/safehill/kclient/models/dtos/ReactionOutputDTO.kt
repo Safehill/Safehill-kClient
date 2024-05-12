@@ -1,4 +1,4 @@
-package com.safehill.kclient.api.dtos
+package com.safehill.kclient.models.dtos
 
 import com.safehill.kclient.models.interactions.ReactionType
 import com.safehill.kclient.models.interactions.UserReaction

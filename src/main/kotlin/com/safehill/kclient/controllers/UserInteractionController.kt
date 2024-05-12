@@ -1,8 +1,8 @@
 package com.safehill.kclient.controllers
 
-import com.safehill.kclient.api.dtos.InteractionsGroupDTO
-import com.safehill.kclient.api.dtos.MessageInputDTO
-import com.safehill.kclient.api.dtos.MessageOutputDTO
+import com.safehill.kclient.models.dtos.InteractionsGroupDTO
+import com.safehill.kclient.models.dtos.MessageInputDTO
+import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.ServerProxy
