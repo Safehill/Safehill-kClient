@@ -3,7 +3,6 @@ package com.safehill.kclient.network
 import com.safehill.kclient.api.AssetGlobalIdentifier
 import com.safehill.kclient.api.SafehillApi
 import com.safehill.kclient.models.dtos.HashedPhoneNumber
-import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.dtos.AuthResponseDTO
 import com.safehill.kclient.models.dtos.InteractionsGroupDTO
 import com.safehill.kclient.models.dtos.MessageInputDTO
@@ -19,8 +18,8 @@ import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.assets.ShareableEncryptedAsset
 import com.safehill.kclient.models.interactions.UserReaction
-import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
-import com.safehill.kclient.network.dtos.RecipientEncryptionDetailsDTO
+import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
+import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 
 class ServerProxy(
     val localServer: LocalServerInterface,

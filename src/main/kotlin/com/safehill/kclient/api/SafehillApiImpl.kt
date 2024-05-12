@@ -39,8 +39,8 @@ import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.assets.ShareableEncryptedAsset
 import com.safehill.kclient.models.interactions.UserReaction
-import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
-import com.safehill.kclient.network.dtos.RecipientEncryptionDetailsDTO
+import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
+import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kcrypto.SafehillCypher
 import com.safehill.kcrypto.models.RemoteCryptoUser
 import com.safehill.kcrypto.models.ShareablePayload

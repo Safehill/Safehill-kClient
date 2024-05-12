@@ -6,8 +6,8 @@ import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.ServerProxy
-import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
-import com.safehill.kclient.network.dtos.RecipientEncryptionDetailsDTO
+import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
+import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kcrypto.base64.base64EncodedString
 import com.safehill.kcrypto.models.EncryptedData
 import com.safehill.kcrypto.models.SymmetricKey

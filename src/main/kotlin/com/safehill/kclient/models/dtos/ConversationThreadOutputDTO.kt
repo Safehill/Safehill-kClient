@@ -1,4 +1,4 @@
-package com.safehill.kclient.network.dtos
+package com.safehill.kclient.models.dtos
 
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kcrypto.SafehillCypher

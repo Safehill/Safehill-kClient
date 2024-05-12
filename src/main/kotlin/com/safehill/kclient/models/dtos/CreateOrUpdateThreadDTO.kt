@@ -1,6 +1,5 @@
 package com.safehill.kclient.models.dtos
 
-import com.safehill.kclient.network.dtos.RecipientEncryptionDetailsDTO
 import kotlinx.serialization.Serializable
 
 @Serializable

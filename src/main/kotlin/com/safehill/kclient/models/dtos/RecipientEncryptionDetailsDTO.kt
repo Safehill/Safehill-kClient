@@ -1,4 +1,4 @@
-package com.safehill.kclient.network.dtos
+package com.safehill.kclient.models.dtos
 
 import com.safehill.kcrypto.base64.decodeBase64
 import com.safehill.kcrypto.models.ShareablePayload
