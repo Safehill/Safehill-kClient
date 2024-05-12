@@ -10,33 +10,39 @@ import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.responseObject
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
-import com.safehill.kclient.models.assets.*
-import com.safehill.kclient.models.dtos.CreateOrUpdateThreadDTO
-import com.safehill.kclient.models.dtos.GetInteractionDTO
-import com.safehill.kclient.models.dtos.HashedPhoneNumber
-import com.safehill.kclient.models.dtos.RetrieveThreadDTO
+import com.safehill.kclient.models.assets.AssetDescriptor
+import com.safehill.kclient.models.assets.AssetDescriptorUploadState
+import com.safehill.kclient.models.assets.AssetGlobalIdentifier
+import com.safehill.kclient.models.assets.AssetQuality
+import com.safehill.kclient.models.assets.EncryptedAsset
+import com.safehill.kclient.models.assets.ShareableEncryptedAsset
 import com.safehill.kclient.models.dtos.AuthChallengeRequestDTO
 import com.safehill.kclient.models.dtos.AuthChallengeResponseDTO
 import com.safehill.kclient.models.dtos.AuthResolvedChallengeDTO
 import com.safehill.kclient.models.dtos.AuthResponseDTO
+import com.safehill.kclient.models.dtos.ConversationThreadAssetDTO
+import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
+import com.safehill.kclient.models.dtos.CreateOrUpdateThreadDTO
+import com.safehill.kclient.models.dtos.GetInteractionDTO
+import com.safehill.kclient.models.dtos.HashedPhoneNumber
 import com.safehill.kclient.models.dtos.InteractionsGroupDTO
 import com.safehill.kclient.models.dtos.MessageInputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.dtos.ReactionOutputDTO
+import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
+import com.safehill.kclient.models.dtos.RemoteUserPhoneNumberMatchDto
+import com.safehill.kclient.models.dtos.RemoteUserSearchDTO
+import com.safehill.kclient.models.dtos.RetrieveThreadDTO
 import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
 import com.safehill.kclient.models.dtos.UserIdentifiersDTO
 import com.safehill.kclient.models.dtos.UserInputDTO
-import com.safehill.kclient.models.dtos.UserUpdateDTO
 import com.safehill.kclient.models.dtos.UserPhoneNumbersDTO
-import com.safehill.kclient.models.dtos.RemoteUserPhoneNumberMatchDto
-import com.safehill.kclient.models.dtos.RemoteUserSearchDTO
+import com.safehill.kclient.models.dtos.UserUpdateDTO
+import com.safehill.kclient.models.interactions.UserReaction
 import com.safehill.kclient.models.serde.toIso8601String
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
-import com.safehill.kclient.models.interactions.UserReaction
-import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
-import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kcrypto.SafehillCypher
 import com.safehill.kcrypto.models.RemoteCryptoUser
 import com.safehill.kcrypto.models.ShareablePayload
@@ -316,6 +322,15 @@ class SafehillApiImpl(
     @Throws
     override suspend fun getAssetDescriptors(assetGlobalIdentifiers: List<AssetGlobalIdentifier>): List<AssetDescriptor> {
         TODO("Not yet implemented")
+    }
+
+    override suspend fun getAssets(threadId: String): List<ConversationThreadAssetDTO> {
+        val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
+
+        return "/threads/retrieve/$threadId/assets".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .responseObject(ListSerializer(ConversationThreadAssetDTO.serializer()))
+            .getOrThrow()
     }
 
     @Throws
