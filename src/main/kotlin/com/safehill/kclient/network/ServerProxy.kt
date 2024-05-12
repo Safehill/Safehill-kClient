@@ -1,7 +1,5 @@
 package com.safehill.kclient.network
 
-import com.safehill.kclient.api.AssetGlobalIdentifier
-import com.safehill.kclient.api.SafehillApi
 import com.safehill.kclient.models.dtos.HashedPhoneNumber
 import com.safehill.kclient.models.dtos.AuthResponseDTO
 import com.safehill.kclient.models.dtos.InteractionsGroupDTO

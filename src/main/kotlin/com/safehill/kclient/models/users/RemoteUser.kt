@@ -1,7 +1,7 @@
 package com.safehill.kclient.models.users
 
 import com.github.kittinunf.fuel.core.ResponseDeserializable
-import com.safehill.kclient.api.serde.RemoteUserSerializer
+import com.safehill.kclient.models.serde.RemoteUserSerializer
 import com.safehill.kcrypto.models.SafehillPublicKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

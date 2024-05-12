@@ -1,4 +1,4 @@
-package com.safehill.kclient.api
+package com.safehill.kclient.network
 
 import com.safehill.kclient.models.dtos.HashedPhoneNumber
 import com.safehill.kclient.models.dtos.AuthResponseDTO

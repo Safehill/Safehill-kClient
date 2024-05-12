@@ -1,7 +1,7 @@
 package com.safehill.kclient.models.assets
 
 import com.github.kittinunf.fuel.core.ResponseDeserializable
-import com.safehill.kclient.api.serde.AssetDescriptorSerializer
+import com.safehill.kclient.models.serde.AssetDescriptorSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.util.*

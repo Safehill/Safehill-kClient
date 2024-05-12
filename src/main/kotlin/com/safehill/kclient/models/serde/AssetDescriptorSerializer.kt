@@ -1,4 +1,4 @@
-package com.safehill.kclient.api.serde
+package com.safehill.kclient.models.serde
 
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetDescriptorImpl
@@ -108,7 +108,8 @@ object AssetDescriptorSerializer : KSerializer<AssetDescriptor> {
             value.localIdentifier?.let { encodeStringElement(descriptor, 1, it) }
             value.creationDate?.let { encodeSerializableElement(descriptor, 2, ISO8601DateSerializer, it) }
             encodeStringElement(descriptor, 3, value.uploadState.toString())
-            encodeSerializableElement(descriptor, 4, SharingInfoSerializer,
+            encodeSerializableElement(
+                descriptor, 4, SharingInfoSerializer,
                 value.sharingInfo
             )
         }
@@ -129,7 +130,8 @@ object AssetDescriptorSerializer : KSerializer<AssetDescriptor> {
                     0 -> globalIdentifier = decodeStringElement(descriptor, 0)
                     1 -> localIdentifier = decodeStringElement(descriptor, 1)
                     2 -> creationDate = decodeSerializableElement(descriptor, 2, ISO8601DateSerializer)
-                    3 -> uploadState = AssetDescriptor.UploadState.entries.firstOrNull { it.toString() == decodeStringElement(descriptor, 3) }
+                    3 -> uploadState = AssetDescriptor.UploadState.entries.firstOrNull { it.toString() == decodeStringElement(
+                        descriptor, 3) }
                     4 -> sharingInfo = decodeSerializableElement(descriptor, 4, SharingInfoSerializer)
 
                     else -> throw SerializationException("unexpected index $index")

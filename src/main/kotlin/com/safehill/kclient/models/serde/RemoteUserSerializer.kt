@@ -1,4 +1,4 @@
-package com.safehill.kclient.api.serde
+package com.safehill.kclient.models.serde
 
 import com.safehill.kclient.models.users.RemoteUser
 import kotlinx.serialization.*

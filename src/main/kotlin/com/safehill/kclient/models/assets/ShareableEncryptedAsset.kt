@@ -1,6 +1,6 @@
 package com.safehill.kclient.models.assets
 
-import com.safehill.kclient.api.AssetGlobalIdentifier
+import com.safehill.kclient.network.AssetGlobalIdentifier
 
 interface ShareableEncryptedAsset {
     val globalIdentifier: AssetGlobalIdentifier

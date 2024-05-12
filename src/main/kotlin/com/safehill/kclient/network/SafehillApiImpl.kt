@@ -1,4 +1,4 @@
-package com.safehill.kclient.api
+package com.safehill.kclient.network
 
 import com.github.kittinunf.fuel.core.FuelManager
 import com.github.kittinunf.fuel.core.HttpException
@@ -29,7 +29,7 @@ import com.safehill.kclient.models.dtos.UserUpdateDTO
 import com.safehill.kclient.models.dtos.UserPhoneNumbersDTO
 import com.safehill.kclient.models.dtos.RemoteUserPhoneNumberMatchDto
 import com.safehill.kclient.models.dtos.RemoteUserSearchDTO
-import com.safehill.kclient.api.serde.toIso8601String
+import com.safehill.kclient.models.serde.toIso8601String
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetDescriptorUploadState
 import com.safehill.kclient.models.assets.AssetQuality
