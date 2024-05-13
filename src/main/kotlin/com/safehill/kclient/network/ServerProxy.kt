@@ -2,30 +2,29 @@ package com.safehill.kclient.network
 
 import com.safehill.kclient.api.AssetGlobalIdentifier
 import com.safehill.kclient.api.SafehillApi
-import com.safehill.kclient.api.dtos.HashedPhoneNumber
-import com.safehill.kclient.api.dtos.SHAssetOutputDTO
-import com.safehill.kclient.api.dtos.SHAuthResponseDTO
-import com.safehill.kclient.api.dtos.SHInteractionsGroupDTO
-import com.safehill.kclient.api.dtos.SHMessageInputDTO
-import com.safehill.kclient.api.dtos.SHMessageOutputDTO
-import com.safehill.kclient.api.dtos.SHReactionOutputDTO
-import com.safehill.kclient.api.dtos.SHSendCodeToUserRequestDTO
-import com.safehill.kclient.models.SHAssetDescriptor
-import com.safehill.kclient.models.SHAssetDescriptorUploadState
-import com.safehill.kclient.models.SHAssetQuality
-import com.safehill.kclient.models.SHEncryptedAsset
-import com.safehill.kclient.models.SHLocalUser
-import com.safehill.kclient.models.SHRemoteUser
-import com.safehill.kclient.models.SHServerUser
-import com.safehill.kclient.models.SHShareableEncryptedAsset
-import com.safehill.kclient.models.SHUserReaction
-import com.safehill.kclient.network.dtos.ConversationThreadOutputDTO
-import com.safehill.kclient.network.dtos.RecipientEncryptionDetailsDTO
+import com.safehill.kclient.models.dtos.HashedPhoneNumber
+import com.safehill.kclient.models.dtos.AuthResponseDTO
+import com.safehill.kclient.models.dtos.InteractionsGroupDTO
+import com.safehill.kclient.models.dtos.MessageInputDTO
+import com.safehill.kclient.models.dtos.MessageOutputDTO
+import com.safehill.kclient.models.dtos.ReactionOutputDTO
+import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
+import com.safehill.kclient.models.assets.AssetDescriptor
+import com.safehill.kclient.models.assets.AssetDescriptorUploadState
+import com.safehill.kclient.models.assets.AssetQuality
+import com.safehill.kclient.models.assets.EncryptedAsset
+import com.safehill.kclient.models.users.LocalUser
+import com.safehill.kclient.models.users.RemoteUser
+import com.safehill.kclient.models.users.ServerUser
+import com.safehill.kclient.models.assets.ShareableEncryptedAsset
+import com.safehill.kclient.models.interactions.UserReaction
+import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
+import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 
 class ServerProxy(
     val localServer: LocalServerInterface,
     val remoteServer: SafehillApi,
-    override var requestor: SHLocalUser,
+    override var requestor: LocalUser,
 ) : ServerProxyInterface {
 
 
@@ -39,7 +38,7 @@ class ServerProxy(
         }
     }
 
-    override suspend fun getUsers(withIdentifiers: List<String>): List<SHRemoteUser> {
+    override suspend fun getUsers(withIdentifiers: List<String>): List<RemoteUser> {
         if (withIdentifiers.isEmpty()) {
             return emptyList()
         }
@@ -58,38 +57,38 @@ class ServerProxy(
         }
     }
 
-    override suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<HashedPhoneNumber>): Map<HashedPhoneNumber, SHRemoteUser> {
+    override suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<HashedPhoneNumber>): Map<HashedPhoneNumber, RemoteUser> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun searchUsers(query: String, per: Int, page: Int): List<SHRemoteUser> {
+    override suspend fun searchUsers(query: String, per: Int, page: Int): List<RemoteUser> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun getAssetDescriptors(): List<SHAssetDescriptor> {
+    override suspend fun getAssetDescriptors(): List<AssetDescriptor> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun getAssetDescriptors(assetGlobalIdentifiers: List<AssetGlobalIdentifier>): List<SHAssetDescriptor> {
+    override suspend fun getAssetDescriptors(assetGlobalIdentifiers: List<AssetGlobalIdentifier>): List<AssetDescriptor> {
         TODO("Not yet implemented")
     }
 
     override suspend fun getAssets(
         globalIdentifiers: List<String>,
-        versions: List<SHAssetQuality>?
-    ): Map<String, SHEncryptedAsset> {
+        versions: List<AssetQuality>?
+    ): Map<String, EncryptedAsset> {
         TODO("Not yet implemented")
     }
 
     override suspend fun create(
-        assets: List<SHEncryptedAsset>,
+        assets: List<EncryptedAsset>,
         groupId: String,
-        filterVersions: List<SHAssetQuality>?
-    ): List<SHAssetOutputDTO> {
+        filterVersions: List<AssetQuality>?
+    ): List<com.safehill.kclient.models.dtos.AssetOutputDTO> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun share(asset: SHShareableEncryptedAsset) {
+    override suspend fun share(asset: ShareableEncryptedAsset) {
         TODO("Not yet implemented")
     }
 
@@ -124,17 +123,17 @@ class ServerProxy(
     }
 
     override suspend fun upload(
-        serverAsset: SHAssetOutputDTO,
-        asset: SHEncryptedAsset,
-        filterVersions: List<SHAssetQuality>
+        serverAsset: com.safehill.kclient.models.dtos.AssetOutputDTO,
+        asset: EncryptedAsset,
+        filterVersions: List<AssetQuality>
     ) {
         TODO("Not yet implemented")
     }
 
     override suspend fun markAsset(
         assetGlobalIdentifier: AssetGlobalIdentifier,
-        quality: SHAssetQuality,
-        asState: SHAssetDescriptorUploadState
+        quality: AssetQuality,
+        asState: AssetDescriptorUploadState
     ) {
         TODO("Not yet implemented")
     }
@@ -159,13 +158,13 @@ class ServerProxy(
     }
 
     override suspend fun addReactions(
-        reactions: List<SHUserReaction>,
+        reactions: List<UserReaction>,
         toGroupId: String
-    ): List<SHReactionOutputDTO> {
+    ): List<ReactionOutputDTO> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun removeReaction(reaction: SHUserReaction, fromGroupId: String) {
+    override suspend fun removeReaction(reaction: UserReaction, fromGroupId: String) {
         TODO("Not yet implemented")
     }
 
@@ -177,7 +176,7 @@ class ServerProxy(
         per: Int,
         page: Int,
         before: String?
-    ): SHInteractionsGroupDTO {
+    ): InteractionsGroupDTO {
         return try {
             retrieveRemoteInteractions(
                 inGroupId = inGroupId,
@@ -201,7 +200,7 @@ class ServerProxy(
         per: Int,
         page: Int,
         before: String?
-    ): SHInteractionsGroupDTO {
+    ): InteractionsGroupDTO {
         return remoteServer.retrieveInteractions(
             inGroupId = inGroupId,
             per = per,
@@ -211,15 +210,15 @@ class ServerProxy(
     }
 
     override suspend fun addMessages(
-        messages: List<SHMessageInputDTO>,
+        messages: List<MessageInputDTO>,
         groupId: String
-    ): List<SHMessageOutputDTO> {
+    ): List<MessageOutputDTO> {
         return remoteServer.addMessages(messages, groupId).also {
             localServer.insertMessages(it, groupId)
         }
     }
 
-    private suspend fun updateLocalUserDB(serverUsers: List<SHRemoteUser>): List<SHRemoteUser> {
+    private suspend fun updateLocalUserDB(serverUsers: List<RemoteUser>): List<RemoteUser> {
         serverUsers.forEach { serverUser ->
             try {
                 localServer.createOrUpdateUser(
@@ -236,12 +235,12 @@ class ServerProxy(
         return localServer.getUsers(serverUsers.map { it.identifier })
     }
 
-    override suspend fun getAllLocalUsers(): List<SHServerUser> {
+    override suspend fun getAllLocalUsers(): List<ServerUser> {
         TODO("Not yet implemented")
     }
 
 
-    override suspend fun createUser(name: String): SHServerUser {
+    override suspend fun createUser(name: String): ServerUser {
         TODO("Not yet implemented")
     }
 
@@ -249,7 +248,7 @@ class ServerProxy(
         countryCode: Int,
         phoneNumber: Long,
         code: String,
-        medium: SHSendCodeToUserRequestDTO.Medium
+        medium: SendCodeToUserRequestDTO.Medium
     ) {
         TODO("Not yet implemented")
     }
@@ -258,7 +257,7 @@ class ServerProxy(
         name: String?,
         phoneNumber: String?,
         email: String?
-    ): SHServerUser {
+    ): ServerUser {
         TODO("Not yet implemented")
     }
 
@@ -270,7 +269,7 @@ class ServerProxy(
         TODO("Not yet implemented")
     }
 
-    override suspend fun signIn(): SHAuthResponseDTO {
+    override suspend fun signIn(): AuthResponseDTO {
         TODO("Not yet implemented")
     }
 

@@ -1,9 +1,9 @@
 package com.safehill.kclient.network
 
 import com.safehill.kclient.api.SafehillApi
-import com.safehill.kclient.models.SHServerUser
+import com.safehill.kclient.models.users.ServerUser
 
 interface ServerProxyInterface : SafehillApi {
-    suspend fun getAllLocalUsers(): List<SHServerUser>
+    suspend fun getAllLocalUsers(): List<ServerUser>
 }
 

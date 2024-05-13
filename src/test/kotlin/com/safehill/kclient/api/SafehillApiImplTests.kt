@@ -1,16 +1,16 @@
 package com.safehill.kclient.api
 
-import com.safehill.kclient.api.dtos.SHAssetOutputDTO
-import com.safehill.kclient.api.dtos.SHAuthResponseDTO
-import com.safehill.kclient.api.dtos.SHSendCodeToUserRequestDTO
-import com.safehill.kclient.models.SHAssetDescriptor
-import com.safehill.kclient.models.SHAssetQuality
-import com.safehill.kclient.models.SHEncryptedAssetImpl
-import com.safehill.kclient.models.SHEncryptedAssetVersionImpl
-import com.safehill.kclient.models.SHLocalUser
-import com.safehill.kclient.models.SHServerUser
-import com.safehill.kcrypto.models.SHKeyPair
-import com.safehill.kcrypto.models.SHLocalCryptoUser
+import com.safehill.kclient.models.dtos.AssetOutputDTO
+import com.safehill.kclient.models.dtos.AuthResponseDTO
+import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
+import com.safehill.kclient.models.assets.AssetDescriptor
+import com.safehill.kclient.models.assets.AssetQuality
+import com.safehill.kclient.models.assets.EncryptedAssetImpl
+import com.safehill.kclient.models.assets.EncryptedAssetVersionImpl
+import com.safehill.kclient.models.users.LocalUser
+import com.safehill.kclient.models.users.ServerUser
+import com.safehill.kcrypto.models.SafehillKeyPair
+import com.safehill.kcrypto.models.LocalCryptoUser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -23,11 +23,11 @@ class SafehillApiImplTests {
 
     private suspend fun createUserOnServer(
         coroutineScope: CoroutineScope,
-        user: SHLocalUser? = null
-    ): SHLocalUser {
-        val localUser: SHLocalUser = user ?: run {
-            val cryptoUser = SHLocalCryptoUser()
-            SHLocalUser(cryptoUser)
+        user: LocalUser? = null
+    ): LocalUser {
+        val localUser: LocalUser = user ?: run {
+            val cryptoUser = LocalCryptoUser()
+            LocalUser(cryptoUser)
         }
 
         val charPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
@@ -35,7 +35,7 @@ class SafehillApiImplTests {
             .map { Random.nextInt(0, charPool.size).let { charPool[it] } }
             .joinToString("")
 
-        var serverUser: SHServerUser? = null
+        var serverUser: ServerUser? = null
         var error: Exception? = null
         val createJob = coroutineScope.launch {
             try {
@@ -59,9 +59,9 @@ class SafehillApiImplTests {
         return localUser
     }
 
-    private suspend fun authenticateUser(coroutineScope: CoroutineScope, localUser: SHLocalUser) {
+    private suspend fun authenticateUser(coroutineScope: CoroutineScope, localUser: LocalUser) {
         var error: Exception? = null
-        var authResponse: SHAuthResponseDTO? = null
+        var authResponse: AuthResponseDTO? = null
 
         val authJob = coroutineScope.launch {
             try {
@@ -84,7 +84,7 @@ class SafehillApiImplTests {
         }
     }
 
-    private suspend fun deleteUser(coroutineScope: CoroutineScope, localUser: SHLocalUser) {
+    private suspend fun deleteUser(coroutineScope: CoroutineScope, localUser: LocalUser) {
         var error: Exception? = null
 
         val deleteJob = coroutineScope.launch {
@@ -104,8 +104,8 @@ class SafehillApiImplTests {
 
     private suspend fun deleteAssets(
         coroutineScope: CoroutineScope,
-        localUser: SHLocalUser,
-        assets: List<SHAssetOutputDTO>
+        localUser: LocalUser,
+        assets: List<com.safehill.kclient.models.dtos.AssetOutputDTO>
     ) {
         var error: Exception? = null
 
@@ -230,17 +230,17 @@ class SafehillApiImplTests {
     @Test
     fun testAssetAndDescriptorCRUD() {
         val groupId = "sampleGroupId"
-        val assetKey = SHKeyPair.generate()
-        val assetSignature = SHKeyPair.generate()
-        val encryptedAsset = SHEncryptedAssetImpl(
+        val assetKey = SafehillKeyPair.generate()
+        val assetSignature = SafehillKeyPair.generate()
+        val encryptedAsset = EncryptedAssetImpl(
             globalIdentifier = "globalIdentifier",
             localIdentifier = null,
             creationDate = Date(0),
             encryptedVersions = mapOf(
                 Pair(
-                    SHAssetQuality.LowResolution,
-                    SHEncryptedAssetVersionImpl(
-                        quality = SHAssetQuality.LowResolution,
+                    AssetQuality.LowResolution,
+                    EncryptedAssetVersionImpl(
+                        quality = AssetQuality.LowResolution,
                         encryptedData = "encryptedData".toByteArray(),
                         encryptedSecret = "encryptedData".toByteArray(),
                         publicKeyData = assetKey.public.encoded,
@@ -256,7 +256,7 @@ class SafehillApiImplTests {
 
             val api = SafehillApiImpl(user)
 
-            var createdAsset: SHAssetOutputDTO? = null
+            var createdAsset: com.safehill.kclient.models.dtos.AssetOutputDTO? = null
             var error: Exception? = null
             val createJob = launch {
                 try {
@@ -277,7 +277,7 @@ class SafehillApiImplTests {
                 throw it
             }
 
-            var descriptors: List<SHAssetDescriptor> = emptyList()
+            var descriptors: List<AssetDescriptor> = emptyList()
             val getDescriptorJob = launch {
                 try {
                     descriptors = api.getAssetDescriptors()
@@ -303,8 +303,8 @@ class SafehillApiImplTests {
 
     @Test
     fun testUnauthorizedGetUsers() {
-        val cryptoUser = SHLocalCryptoUser()
-        val localUser = SHLocalUser(cryptoUser)
+        val cryptoUser = LocalCryptoUser()
+        val localUser = LocalUser(cryptoUser)
         val api = SafehillApiImpl(localUser)
 
         runBlocking {
@@ -332,7 +332,7 @@ class SafehillApiImplTests {
 
     @Test
     fun testAuthenticateNonExistingUser() {
-        val localUser = SHLocalUser(SHLocalCryptoUser())
+        val localUser = LocalUser(LocalCryptoUser())
         val api = SafehillApiImpl(localUser)
 
         runBlocking {
@@ -354,13 +354,13 @@ class SafehillApiImplTests {
             val api = SafehillApiImpl(user)
 
             try {
-                api.sendCodeToUser(1, 4151234567, "12345", SHSendCodeToUserRequestDTO.Medium.SMS)
+                api.sendCodeToUser(1, 4151234567, "12345", SendCodeToUserRequestDTO.Medium.SMS)
             } catch (e: Exception) {
                 error = e
             }
 
             try {
-                api.sendCodeToUser(1, 4151234567, "12345", SHSendCodeToUserRequestDTO.Medium.Phone)
+                api.sendCodeToUser(1, 4151234567, "12345", SendCodeToUserRequestDTO.Medium.Phone)
             } catch (e: Exception) {
                 error = e
             }
