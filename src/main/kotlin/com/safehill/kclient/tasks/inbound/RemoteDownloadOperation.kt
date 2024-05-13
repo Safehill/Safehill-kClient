@@ -4,11 +4,13 @@ import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
+import com.safehill.kclient.network.ServerProxy
 
-public class LocalDownloadOperation(
+public class RemoteDownloadOperation(
     override val localUser: LocalUser,
     override var listeners: List<DownloadOperationListener>
 ) : DownloadOperation {
+
     override suspend fun fetchDescriptors(): List<AssetDescriptor> {
         TODO("Not yet implemented")
     }
