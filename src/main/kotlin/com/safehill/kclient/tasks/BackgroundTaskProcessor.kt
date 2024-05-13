@@ -9,7 +9,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.ConcurrentLinkedQueue
 
-class BackgroundTaskProcessor<T: BackgroundTask>(private val coroutineScope: CoroutineScope) {
+public class BackgroundTaskProcessor<T: BackgroundTask>(private val coroutineScope: CoroutineScope) {
 
     internal val taskQueue = ConcurrentLinkedQueue<T>()
     private val processingMutex = Mutex()

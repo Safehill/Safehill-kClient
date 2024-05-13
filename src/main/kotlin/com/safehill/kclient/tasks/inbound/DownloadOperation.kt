@@ -6,7 +6,7 @@ import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.models.users.ServerUser
 
 
-interface DownloadOperation {
+public interface DownloadOperation {
 
     val localUser: LocalUser
     val listeners: List<DownloadOperationListener>
