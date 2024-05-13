@@ -1,6 +1,13 @@
 package com.safehill.kclient.network
 
-import com.safehill.kclient.models.assets.*
+import com.safehill.kclient.models.assets.AssetDescriptorUploadState
+import com.safehill.kclient.models.assets.AssetDescriptor
+import com.safehill.kclient.models.assets.AssetGlobalIdentifier
+import com.safehill.kclient.models.assets.AssetQuality
+import com.safehill.kclient.models.assets.EncryptedAsset
+import com.safehill.kclient.models.assets.GroupId
+import com.safehill.kclient.models.assets.ShareableEncryptedAsset
+import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.dtos.HashedPhoneNumber
 import com.safehill.kclient.models.dtos.AuthResponseDTO
 import com.safehill.kclient.models.dtos.InteractionsGroupDTO
@@ -14,6 +21,7 @@ import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.dtos.UserReactionDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
+import com.safehill.kclient.models.users.UserIdentifier
 
 interface SafehillApi {
 
@@ -51,12 +59,6 @@ interface SafehillApi {
     suspend fun updateUser(name: String?, phoneNumber: String?, email: String?): ServerUser
 
     /// Delete the user making the request and all related assets, metadata and sharing information
-    /// - Parameters:
-    ///   - name: the username
-    ///   - password: the password for authorization
-    suspend fun deleteAccount(name: String, password: String)
-
-    /// Delete the user making the request and all related assets, metadata and sharing information
     suspend fun deleteAccount()
 
     /// Logs the current user, aka the requestor
@@ -72,7 +74,7 @@ interface SafehillApi {
     /// - Returns:
     ///   - the users matching the criteria
     @Throws
-    suspend fun getUsers(withIdentifiers: List<String>): List<RemoteUser>
+    suspend fun getUsers(withIdentifiers: List<UserIdentifier>): List<RemoteUser>
 
     /**
      * Get a User's public key and public signature
@@ -107,7 +109,7 @@ interface SafehillApi {
     /// - Returns:
     ///   - the encrypted assets from the server
     suspend fun getAssets(
-        globalIdentifiers: List<String>,
+        globalIdentifiers: List<AssetGlobalIdentifier>,
         versions: List<AssetQuality>?
     ): Map<String, EncryptedAsset>
 
@@ -122,9 +124,9 @@ interface SafehillApi {
     ///   - the list of assets created
     suspend fun create(
         assets: List<EncryptedAsset>,
-        groupId: String,
+        groupId: GroupId,
         filterVersions: List<AssetQuality>?
-    ): List<com.safehill.kclient.models.dtos.AssetOutputDTO>
+    ): List<AssetOutputDTO>
 
     /// Shares one or more assets with a set of users
     /// - Parameters:
@@ -137,11 +139,11 @@ interface SafehillApi {
     ///   - with: the public identifier of the user it was previously shared with
     suspend fun unshare(
         assetId: AssetGlobalIdentifier,
-        userPublicIdentifier: String
+        userPublicIdentifier: UserIdentifier
     )
 
     suspend fun retrieveThread(
-        usersIdentifiers: List<String>
+        usersIdentifiers: List<UserIdentifier>
     ): ConversationThreadOutputDTO?
 
     suspend fun retrieveThread(
@@ -155,7 +157,7 @@ interface SafehillApi {
 
     /// Upload encrypted asset versions data to the CDN.
     suspend fun upload(
-        serverAsset: com.safehill.kclient.models.dtos.AssetOutputDTO,
+        serverAsset: AssetOutputDTO,
         asset: EncryptedAsset,
         filterVersions: List<AssetQuality>
     )
@@ -176,7 +178,7 @@ interface SafehillApi {
     ///   - withGlobalIdentifiers: the global identifier
     /// - Returns:
     ///   - the list of global identifiers that have been deleted
-    suspend fun deleteAssets(globalIdentifiers: List<String>): List<String>
+    suspend fun deleteAssets(globalIdentifiers: List<AssetGlobalIdentifier>): List<AssetGlobalIdentifier>
 
     /// Creates a group and provides the encryption details for users in the group for E2EE.
     /// This method needs to be called every time a share (group) is created so that reactions and comments can be added to it.
@@ -184,21 +186,21 @@ interface SafehillApi {
     ///   - groupId: the group identifier
     ///   - recipientsEncryptionDetails: the encryption details for each reciepient
     suspend fun setGroupEncryptionDetails(
-        groupId: String,
+        groupId: GroupId,
         recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>
     )
 
     /// Delete a group, related messages and reactions, given its id
     /// - Parameters:
     ///   - groupId: the group identifier
-    suspend fun deleteGroup(groupId: String)
+    suspend fun deleteGroup(groupId: GroupId)
 
     /// Retrieved the E2EE details for a group, if one exists
     /// - Parameters:
     ///   - groupId: the group identifier
     ///   - completionHandler: the callback method
     suspend fun retrieveGroupUserEncryptionDetails(
-        groupId: String,
+        groupId: GroupId,
     ): List<RecipientEncryptionDetailsDTO>
 
 
@@ -210,7 +212,7 @@ interface SafehillApi {
     ///   - the list of reactions added
     suspend fun addReactions(
         reactions: List<UserReactionDTO>,
-        toGroupId: String
+        toGroupId: GroupId
     ): List<ReactionOutputDTO>
 
     /// Removes a reaction to an asset or a message
@@ -219,7 +221,7 @@ interface SafehillApi {
     ///   - fromGroupId: the group the reaction belongs to
     suspend fun removeReaction(
         reaction: UserReactionDTO,
-        fromGroupId: String
+        fromGroupId: GroupId
     )
 
     /// Retrieves all the messages and reactions for a group id. Results are paginated and returned in reverse cronological order.
@@ -230,7 +232,7 @@ interface SafehillApi {
     /// - Returns:
     ///   - the list of interactions (reactions and messages) in the group
     suspend fun retrieveInteractions(
-        inGroupId: String,
+        inGroupId: GroupId,
         per: Int,
         page: Int,
         before: String?
@@ -244,7 +246,7 @@ interface SafehillApi {
     ///   - the list of messages created
     suspend fun addMessages(
         messages: List<MessageInputDTO>,
-        groupId: String
+        groupId: GroupId
     ): List<MessageOutputDTO>
 
     suspend fun listThreads(): List<ConversationThreadOutputDTO>

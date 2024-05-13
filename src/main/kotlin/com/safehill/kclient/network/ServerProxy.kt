@@ -1,6 +1,13 @@
 package com.safehill.kclient.network
 
-import com.safehill.kclient.models.assets.*
+import com.safehill.kclient.models.assets.AssetDescriptorUploadState
+import com.safehill.kclient.models.assets.AssetDescriptor
+import com.safehill.kclient.models.assets.AssetGlobalIdentifier
+import com.safehill.kclient.models.assets.AssetQuality
+import com.safehill.kclient.models.assets.EncryptedAsset
+import com.safehill.kclient.models.assets.GroupId
+import com.safehill.kclient.models.assets.ShareableEncryptedAsset
+import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.dtos.HashedPhoneNumber
 import com.safehill.kclient.models.dtos.AuthResponseDTO
 import com.safehill.kclient.models.dtos.InteractionsGroupDTO
@@ -14,6 +21,7 @@ import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.dtos.UserReactionDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
+import com.safehill.kclient.models.users.UserIdentifier
 
 class ServerProxy(
     val localServer: LocalServerInterface,
@@ -32,7 +40,7 @@ class ServerProxy(
         }
     }
 
-    override suspend fun getUsers(withIdentifiers: List<String>): List<RemoteUser> {
+    override suspend fun getUsers(withIdentifiers: List<UserIdentifier>): List<RemoteUser> {
         if (withIdentifiers.isEmpty()) {
             return emptyList()
         }
@@ -52,45 +60,45 @@ class ServerProxy(
     }
 
     override suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<HashedPhoneNumber>): Map<HashedPhoneNumber, RemoteUser> {
-        TODO("Not yet implemented")
+        return remoteServer.getUsersWithPhoneNumber(hashedPhoneNumbers)
     }
 
     override suspend fun searchUsers(query: String, per: Int, page: Int): List<RemoteUser> {
-        TODO("Not yet implemented")
+        return remoteServer.searchUsers(query, per, page)
     }
 
     override suspend fun getAssetDescriptors(): List<AssetDescriptor> {
-        TODO("Not yet implemented")
+        return remoteServer.getAssetDescriptors()
     }
 
     override suspend fun getAssetDescriptors(assetGlobalIdentifiers: List<AssetGlobalIdentifier>): List<AssetDescriptor> {
-        TODO("Not yet implemented")
+        return remoteServer.getAssetDescriptors(assetGlobalIdentifiers)
     }
 
     override suspend fun getAssets(
-        globalIdentifiers: List<String>,
+        globalIdentifiers: List<AssetGlobalIdentifier>,
         versions: List<AssetQuality>?
-    ): Map<String, EncryptedAsset> {
-        TODO("Not yet implemented")
+    ): Map<AssetGlobalIdentifier, EncryptedAsset> {
+        return remoteServer.getAssets(globalIdentifiers, versions)
     }
 
     override suspend fun create(
         assets: List<EncryptedAsset>,
-        groupId: String,
+        groupId: GroupId,
         filterVersions: List<AssetQuality>?
     ): List<com.safehill.kclient.models.dtos.AssetOutputDTO> {
-        TODO("Not yet implemented")
+        return remoteServer.create(assets, groupId, filterVersions)
     }
 
     override suspend fun share(asset: ShareableEncryptedAsset) {
-        TODO("Not yet implemented")
+        remoteServer.share(asset)
     }
 
-    override suspend fun unshare(assetId: AssetGlobalIdentifier, userPublicIdentifier: String) {
-        TODO("Not yet implemented")
+    override suspend fun unshare(assetId: AssetGlobalIdentifier, userPublicIdentifier: UserIdentifier) {
+        remoteServer.unshare(assetId, userPublicIdentifier)
     }
 
-    override suspend fun retrieveThread(usersIdentifiers: List<String>): ConversationThreadOutputDTO? {
+    override suspend fun retrieveThread(usersIdentifiers: List<UserIdentifier>): ConversationThreadOutputDTO? {
         return localServer.retrieveThread(usersIdentifiers) ?: remoteServer.retrieveThread(
             usersIdentifiers
         )?.also {
@@ -117,11 +125,11 @@ class ServerProxy(
     }
 
     override suspend fun upload(
-        serverAsset: com.safehill.kclient.models.dtos.AssetOutputDTO,
+        serverAsset: AssetOutputDTO,
         asset: EncryptedAsset,
         filterVersions: List<AssetQuality>
     ) {
-        TODO("Not yet implemented")
+        remoteServer.upload(serverAsset, asset, filterVersions)
     }
 
     override suspend fun markAsset(
@@ -129,44 +137,44 @@ class ServerProxy(
         quality: AssetQuality,
         asState: AssetDescriptorUploadState
     ) {
-        TODO("Not yet implemented")
+        remoteServer.markAsset(assetGlobalIdentifier, quality, asState)
     }
 
-    override suspend fun deleteAssets(globalIdentifiers: List<String>): List<String> {
-        TODO("Not yet implemented")
+    override suspend fun deleteAssets(globalIdentifiers: List<AssetGlobalIdentifier>): List<AssetGlobalIdentifier> {
+        return remoteServer.deleteAssets(globalIdentifiers)
     }
 
     override suspend fun setGroupEncryptionDetails(
-        groupId: String,
+        groupId: GroupId,
         recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>
     ) {
-        TODO("Not yet implemented")
+        return remoteServer.setGroupEncryptionDetails(groupId, recipientsEncryptionDetails)
     }
 
-    override suspend fun deleteGroup(groupId: String) {
-        TODO("Not yet implemented")
+    override suspend fun deleteGroup(groupId: GroupId) {
+        remoteServer.deleteGroup(groupId)
     }
 
-    override suspend fun retrieveGroupUserEncryptionDetails(groupId: String): List<RecipientEncryptionDetailsDTO> {
-        TODO("Not yet implemented")
+    override suspend fun retrieveGroupUserEncryptionDetails(groupId: GroupId): List<RecipientEncryptionDetailsDTO> {
+        return remoteServer.retrieveGroupUserEncryptionDetails(groupId)
     }
 
     override suspend fun addReactions(
         reactions: List<UserReactionDTO>,
-        toGroupId: String
+        toGroupId: GroupId
     ): List<ReactionOutputDTO> {
-        TODO("Not yet implemented")
+        return remoteServer.addReactions(reactions, toGroupId)
     }
 
-    override suspend fun removeReaction(reaction: UserReactionDTO, fromGroupId: String) {
-        TODO("Not yet implemented")
+    override suspend fun removeReaction(reaction: UserReactionDTO, fromGroupId: GroupId) {
+        remoteServer.removeReaction(reaction, fromGroupId)
     }
 
     /***
      * This function will try to fetch interactions from remote server and if it fails, retrieves locally.
      */
     override suspend fun retrieveInteractions(
-        inGroupId: String,
+        inGroupId: GroupId,
         per: Int,
         page: Int,
         before: String?
@@ -190,7 +198,7 @@ class ServerProxy(
     }
 
     suspend fun retrieveRemoteInteractions(
-        inGroupId: String,
+        inGroupId: GroupId,
         per: Int,
         page: Int,
         before: String?
@@ -205,7 +213,7 @@ class ServerProxy(
 
     override suspend fun addMessages(
         messages: List<MessageInputDTO>,
-        groupId: String
+        groupId: GroupId
     ): List<MessageOutputDTO> {
         return remoteServer.addMessages(messages, groupId).also {
             localServer.insertMessages(it, groupId)
@@ -235,7 +243,7 @@ class ServerProxy(
 
 
     override suspend fun createUser(name: String): ServerUser {
-        TODO("Not yet implemented")
+        return remoteServer.createUser(name)
     }
 
     override suspend fun sendCodeToUser(
@@ -244,7 +252,7 @@ class ServerProxy(
         code: String,
         medium: SendCodeToUserRequestDTO.Medium
     ) {
-        TODO("Not yet implemented")
+        return remoteServer.sendCodeToUser(countryCode, phoneNumber, code, medium)
     }
 
     override suspend fun updateUser(
@@ -252,19 +260,15 @@ class ServerProxy(
         phoneNumber: String?,
         email: String?
     ): ServerUser {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun deleteAccount(name: String, password: String) {
-        TODO("Not yet implemented")
+        return remoteServer.updateUser(name, phoneNumber, email)
     }
 
     override suspend fun deleteAccount() {
-        TODO("Not yet implemented")
+        remoteServer.deleteAccount()
     }
 
     override suspend fun signIn(): AuthResponseDTO {
-        TODO("Not yet implemented")
+        return remoteServer.signIn()
     }
 
 }

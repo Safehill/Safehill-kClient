@@ -10,7 +10,13 @@ import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.responseObject
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
-import com.safehill.kclient.models.assets.*
+import com.safehill.kclient.models.assets.AssetDescriptorUploadState
+import com.safehill.kclient.models.assets.AssetDescriptor
+import com.safehill.kclient.models.assets.AssetGlobalIdentifier
+import com.safehill.kclient.models.assets.AssetQuality
+import com.safehill.kclient.models.assets.EncryptedAsset
+import com.safehill.kclient.models.assets.GroupId
+import com.safehill.kclient.models.assets.ShareableEncryptedAsset
 import com.safehill.kclient.models.dtos.CreateOrUpdateThreadDTO
 import com.safehill.kclient.models.dtos.GetInteractionDTO
 import com.safehill.kclient.models.dtos.HashedPhoneNumber
@@ -37,6 +43,7 @@ import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.dtos.UserReactionDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
+import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kcrypto.SafehillCypher
 import com.safehill.kcrypto.models.RemoteCryptoUser
 import com.safehill.kcrypto.models.ShareablePayload
@@ -179,11 +186,6 @@ class SafehillApiImpl(
     }
 
     @Throws
-    override suspend fun deleteAccount(name: String, password: String) {
-        TODO("Not yet implemented")
-    }
-
-    @Throws
     override suspend fun deleteAccount() {
         val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
 
@@ -248,7 +250,7 @@ class SafehillApiImpl(
     }
 
     @Throws
-    override suspend fun getUsers(withIdentifiers: List<String>): List<RemoteUser> {
+    override suspend fun getUsers(withIdentifiers: List<UserIdentifier>): List<RemoteUser> {
         val bearerToken =
             this.requestor.authToken ?: throw UnAuthorizedException
 
@@ -320,16 +322,16 @@ class SafehillApiImpl(
 
     @Throws
     override suspend fun getAssets(
-        globalIdentifiers: List<String>,
+        globalIdentifiers: List<AssetGlobalIdentifier>,
         versions: List<AssetQuality>?,
-    ): Map<String, EncryptedAsset> {
+    ): Map<AssetGlobalIdentifier, EncryptedAsset> {
         TODO("Not yet implemented")
     }
 
     @Throws
     override suspend fun create(
         assets: List<EncryptedAsset>,
-        groupId: String,
+        groupId: GroupId,
         filterVersions: List<AssetQuality>?,
     ): List<com.safehill.kclient.models.dtos.AssetOutputDTO> {
         if (assets.size > 1) {
@@ -367,11 +369,11 @@ class SafehillApiImpl(
         TODO("Not yet implemented")
     }
 
-    override suspend fun unshare(assetId: AssetGlobalIdentifier, userPublicIdentifier: String) {
+    override suspend fun unshare(assetId: AssetGlobalIdentifier, userPublicIdentifier: UserIdentifier) {
         TODO("Not yet implemented")
     }
 
-    override suspend fun retrieveThread(usersIdentifiers: List<String>): ConversationThreadOutputDTO? {
+    override suspend fun retrieveThread(usersIdentifiers: List<UserIdentifier>): ConversationThreadOutputDTO? {
         return listThreads(usersIdentifiers).firstOrNull()
     }
 
@@ -403,7 +405,7 @@ class SafehillApiImpl(
 
 
     @OptIn(ExperimentalSerializationApi::class)
-    private fun listThreads(usersIdentifiers: List<String>?): List<ConversationThreadOutputDTO> {
+    private fun listThreads(usersIdentifiers: List<UserIdentifier>?): List<ConversationThreadOutputDTO> {
         val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
 
         val request = usersIdentifiers?.let {
@@ -464,7 +466,7 @@ class SafehillApiImpl(
     }
 
     @Throws
-    override suspend fun deleteAssets(globalIdentifiers: List<String>): List<String> {
+    override suspend fun deleteAssets(globalIdentifiers: List<AssetGlobalIdentifier>): List<AssetGlobalIdentifier> {
         val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
 
         val responseResult = "/assets/delete".httpPost()
@@ -475,34 +477,34 @@ class SafehillApiImpl(
     }
 
     override suspend fun setGroupEncryptionDetails(
-        groupId: String,
+        groupId: GroupId,
         recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>,
     ) {
         TODO("Not yet implemented")
     }
 
-    override suspend fun deleteGroup(groupId: String) {
+    override suspend fun deleteGroup(groupId: GroupId) {
         TODO("Not yet implemented")
     }
 
-    override suspend fun retrieveGroupUserEncryptionDetails(groupId: String): List<RecipientEncryptionDetailsDTO> {
+    override suspend fun retrieveGroupUserEncryptionDetails(groupId: GroupId): List<RecipientEncryptionDetailsDTO> {
         TODO("Not yet implemented")
     }
 
     override suspend fun addReactions(
         reactions: List<UserReactionDTO>,
-        toGroupId: String
+        toGroupId: GroupId
     ): List<ReactionOutputDTO> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun removeReaction(reaction: UserReactionDTO, fromGroupId: String) {
+    override suspend fun removeReaction(reaction: UserReactionDTO, fromGroupId: GroupId) {
         TODO("Not yet implemented")
     }
 
     @OptIn(ExperimentalSerializationApi::class)
     override suspend fun retrieveInteractions(
-        inGroupId: String,
+        inGroupId: GroupId,
         per: Int,
         page: Int,
         before: String?
@@ -536,7 +538,7 @@ class SafehillApiImpl(
     @OptIn(ExperimentalSerializationApi::class)
     override suspend fun addMessages(
         messages: List<MessageInputDTO>,
-        groupId: String
+        groupId: GroupId
     ): List<MessageOutputDTO> {
         require(messages.size == 1) {
             "Can only add one message at a time."
