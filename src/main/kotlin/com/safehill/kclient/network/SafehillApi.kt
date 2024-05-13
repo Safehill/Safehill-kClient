@@ -11,7 +11,7 @@ import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
-import com.safehill.kclient.models.interactions.UserReaction
+import com.safehill.kclient.models.dtos.UserReactionDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 
@@ -209,7 +209,7 @@ interface SafehillApi {
     /// - Returns:
     ///   - the list of reactions added
     suspend fun addReactions(
-        reactions: List<UserReaction>,
+        reactions: List<UserReactionDTO>,
         toGroupId: String
     ): List<ReactionOutputDTO>
 
@@ -218,7 +218,7 @@ interface SafehillApi {
     ///   - reaction: the reaction type and references to remove
     ///   - fromGroupId: the group the reaction belongs to
     suspend fun removeReaction(
-        reaction: UserReaction,
+        reaction: UserReactionDTO,
         fromGroupId: String
     )
 

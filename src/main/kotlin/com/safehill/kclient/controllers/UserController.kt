@@ -1,6 +1,7 @@
 package com.safehill.kclient.controllers
 
 import com.safehill.kclient.models.users.ServerUser
+import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.ServerProxy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -10,9 +11,9 @@ class UserController(
     private val serverProxy: ServerProxy
 ) {
 
-    private val usersCache = ConcurrentHashMap<String, ServerUser>(50)
+    private val usersCache = ConcurrentHashMap<UserIdentifier, ServerUser>(50)
 
-    suspend fun getUsers(userIdentifiers: List<String>): Result<Map<String, ServerUser>> {
+    suspend fun getUsers(userIdentifiers: List<UserIdentifier>): Result<Map<UserIdentifier, ServerUser>> {
         return withContext(Dispatchers.IO) {
             runCatching {
                 val distinctIdentifiers = userIdentifiers.toSet().toMutableList()
@@ -32,7 +33,7 @@ class UserController(
         }
     }
 
-    private suspend fun getUsersFromLocalOrServer(userIdentifiers: List<String>): Map<String, ServerUser> {
+    private suspend fun getUsersFromLocalOrServer(userIdentifiers: List<UserIdentifier>): Map<UserIdentifier, ServerUser> {
         val localUsers = serverProxy.localServer.getUsers(userIdentifiers)
         val remaining = userIdentifiers - localUsers.map { it.identifier }.toSet()
 

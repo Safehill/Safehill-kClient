@@ -34,7 +34,7 @@ import com.safehill.kclient.models.serde.toIso8601String
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
-import com.safehill.kclient.models.interactions.UserReaction
+import com.safehill.kclient.models.dtos.UserReactionDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kcrypto.SafehillCypher
@@ -490,13 +490,13 @@ class SafehillApiImpl(
     }
 
     override suspend fun addReactions(
-        reactions: List<UserReaction>,
+        reactions: List<UserReactionDTO>,
         toGroupId: String
     ): List<ReactionOutputDTO> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun removeReaction(reaction: UserReaction, fromGroupId: String) {
+    override suspend fun removeReaction(reaction: UserReactionDTO, fromGroupId: String) {
         TODO("Not yet implemented")
     }
 
