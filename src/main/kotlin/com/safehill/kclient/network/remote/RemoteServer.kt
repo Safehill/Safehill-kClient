@@ -1,4 +1,4 @@
-package com.safehill.kclient.network
+package com.safehill.kclient.network.remote
 
 import com.github.kittinunf.fuel.core.FuelManager
 import com.github.kittinunf.fuel.core.HttpException
@@ -44,6 +44,9 @@ import com.safehill.kclient.models.dtos.UserReactionDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.users.UserIdentifier
+import com.safehill.kclient.network.SafehillApi
+import com.safehill.kclient.network.exceptions.SafehillHttpException
+import com.safehill.kclient.network.exceptions.UnauthorizedSafehillHttpException
 import com.safehill.kcrypto.SafehillCypher
 import com.safehill.kcrypto.models.RemoteCryptoUser
 import com.safehill.kcrypto.models.ShareablePayload
@@ -55,63 +58,25 @@ import java.security.MessageDigest
 import java.util.Base64
 import java.util.Date
 
-enum class ServerEnvironment {
-    Production, Development
-}
-
-enum class SafehillHttpStatusCode(val statusCode: Int) {
-    UnAuthorized(401),
-    PaymentRequired(402),
-    NotFound(404),
-    MethodNotAllowed(405),
-    Conflict(409);
-
-    companion object {
-        fun fromInt(value: Int): SafehillHttpStatusCode? {
-            return entries.firstOrNull() { it.statusCode == value }
-        }
-    }
-}
-
-val UnAuthorizedException = SafehillHttpException(
-    statusCode = 401,
-    message = "unauthorized",
-)
-
-data class SafehillHttpException(
-    val statusCode: SafehillHttpStatusCode?,
-    override val message: String,
-    val httpException: HttpException
-) : Exception(message, httpException) {
-    constructor(
-        statusCode: Int,
-        message: String,
-        httpException: HttpException = HttpException(statusCode, message)
-    ) : this(
-        SafehillHttpStatusCode.fromInt(statusCode),
-        "$statusCode: $message",
-        httpException
-    )
-}
-
 
 // For Fuel how to see https://www.baeldung.com/kotlin/fuel
 
-
-// todo properly setup fuel configurations only once
-var alreadyInstantiated = false
-
-class SafehillApiImpl(
+class RemoteServer(
     override var requestor: LocalUser,
-    private val environment: ServerEnvironment = ServerEnvironment.Development,
+    private val environment: RemoteServerEnvironment = RemoteServerEnvironment.Development,
     hostname: String = "localhost"
 ) : SafehillApi {
+
+    // todo properly setup fuel configurations only once
+    companion object {
+        var alreadyInstantiated = false
+    }
 
     init {
         if (!alreadyInstantiated) {
             FuelManager.instance.basePath = when (this.environment) {
-                ServerEnvironment.Development -> "http://${hostname}:8080"
-                ServerEnvironment.Production -> "https://app.safehill.io:443"
+                RemoteServerEnvironment.Development -> "http://${hostname}:8080"
+                RemoteServerEnvironment.Production -> "https://app.safehill.io:443"
             }
             FuelManager.instance.baseHeaders = mapOf("Content-type" to "application/json")
             FuelManager.instance.timeoutInMillisecond = 10000
@@ -145,7 +110,7 @@ class SafehillApiImpl(
         code: String,
         medium: SendCodeToUserRequestDTO.Medium,
     ) {
-        val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
+        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
 
         val requestBody = SendCodeToUserRequestDTO(
             countryCode = countryCode,
@@ -168,7 +133,7 @@ class SafehillApiImpl(
         phoneNumber: String?,
         email: String?,
     ): ServerUser {
-        val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
+        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
 
         val requestBody = UserUpdateDTO(
             identifier = null,
@@ -187,7 +152,7 @@ class SafehillApiImpl(
 
     @Throws
     override suspend fun deleteAccount() {
-        val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
+        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
 
         "/users/safe_delete".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
@@ -252,7 +217,7 @@ class SafehillApiImpl(
     @Throws
     override suspend fun getUsers(withIdentifiers: List<UserIdentifier>): List<RemoteUser> {
         val bearerToken =
-            this.requestor.authToken ?: throw UnAuthorizedException
+            this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
 
         if (withIdentifiers.isEmpty()) {
             return listOf()
@@ -273,7 +238,7 @@ class SafehillApiImpl(
 
     override suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<HashedPhoneNumber>): Map<HashedPhoneNumber, RemoteUser> {
         val bearerToken =
-            this.requestor.authToken ?: throw UnAuthorizedException
+            this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
 
         if (hashedPhoneNumbers.isEmpty()) {
             return mapOf()
@@ -290,7 +255,7 @@ class SafehillApiImpl(
 
     @Throws
     override suspend fun searchUsers(query: String, per: Int, page: Int): List<RemoteUser> {
-        val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
+        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
 
         return "/users/search".httpGet(
             listOf(
@@ -307,7 +272,7 @@ class SafehillApiImpl(
 
     @Throws
     override suspend fun getAssetDescriptors(): List<AssetDescriptor> {
-        val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
+        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
 
         return "/assets/descriptors/retrieve".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
@@ -339,7 +304,7 @@ class SafehillApiImpl(
         }
         val asset = assets.first()
 
-        val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
+        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
 
         val assetCreatedAt = asset.creationDate ?: run { Date(0) }
         val requestBody = com.safehill.kclient.models.dtos.AssetInputDTO(
@@ -467,7 +432,7 @@ class SafehillApiImpl(
 
     @Throws
     override suspend fun deleteAssets(globalIdentifiers: List<AssetGlobalIdentifier>): List<AssetGlobalIdentifier> {
-        val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
+        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
 
         val responseResult = "/assets/delete".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))

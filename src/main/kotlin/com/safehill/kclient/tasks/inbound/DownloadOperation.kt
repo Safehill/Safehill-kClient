@@ -8,7 +8,6 @@ import com.safehill.kclient.models.users.ServerUser
 
 public interface DownloadOperation {
 
-    val localUser: LocalUser
     val listeners: List<DownloadOperationListener>
 
     suspend fun fetchDescriptors(): List<AssetDescriptor>
