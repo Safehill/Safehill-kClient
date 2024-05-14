@@ -17,32 +17,11 @@ import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.assets.ShareableEncryptedAsset
-import com.safehill.kclient.models.dtos.CreateOrUpdateThreadDTO
-import com.safehill.kclient.models.dtos.GetInteractionDTO
-import com.safehill.kclient.models.dtos.HashedPhoneNumber
-import com.safehill.kclient.models.dtos.RetrieveThreadDTO
-import com.safehill.kclient.models.dtos.AuthChallengeRequestDTO
-import com.safehill.kclient.models.dtos.AuthChallengeResponseDTO
-import com.safehill.kclient.models.dtos.AuthResolvedChallengeDTO
-import com.safehill.kclient.models.dtos.AuthResponseDTO
-import com.safehill.kclient.models.dtos.InteractionsGroupDTO
-import com.safehill.kclient.models.dtos.MessageInputDTO
-import com.safehill.kclient.models.dtos.MessageOutputDTO
-import com.safehill.kclient.models.dtos.ReactionOutputDTO
-import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
-import com.safehill.kclient.models.dtos.UserIdentifiersDTO
-import com.safehill.kclient.models.dtos.UserInputDTO
-import com.safehill.kclient.models.dtos.UserUpdateDTO
-import com.safehill.kclient.models.dtos.UserPhoneNumbersDTO
-import com.safehill.kclient.models.dtos.RemoteUserPhoneNumberMatchDto
-import com.safehill.kclient.models.dtos.RemoteUserSearchDTO
+import com.safehill.kclient.models.dtos.*
 import com.safehill.kclient.models.serde.toIso8601String
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
-import com.safehill.kclient.models.dtos.UserReactionDTO
-import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
-import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.SafehillApi
 import com.safehill.kclient.network.exceptions.SafehillHttpException
@@ -274,18 +253,39 @@ class RemoteServer(
     }
 
     @Throws
-    override suspend fun getAssetDescriptors(): List<AssetDescriptor> {
+    override suspend fun getAssetDescriptors(after: Date?): List<AssetDescriptor> {
         val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
+        val descriptorFilterCriteriaDTO = AssetDescriptorFilterCriteriaDTO(
+            after = after?.toIso8601String(),
+            globalIdentifiers = null,
+            groupIds = null
+        )
 
         return "/assets/descriptors/retrieve".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Json.encodeToString(descriptorFilterCriteriaDTO))
             .responseObject(AssetDescriptor.ListDeserializer())
             .getOrThrow()
     }
 
     @Throws
-    override suspend fun getAssetDescriptors(assetGlobalIdentifiers: List<AssetGlobalIdentifier>): List<AssetDescriptor> {
-        TODO("Not yet implemented")
+    override suspend fun getAssetDescriptors(
+        assetGlobalIdentifiers: List<AssetGlobalIdentifier>?,
+        groupIds: List<GroupId>?,
+        after: Date?
+    ): List<AssetDescriptor> {
+        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
+        val descriptorFilterCriteriaDTO = AssetDescriptorFilterCriteriaDTO(
+            after = after?.toIso8601String(),
+            globalIdentifiers = assetGlobalIdentifiers,
+            groupIds = groupIds
+        )
+
+        return "/assets/descriptors/retrieve".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Json.encodeToString(descriptorFilterCriteriaDTO))
+            .responseObject(AssetDescriptor.ListDeserializer())
+            .getOrThrow()
     }
 
     @Throws

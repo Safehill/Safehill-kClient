@@ -19,7 +19,7 @@ public class RemoteDownloadOperation(
         get() = serverProxy.requestor
 
     override suspend fun getDescriptors(): List<AssetDescriptor> {
-        return serverProxy.remoteServer.getAssetDescriptors()
+        return serverProxy.remoteServer.getAssetDescriptors(after = null)
     }
 
     override suspend fun getUsers(withIdentifiers: List<UserIdentifier>): Map<UserIdentifier, ServerUser> {
@@ -42,7 +42,7 @@ public class RemoteDownloadOperation(
      */
     override suspend fun process(descriptors: List<AssetDescriptor>) {
         val globalIdentifiersInLocalServer = serverProxy.localServer
-            .getAssetDescriptors()
+            .getAssetDescriptors(after = null)
             .map { it.globalIdentifier }
         val remoteOnlyDescriptors = descriptors
             .filter {

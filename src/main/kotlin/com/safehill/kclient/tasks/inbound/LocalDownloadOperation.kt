@@ -15,7 +15,7 @@ public class LocalDownloadOperation(
     override var listeners: List<DownloadOperationListener>
 ) : AbstractDownloadOperation() {
     override suspend fun getDescriptors(): List<AssetDescriptor> {
-        return localServer.getAssetDescriptors()
+        return localServer.getAssetDescriptors(after = null)
     }
 
     override suspend fun getUsers(withIdentifiers: List<UserIdentifier>): Map<UserIdentifier, ServerUser> {

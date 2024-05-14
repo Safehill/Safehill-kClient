@@ -23,6 +23,7 @@ import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.local.LocalServerInterface
+import java.util.Date
 
 class ServerProxyImpl(
     override val localServer: LocalServerInterface,
@@ -68,12 +69,16 @@ class ServerProxyImpl(
         return remoteServer.searchUsers(query, per, page)
     }
 
-    override suspend fun getAssetDescriptors(): List<AssetDescriptor> {
-        return remoteServer.getAssetDescriptors()
+    override suspend fun getAssetDescriptors(after: Date?): List<AssetDescriptor> {
+        return remoteServer.getAssetDescriptors(after)
     }
 
-    override suspend fun getAssetDescriptors(assetGlobalIdentifiers: List<AssetGlobalIdentifier>): List<AssetDescriptor> {
-        return remoteServer.getAssetDescriptors(assetGlobalIdentifiers)
+    override suspend fun getAssetDescriptors(
+        assetGlobalIdentifiers: List<AssetGlobalIdentifier>?,
+        groupIds: List<GroupId>?,
+        after: Date?
+    ): List<AssetDescriptor> {
+        return remoteServer.getAssetDescriptors(assetGlobalIdentifiers, groupIds, after)
     }
 
     override suspend fun getAssets(
@@ -87,7 +92,7 @@ class ServerProxyImpl(
         assets: List<EncryptedAsset>,
         groupId: GroupId,
         filterVersions: List<AssetQuality>?
-    ): List<com.safehill.kclient.models.dtos.AssetOutputDTO> {
+    ): List<AssetOutputDTO> {
         return remoteServer.create(assets, groupId, filterVersions)
     }
 

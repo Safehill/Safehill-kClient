@@ -92,7 +92,6 @@ class RemoteDownloadTaskTests {
         override fun fetched(decryptedAsset: DecryptedAsset) {
             println("fetched low resolution asset with global identifier ${decryptedAsset.globalIdentifier}")
         }
-
     }
 
     @Test

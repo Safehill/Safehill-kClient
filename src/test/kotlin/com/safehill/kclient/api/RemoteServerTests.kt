@@ -6,6 +6,7 @@ import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAssetImpl
 import com.safehill.kclient.models.assets.EncryptedAssetVersionImpl
+import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.remote.RemoteServer
@@ -108,7 +109,7 @@ class RemoteServerTests {
     private suspend fun deleteAssets(
         coroutineScope: CoroutineScope,
         localUser: LocalUser,
-        assets: List<com.safehill.kclient.models.dtos.AssetOutputDTO>
+        assets: List<AssetOutputDTO>
     ) {
         var error: Exception? = null
 
@@ -261,7 +262,7 @@ class RemoteServerTests {
 
             val api = RemoteServer(user)
 
-            var createdAsset: com.safehill.kclient.models.dtos.AssetOutputDTO? = null
+            var createdAsset: AssetOutputDTO? = null
             var error: Exception? = null
             val createJob = launch {
                 try {
@@ -283,9 +284,31 @@ class RemoteServerTests {
             }
 
             var descriptors: List<AssetDescriptor> = emptyList()
-            val getDescriptorJob = launch {
+            var getDescriptorJob = launch {
                 try {
-                    descriptors = api.getAssetDescriptors()
+                    descriptors = api.getAssetDescriptors(after = null)
+                } catch (err: Exception) {
+                    error = err
+                }
+            }
+            getDescriptorJob.join()
+
+            error?.let {
+                deleteAssets(this, user, listOf(createdAsset!!))
+                deleteUser(this, user)
+                println("error: $it")
+                throw it
+            }
+
+            assert(descriptors.size == 1)
+
+            getDescriptorJob = launch {
+                try {
+                    descriptors = api.getAssetDescriptors(
+                        assetGlobalIdentifiers = listOf(createdAsset!!.globalIdentifier),
+                        groupIds = null,
+                        after = null
+                    )
                 } catch (err: Exception) {
                     error = err
                 }

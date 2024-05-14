@@ -6,6 +6,7 @@ import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
+import java.util.Date
 
 class LocalServerInterfaceImpl: LocalServerInterface {
     override suspend fun createOrUpdateUser(
@@ -85,11 +86,15 @@ class LocalServerInterfaceImpl: LocalServerInterface {
         TODO("Not yet implemented")
     }
 
-    override suspend fun getAssetDescriptors(): List<AssetDescriptor> {
+    override suspend fun getAssetDescriptors(after: Date?): List<AssetDescriptor> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun getAssetDescriptors(assetGlobalIdentifiers: List<AssetGlobalIdentifier>): List<AssetDescriptor> {
+    override suspend fun getAssetDescriptors(
+        assetGlobalIdentifiers: List<AssetGlobalIdentifier>?,
+        groupIds: List<GroupId>?,
+        after: Date?
+    ): List<AssetDescriptor> {
         TODO("Not yet implemented")
     }
 

@@ -22,6 +22,7 @@ import com.safehill.kclient.models.dtos.UserReactionDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.users.UserIdentifier
+import java.util.Date
 
 interface SafehillApi {
 
@@ -81,7 +82,6 @@ interface SafehillApi {
      * @param hashedPhoneNumbers: list of hashed phone numbers to retrieve the users.
      * @return [Map] of matched users. [Map.Entry.key] is the phone number hash and [Map.Entry.value] is the corresponding user.
      */
-
     suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<HashedPhoneNumber>): Map<HashedPhoneNumber, RemoteUser>
 
     /// Get a User's public key and public signature
@@ -91,16 +91,23 @@ interface SafehillApi {
     ///   - the users matching the identifiers
     suspend fun searchUsers(query: String, per: Int, page: Int): List<RemoteUser>
 
-    /// Get the descriptors for all the assets the local user has access to
-    suspend fun getAssetDescriptors(): List<AssetDescriptor>
+    /**
+     * Get the descriptors for all the assets the local user has access to
+     * @param assetGlobalIdentifiers if not empty, retrieve only the provided asset gids
+     * @param groupIds only returns descriptors for assets that are shared via the group ids, and return the group information only for the provided these group ids
+     * @param after retrieve only the ones uploaded or shared after this date
+     */
+    suspend fun getAssetDescriptors(
+        assetGlobalIdentifiers: List<AssetGlobalIdentifier>?,
+        groupIds: List<GroupId>?,
+        after: Date?
+    ): List<AssetDescriptor>
 
-    /// Get the descriptors for some assets given their identifiers.
-    /// Only descriptors whose assets th local user has access to can be retrieved.
-    /// - Parameters:
-    ///   - assetGlobalIdentifiers: the list of asset identifiers
-    /// - Returns:
-    ///   - the descriptor for the assets matching the criteria
-    suspend fun getAssetDescriptors(assetGlobalIdentifiers: List<AssetGlobalIdentifier>): List<AssetDescriptor>
+    /**
+     * Retrieve asset descriptor created or updated since the reference date
+     * @param after retrieve only the ones uploaded or shared after this date
+     */
+    suspend fun getAssetDescriptors(after: Date?): List<AssetDescriptor>
 
     /// Retrieve assets data and metadata
     /// - Parameters:
