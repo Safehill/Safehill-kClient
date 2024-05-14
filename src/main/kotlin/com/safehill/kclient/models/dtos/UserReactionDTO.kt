@@ -1,6 +1,8 @@
-package com.safehill.kclient.models.interactions
+package com.safehill.kclient.models.dtos
 
-interface UserReaction {
+import com.safehill.kclient.models.interactions.ReactionType
+
+interface UserReactionDTO {
     val interactionId: String?
     val senderUserIdentifier: String?
     val inReplyToAssetGlobalIdentifier: String?

@@ -1,6 +1,5 @@
 package com.safehill.kclient.api
 
-import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.dtos.AuthResponseDTO
 import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
 import com.safehill.kclient.models.assets.AssetDescriptor
@@ -9,6 +8,9 @@ import com.safehill.kclient.models.assets.EncryptedAssetImpl
 import com.safehill.kclient.models.assets.EncryptedAssetVersionImpl
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
+import com.safehill.kclient.network.SafehillApiImpl
+import com.safehill.kclient.network.SafehillHttpException
+import com.safehill.kclient.network.SafehillHttpStatusCode
 import com.safehill.kcrypto.models.SafehillKeyPair
 import com.safehill.kcrypto.models.LocalCryptoUser
 import kotlinx.coroutines.CoroutineScope

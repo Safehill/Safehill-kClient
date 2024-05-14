@@ -1,5 +1,6 @@
-package com.safehill.kclient.api
+package com.safehill.kclient.network
 
+import com.safehill.kclient.models.assets.*
 import com.safehill.kclient.models.dtos.HashedPhoneNumber
 import com.safehill.kclient.models.dtos.AuthResponseDTO
 import com.safehill.kclient.models.dtos.InteractionsGroupDTO
@@ -7,19 +8,12 @@ import com.safehill.kclient.models.dtos.MessageInputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.dtos.ReactionOutputDTO
 import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
-import com.safehill.kclient.models.assets.AssetDescriptor
-import com.safehill.kclient.models.assets.AssetDescriptorUploadState
-import com.safehill.kclient.models.assets.AssetQuality
-import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
-import com.safehill.kclient.models.assets.ShareableEncryptedAsset
-import com.safehill.kclient.models.interactions.UserReaction
+import com.safehill.kclient.models.dtos.UserReactionDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
-
-typealias AssetGlobalIdentifier = String
 
 interface SafehillApi {
 
@@ -215,7 +209,7 @@ interface SafehillApi {
     /// - Returns:
     ///   - the list of reactions added
     suspend fun addReactions(
-        reactions: List<UserReaction>,
+        reactions: List<UserReactionDTO>,
         toGroupId: String
     ): List<ReactionOutputDTO>
 
@@ -224,7 +218,7 @@ interface SafehillApi {
     ///   - reaction: the reaction type and references to remove
     ///   - fromGroupId: the group the reaction belongs to
     suspend fun removeReaction(
-        reaction: UserReaction,
+        reaction: UserReactionDTO,
         fromGroupId: String
     )
 

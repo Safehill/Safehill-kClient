@@ -1,6 +1,7 @@
-package com.safehill.kclient.models.interactions
+package com.safehill.kclient.models.dtos
 
-interface UserMessage {
+
+interface UserMessageDTO {
     val interactionId: String?
     val senderUserIdentifier: String?
     val inReplyToAssetGlobalIdentifier: String?

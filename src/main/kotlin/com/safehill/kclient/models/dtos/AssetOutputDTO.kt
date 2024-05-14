@@ -1,7 +1,7 @@
 package com.safehill.kclient.models.dtos
 
 import com.github.kittinunf.fuel.core.ResponseDeserializable
-import com.safehill.kclient.api.serde.ServerAssetSerializer
+import com.safehill.kclient.models.serde.ServerAssetSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.util.Date
@@ -12,10 +12,10 @@ data class AssetOutputDTO(
     val localIdentifier: String?,
     val creationDate: Date?,
     val groupId: String,
-    val versions: List<com.safehill.kclient.models.dtos.AssetVersionOutputDTO>,
+    val versions: List<AssetVersionOutputDTO>,
 ) {
-    class Deserializer : ResponseDeserializable<com.safehill.kclient.models.dtos.AssetOutputDTO> {
-        override fun deserialize(content: String): com.safehill.kclient.models.dtos.AssetOutputDTO {
+    class Deserializer : ResponseDeserializable<AssetOutputDTO> {
+        override fun deserialize(content: String): AssetOutputDTO {
             return Json.decodeFromString(content)
         }
     }

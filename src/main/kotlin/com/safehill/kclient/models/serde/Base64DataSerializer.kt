@@ -1,4 +1,4 @@
-package com.safehill.kclient.api.serde
+package com.safehill.kclient.models.serde
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind
