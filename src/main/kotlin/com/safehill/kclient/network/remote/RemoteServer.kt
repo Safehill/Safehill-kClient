@@ -10,13 +10,7 @@ import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.responseObject
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
-import com.safehill.kclient.models.assets.AssetDescriptorUploadState
-import com.safehill.kclient.models.assets.AssetDescriptor
-import com.safehill.kclient.models.assets.AssetGlobalIdentifier
-import com.safehill.kclient.models.assets.AssetQuality
-import com.safehill.kclient.models.assets.EncryptedAsset
-import com.safehill.kclient.models.assets.GroupId
-import com.safehill.kclient.models.assets.ShareableEncryptedAsset
+import com.safehill.kclient.models.assets.*
 import com.safehill.kclient.models.dtos.*
 import com.safehill.kclient.models.serde.toIso8601String
 import com.safehill.kclient.models.users.LocalUser
@@ -293,7 +287,19 @@ class RemoteServer(
         globalIdentifiers: List<AssetGlobalIdentifier>,
         versions: List<AssetQuality>?,
     ): Map<AssetGlobalIdentifier, EncryptedAsset> {
-        TODO("Not yet implemented")
+        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
+        val assetFilterCriteriaDTO = AssetSearchCriteriaDTO(
+            globalIdentifiers = globalIdentifiers,
+            versionNames = versions?.map { it.name }
+        )
+
+        val assetOutputDTOs = "/assets/retrieve".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Json.encodeToString(assetFilterCriteriaDTO))
+            .responseObject(AssetOutputDTO.ListDeserializer())
+            .getOrThrow()
+
+        return S3Proxy.fetchAssets(assetOutputDTOs)
     }
 
     @Throws
