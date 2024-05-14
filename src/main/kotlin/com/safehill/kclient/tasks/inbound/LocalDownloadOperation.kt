@@ -1,13 +1,13 @@
 package com.safehill.kclient.tasks.inbound
 
 import com.safehill.kclient.models.assets.AssetDescriptor
-import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
+import com.safehill.kclient.network.local.LocalServerInterface
 import com.safehill.kclient.tasks.BackgroundTask
 
 public class LocalDownloadOperation(
-    override val localUser: LocalUser,
+    val localServer: LocalServerInterface,
     override var listeners: List<DownloadOperationListener>
 ) : DownloadOperation, BackgroundTask {
     override suspend fun fetchDescriptors(): List<AssetDescriptor> {
