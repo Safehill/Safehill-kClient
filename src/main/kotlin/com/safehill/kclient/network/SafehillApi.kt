@@ -74,7 +74,7 @@ interface SafehillApi {
     /// - Returns:
     ///   - the users matching the criteria
     @Throws
-    suspend fun getUsers(withIdentifiers: List<UserIdentifier>): List<RemoteUser>
+    suspend fun getUsers(withIdentifiers: List<UserIdentifier>): Map<UserIdentifier, RemoteUser>
 
     /**
      * Get a User's public key and public signature
@@ -111,7 +111,7 @@ interface SafehillApi {
     suspend fun getAssets(
         globalIdentifiers: List<AssetGlobalIdentifier>,
         versions: List<AssetQuality>?
-    ): Map<String, EncryptedAsset>
+    ): Map<AssetGlobalIdentifier, EncryptedAsset>
 
     // MARK: Assets Write
 

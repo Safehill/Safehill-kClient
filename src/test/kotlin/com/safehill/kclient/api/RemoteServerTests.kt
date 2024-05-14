@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test
 import java.util.Base64
 import java.util.Date
 import kotlin.random.Random
+import kotlin.test.assertNotNull
 
 class RemoteServerTests {
 
@@ -137,7 +138,8 @@ class RemoteServerTests {
                 try {
                     val users = RemoteServer(user).getUsers(listOf(user.identifier))
                     assert(users.isNotEmpty())
-                    val retrievedUser = users[0]
+                    val retrievedUser = users[user.identifier]
+                    assertNotNull(retrievedUser)
                     assert(retrievedUser.identifier == user.identifier)
                     assert(retrievedUser.name == user.name)
                     assert(
@@ -206,7 +208,8 @@ class RemoteServerTests {
                     val users = RemoteServer(user).getUsers(listOf(user.identifier))
                     assert(users.isNotEmpty())
                     assert(users.count() == 1)
-                    val retrievedUser = users[0]
+                    val retrievedUser = users[user.identifier]
+                    assertNotNull(retrievedUser)
                     assert(retrievedUser.identifier == user.identifier)
                     assert(retrievedUser.name == user.name)
                     assert(
@@ -310,8 +313,9 @@ class RemoteServerTests {
         val api = RemoteServer(localUser)
 
         runBlocking {
+            val userId = localUser.shUser.identifier
             try {
-                api.getUsers(listOf(localUser.shUser.identifier)).firstOrNull()
+                api.getUsers(listOf(userId))[userId]
             } catch (e: SafehillHttpException) {
                 assert(e.statusCode == SafehillHttpStatusCode.UnAuthorized)
             }
@@ -319,13 +323,13 @@ class RemoteServerTests {
             createUserOnServer(this, localUser)
             authenticateUser(this, localUser)
 
-            api.getUsers(listOf(localUser.shUser.identifier)).firstOrNull()
+            api.getUsers(listOf(userId))[userId]
 
             // Invalid auth token
             localUser.authToken = ""
 
             try {
-                api.getUsers(listOf(localUser.shUser.identifier)).firstOrNull()
+                api.getUsers(listOf(userId))[userId]
             } catch (e: SafehillHttpException) {
                 assert(e.statusCode == SafehillHttpStatusCode.UnAuthorized)
             }

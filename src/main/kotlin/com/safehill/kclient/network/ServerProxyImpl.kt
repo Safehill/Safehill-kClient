@@ -41,14 +41,14 @@ class ServerProxyImpl(
         }
     }
 
-    override suspend fun getUsers(withIdentifiers: List<UserIdentifier>): List<RemoteUser> {
+    override suspend fun getUsers(withIdentifiers: List<UserIdentifier>): Map<UserIdentifier, RemoteUser> {
         if (withIdentifiers.isEmpty()) {
-            return emptyList()
+            return emptyMap()
         }
 
         return try {
             val remoteUsers = remoteServer.getUsers(withIdentifiers)
-            val updateResult = updateLocalUserDB(serverUsers = remoteUsers)
+            val updateResult = updateLocalUserDB(serverUsers = remoteUsers.values)
             updateResult
         } catch (exception: Exception) {
             val localUsers = localServer.getUsers(withIdentifiers)
@@ -221,7 +221,7 @@ class ServerProxyImpl(
         }
     }
 
-    private suspend fun updateLocalUserDB(serverUsers: List<RemoteUser>): List<RemoteUser> {
+    private suspend fun updateLocalUserDB(serverUsers: Collection<RemoteUser>): Map<UserIdentifier, RemoteUser> {
         serverUsers.forEach { serverUser ->
             try {
                 localServer.createOrUpdateUser(

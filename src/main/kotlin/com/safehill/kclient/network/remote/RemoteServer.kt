@@ -52,6 +52,8 @@ import com.safehill.kcrypto.models.RemoteCryptoUser
 import com.safehill.kcrypto.models.ShareablePayload
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.security.MessageDigest
@@ -215,12 +217,12 @@ class RemoteServer(
     }
 
     @Throws
-    override suspend fun getUsers(withIdentifiers: List<UserIdentifier>): List<RemoteUser> {
+    override suspend fun getUsers(withIdentifiers: List<UserIdentifier>): Map<UserIdentifier, RemoteUser> {
         val bearerToken =
             this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
 
         if (withIdentifiers.isEmpty()) {
-            return listOf()
+            return emptyMap()
         }
 
         val getUsersRequestBody = UserIdentifiersDTO(userIdentifiers = withIdentifiers)
@@ -234,6 +236,7 @@ class RemoteServer(
                 }
             )
             .getOrThrow()
+            .associateBy { it.identifier }
     }
 
     override suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<HashedPhoneNumber>): Map<HashedPhoneNumber, RemoteUser> {
@@ -562,5 +565,4 @@ class RemoteServer(
             }
         }
     }
-
 }
