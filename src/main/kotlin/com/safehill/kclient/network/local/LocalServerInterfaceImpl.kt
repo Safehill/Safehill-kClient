@@ -1,0 +1,186 @@
+package com.safehill.kclient.network.local
+
+import com.safehill.kclient.models.assets.*
+import com.safehill.kclient.models.dtos.*
+import com.safehill.kclient.models.users.LocalUser
+import com.safehill.kclient.models.users.RemoteUser
+import com.safehill.kclient.models.users.ServerUser
+import com.safehill.kclient.models.users.UserIdentifier
+
+class LocalServerInterfaceImpl: LocalServerInterface {
+    override suspend fun createOrUpdateUser(
+        identifier: String,
+        name: String,
+        publicKeyData: ByteArray,
+        publicSignatureData: ByteArray,
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun createOrUpdateThread(threads: List<ConversationThreadOutputDTO>) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun createOrUpdateThread(
+        name: String?,
+        recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>,
+    ): ConversationThreadOutputDTO {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun insertMessages(messages: List<MessageOutputDTO>, threadId: String) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun retrieveLastMessage(threadId: String): MessageOutputDTO? {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun upsertUsers(remoteUsers: List<RemoteUser>) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun deleteThreads(threadIds: List<String>) {
+        TODO("Not yet implemented")
+    }
+
+    override var requestor: LocalUser
+        get() = TODO("Not yet implemented")
+        set(value) {}
+
+    override suspend fun createUser(name: String): ServerUser {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun sendCodeToUser(
+        countryCode: Int,
+        phoneNumber: Long,
+        code: String,
+        medium: SendCodeToUserRequestDTO.Medium,
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun updateUser(name: String?, phoneNumber: String?, email: String?): ServerUser {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun deleteAccount() {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun signIn(): AuthResponseDTO {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getUsers(withIdentifiers: List<UserIdentifier>): Map<UserIdentifier, RemoteUser> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<HashedPhoneNumber>): Map<HashedPhoneNumber, RemoteUser> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun searchUsers(query: String, per: Int, page: Int): List<RemoteUser> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getAssetDescriptors(): List<AssetDescriptor> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getAssetDescriptors(assetGlobalIdentifiers: List<AssetGlobalIdentifier>): List<AssetDescriptor> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getAssets(
+        globalIdentifiers: List<AssetGlobalIdentifier>,
+        versions: List<AssetQuality>?,
+    ): Map<AssetGlobalIdentifier, EncryptedAsset> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun create(
+        assets: List<EncryptedAsset>,
+        groupId: GroupId,
+        filterVersions: List<AssetQuality>?,
+    ): List<AssetOutputDTO> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun share(asset: ShareableEncryptedAsset) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun unshare(assetId: AssetGlobalIdentifier, userPublicIdentifier: UserIdentifier) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun retrieveThread(usersIdentifiers: List<UserIdentifier>): ConversationThreadOutputDTO? {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun retrieveThread(threadId: String): ConversationThreadOutputDTO? {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun upload(
+        serverAsset: AssetOutputDTO,
+        asset: EncryptedAsset,
+        filterVersions: List<AssetQuality>,
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun markAsset(
+        assetGlobalIdentifier: AssetGlobalIdentifier,
+        quality: AssetQuality,
+        asState: AssetDescriptorUploadState,
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun deleteAssets(globalIdentifiers: List<AssetGlobalIdentifier>): List<AssetGlobalIdentifier> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun setGroupEncryptionDetails(
+        groupId: GroupId,
+        recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>,
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun deleteGroup(groupId: GroupId) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun retrieveGroupUserEncryptionDetails(groupId: GroupId): List<RecipientEncryptionDetailsDTO> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun addReactions(reactions: List<UserReactionDTO>, toGroupId: GroupId): List<ReactionOutputDTO> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun removeReaction(reaction: UserReactionDTO, fromGroupId: GroupId) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun retrieveInteractions(
+        inGroupId: GroupId,
+        per: Int,
+        page: Int,
+        before: String?,
+    ): InteractionsGroupDTO {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun addMessages(messages: List<MessageInputDTO>, groupId: GroupId): List<MessageOutputDTO> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun listThreads(): List<ConversationThreadOutputDTO> {
+        TODO("Not yet implemented")
+    }
+}
