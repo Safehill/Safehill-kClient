@@ -11,11 +11,7 @@ public interface DownloadOperationListener {
         referencingUsers: Map<UserIdentifier, ServerUser>
     )
 
-    fun didIdentify(
-        globalToLocalAssets: Map<AssetLocalIdentifier, AssetGlobalIdentifier>
-    )
-
-    fun didFetch(
+    fun fetched(
         decryptedAsset: DecryptedAsset
     )
 }

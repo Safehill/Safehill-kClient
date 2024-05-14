@@ -19,4 +19,10 @@ data class AssetOutputDTO(
             return Json.decodeFromString(content)
         }
     }
+
+    class ListDeserializer : ResponseDeserializable<List<AssetOutputDTO>> {
+        override fun deserialize(content: String): List<AssetOutputDTO> {
+            return Json.decodeFromString(content)
+        }
+    }
 }

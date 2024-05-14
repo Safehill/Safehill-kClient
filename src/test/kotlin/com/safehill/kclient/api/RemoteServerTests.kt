@@ -6,11 +6,12 @@ import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAssetImpl
 import com.safehill.kclient.models.assets.EncryptedAssetVersionImpl
+import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
-import com.safehill.kclient.network.SafehillApiImpl
-import com.safehill.kclient.network.SafehillHttpException
-import com.safehill.kclient.network.SafehillHttpStatusCode
+import com.safehill.kclient.network.remote.RemoteServer
+import com.safehill.kclient.network.exceptions.SafehillHttpException
+import com.safehill.kclient.network.remote.SafehillHttpStatusCode
 import com.safehill.kcrypto.models.SafehillKeyPair
 import com.safehill.kcrypto.models.LocalCryptoUser
 import kotlinx.coroutines.CoroutineScope
@@ -20,8 +21,9 @@ import org.junit.jupiter.api.Test
 import java.util.Base64
 import java.util.Date
 import kotlin.random.Random
+import kotlin.test.assertNotNull
 
-class SafehillApiImplTests {
+class RemoteServerTests {
 
     private suspend fun createUserOnServer(
         coroutineScope: CoroutineScope,
@@ -41,7 +43,7 @@ class SafehillApiImplTests {
         var error: Exception? = null
         val createJob = coroutineScope.launch {
             try {
-                serverUser = SafehillApiImpl(localUser).createUser(newUserName)
+                serverUser = RemoteServer(localUser).createUser(newUserName)
             } catch (err: Exception) {
                 error = err
             }
@@ -67,7 +69,7 @@ class SafehillApiImplTests {
 
         val authJob = coroutineScope.launch {
             try {
-                authResponse = SafehillApiImpl(localUser).signIn()
+                authResponse = RemoteServer(localUser).signIn()
             } catch (err: Exception) {
                 error = err
             }
@@ -91,7 +93,7 @@ class SafehillApiImplTests {
 
         val deleteJob = coroutineScope.launch {
             try {
-                SafehillApiImpl(localUser).deleteAccount()
+                RemoteServer(localUser).deleteAccount()
             } catch (err: Exception) {
                 error = err
             }
@@ -107,13 +109,13 @@ class SafehillApiImplTests {
     private suspend fun deleteAssets(
         coroutineScope: CoroutineScope,
         localUser: LocalUser,
-        assets: List<com.safehill.kclient.models.dtos.AssetOutputDTO>
+        assets: List<AssetOutputDTO>
     ) {
         var error: Exception? = null
 
         val deleteJob = coroutineScope.launch {
             try {
-                SafehillApiImpl(localUser).deleteAssets(assets.map { it.globalIdentifier })
+                RemoteServer(localUser).deleteAssets(assets.map { it.globalIdentifier })
             } catch (err: Exception) {
                 error = err
             }
@@ -135,9 +137,10 @@ class SafehillApiImplTests {
             var error: Exception? = null
             var getJob = launch {
                 try {
-                    val users = SafehillApiImpl(user).getUsers(listOf(user.identifier))
+                    val users = RemoteServer(user).getUsers(listOf(user.identifier))
                     assert(users.isNotEmpty())
-                    val retrievedUser = users[0]
+                    val retrievedUser = users[user.identifier]
+                    assertNotNull(retrievedUser)
                     assert(retrievedUser.identifier == user.identifier)
                     assert(retrievedUser.name == user.name)
                     assert(
@@ -166,7 +169,7 @@ class SafehillApiImplTests {
 
             val updateJob = launch {
                 try {
-                    val updatedUser = SafehillApiImpl(user).updateUser(
+                    val updatedUser = RemoteServer(user).updateUser(
                         name = null,
                         phoneNumber = newPhoneNumber,
                         email = null
@@ -187,7 +190,7 @@ class SafehillApiImplTests {
 
             val authJob = launch {
                 try {
-                    val authResponse = SafehillApiImpl(user).signIn()
+                    val authResponse = RemoteServer(user).signIn()
                     assert(authResponse.metadata.isPhoneNumberVerified)
                 } catch (err: Exception) {
                     error = err
@@ -203,10 +206,11 @@ class SafehillApiImplTests {
 
             getJob = launch {
                 try {
-                    val users = SafehillApiImpl(user).getUsers(listOf(user.identifier))
+                    val users = RemoteServer(user).getUsers(listOf(user.identifier))
                     assert(users.isNotEmpty())
                     assert(users.count() == 1)
-                    val retrievedUser = users[0]
+                    val retrievedUser = users[user.identifier]
+                    assertNotNull(retrievedUser)
                     assert(retrievedUser.identifier == user.identifier)
                     assert(retrievedUser.name == user.name)
                     assert(
@@ -256,9 +260,9 @@ class SafehillApiImplTests {
             val user = createUserOnServer(this)
             authenticateUser(this, user)
 
-            val api = SafehillApiImpl(user)
+            val api = RemoteServer(user)
 
-            var createdAsset: com.safehill.kclient.models.dtos.AssetOutputDTO? = null
+            var createdAsset: AssetOutputDTO? = null
             var error: Exception? = null
             val createJob = launch {
                 try {
@@ -280,9 +284,31 @@ class SafehillApiImplTests {
             }
 
             var descriptors: List<AssetDescriptor> = emptyList()
-            val getDescriptorJob = launch {
+            var getDescriptorJob = launch {
                 try {
-                    descriptors = api.getAssetDescriptors()
+                    descriptors = api.getAssetDescriptors(after = null)
+                } catch (err: Exception) {
+                    error = err
+                }
+            }
+            getDescriptorJob.join()
+
+            error?.let {
+                deleteAssets(this, user, listOf(createdAsset!!))
+                deleteUser(this, user)
+                println("error: $it")
+                throw it
+            }
+
+            assert(descriptors.size == 1)
+
+            getDescriptorJob = launch {
+                try {
+                    descriptors = api.getAssetDescriptors(
+                        assetGlobalIdentifiers = listOf(createdAsset!!.globalIdentifier),
+                        groupIds = null,
+                        after = null
+                    )
                 } catch (err: Exception) {
                     error = err
                 }
@@ -307,11 +333,12 @@ class SafehillApiImplTests {
     fun testUnauthorizedGetUsers() {
         val cryptoUser = LocalCryptoUser()
         val localUser = LocalUser(cryptoUser)
-        val api = SafehillApiImpl(localUser)
+        val api = RemoteServer(localUser)
 
         runBlocking {
+            val userId = localUser.shUser.identifier
             try {
-                api.getUsers(listOf(localUser.shUser.identifier)).firstOrNull()
+                api.getUsers(listOf(userId))[userId]
             } catch (e: SafehillHttpException) {
                 assert(e.statusCode == SafehillHttpStatusCode.UnAuthorized)
             }
@@ -319,13 +346,13 @@ class SafehillApiImplTests {
             createUserOnServer(this, localUser)
             authenticateUser(this, localUser)
 
-            api.getUsers(listOf(localUser.shUser.identifier)).firstOrNull()
+            api.getUsers(listOf(userId))[userId]
 
             // Invalid auth token
             localUser.authToken = ""
 
             try {
-                api.getUsers(listOf(localUser.shUser.identifier)).firstOrNull()
+                api.getUsers(listOf(userId))[userId]
             } catch (e: SafehillHttpException) {
                 assert(e.statusCode == SafehillHttpStatusCode.UnAuthorized)
             }
@@ -335,7 +362,7 @@ class SafehillApiImplTests {
     @Test
     fun testAuthenticateNonExistingUser() {
         val localUser = LocalUser(LocalCryptoUser())
-        val api = SafehillApiImpl(localUser)
+        val api = RemoteServer(localUser)
 
         runBlocking {
             try {
@@ -353,7 +380,7 @@ class SafehillApiImplTests {
             authenticateUser(this, user)
 
             var error: Exception? = null
-            val api = SafehillApiImpl(user)
+            val api = RemoteServer(user)
 
             try {
                 api.sendCodeToUser(1, 4151234567, "12345", SendCodeToUserRequestDTO.Medium.SMS)

@@ -35,22 +35,21 @@ class UserController(
 
     private suspend fun getUsersFromLocalOrServer(userIdentifiers: List<UserIdentifier>): Map<UserIdentifier, ServerUser> {
         val localUsers = serverProxy.localServer.getUsers(userIdentifiers)
-        val remaining = userIdentifiers - localUsers.map { it.identifier }.toSet()
+        val remaining = userIdentifiers - localUsers.map { it.key }.toSet()
 
         val requiredUsers = if (remaining.isEmpty()) {
             localUsers
         } else {
             serverProxy.remoteServer.getUsers(remaining).also {
-                serverProxy.localServer.upsertUsers(it)
+                serverProxy.localServer.upsertUsers(it.values.toList())
             } + localUsers
         }
 
         return requiredUsers
-            .also(::cacheUser)
-            .associateBy { it.identifier }
+            .also { cacheUser(it.values) }
     }
 
-    private fun cacheUser(users: List<ServerUser>) {
+    private fun cacheUser(users: Collection<ServerUser>) {
         users.forEach {
             usersCache.put(it.identifier, it)
         }
