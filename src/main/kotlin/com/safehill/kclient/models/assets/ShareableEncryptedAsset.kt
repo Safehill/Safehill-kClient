@@ -3,5 +3,5 @@ package com.safehill.kclient.models.assets
 interface ShareableEncryptedAsset {
     val globalIdentifier: AssetGlobalIdentifier
     val sharedVersions: List<ShareableEncryptedAssetVersion>
-    val groupId: String
+    val groupId: GroupId
 }

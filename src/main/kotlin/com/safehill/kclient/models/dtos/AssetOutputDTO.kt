@@ -12,10 +12,16 @@ data class AssetOutputDTO(
     val localIdentifier: String?,
     val creationDate: Date?,
     val groupId: String,
-    val versions: List<com.safehill.kclient.models.dtos.AssetVersionOutputDTO>,
+    val versions: List<AssetVersionOutputDTO>,
 ) {
-    class Deserializer : ResponseDeserializable<com.safehill.kclient.models.dtos.AssetOutputDTO> {
-        override fun deserialize(content: String): com.safehill.kclient.models.dtos.AssetOutputDTO {
+    class Deserializer : ResponseDeserializable<AssetOutputDTO> {
+        override fun deserialize(content: String): AssetOutputDTO {
+            return Json.decodeFromString(content)
+        }
+    }
+
+    class ListDeserializer : ResponseDeserializable<List<AssetOutputDTO>> {
+        override fun deserialize(content: String): List<AssetOutputDTO> {
             return Json.decodeFromString(content)
         }
     }

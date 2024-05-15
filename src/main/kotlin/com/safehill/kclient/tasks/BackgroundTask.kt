@@ -1,5 +1,5 @@
 package com.safehill.kclient.tasks
 
-interface BackgroundTask {
+public interface BackgroundTask {
     suspend fun run()
 }

@@ -1,4 +1,4 @@
-package com.safehill.kclient.network
+package com.safehill.kclient.network.remote
 
 import com.github.kittinunf.fuel.core.FuelManager
 import com.github.kittinunf.fuel.core.HttpException
@@ -10,6 +10,8 @@ import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.responseObject
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
+import com.safehill.kclient.models.assets.*
+import com.safehill.kclient.models.dtos.*
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetDescriptorUploadState
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
@@ -43,74 +45,42 @@ import com.safehill.kclient.models.serde.toIso8601String
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
+import com.safehill.kclient.models.users.UserIdentifier
+import com.safehill.kclient.network.SafehillApi
+import com.safehill.kclient.network.exceptions.SafehillHttpException
+import com.safehill.kclient.network.exceptions.UnauthorizedSafehillHttpException
 import com.safehill.kcrypto.SafehillCypher
 import com.safehill.kcrypto.models.RemoteCryptoUser
 import com.safehill.kcrypto.models.ShareablePayload
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.security.MessageDigest
 import java.util.Base64
 import java.util.Date
 
-enum class ServerEnvironment {
-    Production, Development
-}
-
-enum class SafehillHttpStatusCode(val statusCode: Int) {
-    UnAuthorized(401),
-    PaymentRequired(402),
-    NotFound(404),
-    MethodNotAllowed(405),
-    Conflict(409);
-
-    companion object {
-        fun fromInt(value: Int): SafehillHttpStatusCode? {
-            return entries.firstOrNull() { it.statusCode == value }
-        }
-    }
-}
-
-val UnAuthorizedException = SafehillHttpException(
-    statusCode = 401,
-    message = "unauthorized",
-)
-
-data class SafehillHttpException(
-    val statusCode: SafehillHttpStatusCode?,
-    override val message: String,
-    val httpException: HttpException
-) : Exception(message, httpException) {
-    constructor(
-        statusCode: Int,
-        message: String,
-        httpException: HttpException = HttpException(statusCode, message)
-    ) : this(
-        SafehillHttpStatusCode.fromInt(statusCode),
-        "$statusCode: $message",
-        httpException
-    )
-}
-
 
 // For Fuel how to see https://www.baeldung.com/kotlin/fuel
 
-
-// todo properly setup fuel configurations only once
-var alreadyInstantiated = false
-
-class SafehillApiImpl(
+class RemoteServer(
     override var requestor: LocalUser,
-    private val environment: ServerEnvironment = ServerEnvironment.Development,
+    private val environment: RemoteServerEnvironment = RemoteServerEnvironment.Development,
     hostname: String = "localhost"
 ) : SafehillApi {
+
+    // todo properly setup fuel configurations only once
+    companion object {
+        var alreadyInstantiated = false
+    }
 
     init {
         if (!alreadyInstantiated) {
             FuelManager.instance.basePath = when (this.environment) {
-                ServerEnvironment.Development -> "http://${hostname}:8080"
-                ServerEnvironment.Production -> "https://app.safehill.io:443"
+                RemoteServerEnvironment.Development -> "http://${hostname}:8080"
+                RemoteServerEnvironment.Production -> "https://app.safehill.io:443"
             }
             FuelManager.instance.baseHeaders = mapOf("Content-type" to "application/json")
             FuelManager.instance.timeoutInMillisecond = 10000
@@ -144,7 +114,7 @@ class SafehillApiImpl(
         code: String,
         medium: SendCodeToUserRequestDTO.Medium,
     ) {
-        val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
+        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
 
         val requestBody = SendCodeToUserRequestDTO(
             countryCode = countryCode,
@@ -167,7 +137,7 @@ class SafehillApiImpl(
         phoneNumber: String?,
         email: String?,
     ): ServerUser {
-        val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
+        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
 
         val requestBody = UserUpdateDTO(
             identifier = null,
@@ -185,13 +155,8 @@ class SafehillApiImpl(
     }
 
     @Throws
-    override suspend fun deleteAccount(name: String, password: String) {
-        TODO("Not yet implemented")
-    }
-
-    @Throws
     override suspend fun deleteAccount() {
-        val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
+        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
 
         "/users/safe_delete".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
@@ -254,12 +219,12 @@ class SafehillApiImpl(
     }
 
     @Throws
-    override suspend fun getUsers(withIdentifiers: List<String>): List<RemoteUser> {
+    override suspend fun getUsers(withIdentifiers: List<UserIdentifier>): Map<UserIdentifier, RemoteUser> {
         val bearerToken =
-            this.requestor.authToken ?: throw UnAuthorizedException
+            this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
 
         if (withIdentifiers.isEmpty()) {
-            return listOf()
+            return emptyMap()
         }
 
         val getUsersRequestBody = UserIdentifiersDTO(userIdentifiers = withIdentifiers)
@@ -273,11 +238,12 @@ class SafehillApiImpl(
                 }
             )
             .getOrThrow()
+            .associateBy { it.identifier }
     }
 
     override suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<HashedPhoneNumber>): Map<HashedPhoneNumber, RemoteUser> {
         val bearerToken =
-            this.requestor.authToken ?: throw UnAuthorizedException
+            this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
 
         if (hashedPhoneNumbers.isEmpty()) {
             return mapOf()
@@ -294,7 +260,7 @@ class SafehillApiImpl(
 
     @Throws
     override suspend fun searchUsers(query: String, per: Int, page: Int): List<RemoteUser> {
-        val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
+        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
 
         return "/users/search".httpGet(
             listOf(
@@ -310,18 +276,39 @@ class SafehillApiImpl(
     }
 
     @Throws
-    override suspend fun getAssetDescriptors(): List<AssetDescriptor> {
-        val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
+    override suspend fun getAssetDescriptors(after: Date?): List<AssetDescriptor> {
+        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
+        val descriptorFilterCriteriaDTO = AssetDescriptorFilterCriteriaDTO(
+            after = after?.toIso8601String(),
+            globalIdentifiers = null,
+            groupIds = null
+        )
 
         return "/assets/descriptors/retrieve".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Json.encodeToString(descriptorFilterCriteriaDTO))
             .responseObject(AssetDescriptor.ListDeserializer())
             .getOrThrow()
     }
 
     @Throws
-    override suspend fun getAssetDescriptors(assetGlobalIdentifiers: List<AssetGlobalIdentifier>): List<AssetDescriptor> {
-        TODO("Not yet implemented")
+    override suspend fun getAssetDescriptors(
+        assetGlobalIdentifiers: List<AssetGlobalIdentifier>?,
+        groupIds: List<GroupId>?,
+        after: Date?
+    ): List<AssetDescriptor> {
+        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
+        val descriptorFilterCriteriaDTO = AssetDescriptorFilterCriteriaDTO(
+            after = after?.toIso8601String(),
+            globalIdentifiers = assetGlobalIdentifiers,
+            groupIds = groupIds
+        )
+
+        return "/assets/descriptors/retrieve".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Json.encodeToString(descriptorFilterCriteriaDTO))
+            .responseObject(AssetDescriptor.ListDeserializer())
+            .getOrThrow()
     }
 
     override suspend fun getAssets(threadId: String): List<ConversationThreadAssetDTO> {
@@ -335,16 +322,28 @@ class SafehillApiImpl(
 
     @Throws
     override suspend fun getAssets(
-        globalIdentifiers: List<String>,
+        globalIdentifiers: List<AssetGlobalIdentifier>,
         versions: List<AssetQuality>?,
-    ): Map<String, EncryptedAsset> {
-        TODO("Not yet implemented")
+    ): Map<AssetGlobalIdentifier, EncryptedAsset> {
+        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
+        val assetFilterCriteriaDTO = AssetSearchCriteriaDTO(
+            globalIdentifiers = globalIdentifiers,
+            versionNames = versions?.map { it.name }
+        )
+
+        val assetOutputDTOs = "/assets/retrieve".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Json.encodeToString(assetFilterCriteriaDTO))
+            .responseObject(AssetOutputDTO.ListDeserializer())
+            .getOrThrow()
+
+        return S3Proxy.fetchAssets(assetOutputDTOs)
     }
 
     @Throws
     override suspend fun create(
         assets: List<EncryptedAsset>,
-        groupId: String,
+        groupId: GroupId,
         filterVersions: List<AssetQuality>?,
     ): List<com.safehill.kclient.models.dtos.AssetOutputDTO> {
         if (assets.size > 1) {
@@ -352,7 +351,7 @@ class SafehillApiImpl(
         }
         val asset = assets.first()
 
-        val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
+        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
 
         val assetCreatedAt = asset.creationDate ?: run { Date(0) }
         val requestBody = com.safehill.kclient.models.dtos.AssetInputDTO(
@@ -382,11 +381,14 @@ class SafehillApiImpl(
         TODO("Not yet implemented")
     }
 
-    override suspend fun unshare(assetId: AssetGlobalIdentifier, userPublicIdentifier: String) {
+    override suspend fun unshare(
+        assetId: AssetGlobalIdentifier,
+        userPublicIdentifier: UserIdentifier
+    ) {
         TODO("Not yet implemented")
     }
 
-    override suspend fun retrieveThread(usersIdentifiers: List<String>): ConversationThreadOutputDTO? {
+    override suspend fun retrieveThread(usersIdentifiers: List<UserIdentifier>): ConversationThreadOutputDTO? {
         return listThreads(usersIdentifiers).firstOrNull()
     }
 
@@ -418,7 +420,7 @@ class SafehillApiImpl(
 
 
     @OptIn(ExperimentalSerializationApi::class)
-    private fun listThreads(usersIdentifiers: List<String>?): List<ConversationThreadOutputDTO> {
+    private fun listThreads(usersIdentifiers: List<UserIdentifier>?): List<ConversationThreadOutputDTO> {
         val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
 
         val request = usersIdentifiers?.let {
@@ -479,45 +481,51 @@ class SafehillApiImpl(
     }
 
     @Throws
-    override suspend fun deleteAssets(globalIdentifiers: List<String>): List<String> {
-        val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
+    override suspend fun deleteAssets(globalIdentifiers: List<AssetGlobalIdentifier>): List<AssetGlobalIdentifier> {
+        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
 
         val responseResult = "/assets/delete".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Gson().toJson(com.safehill.kclient.models.dtos.AssetDeleteCriteriaDTO(globalIdentifiers)))
+            .body(
+                Gson().toJson(
+                    com.safehill.kclient.models.dtos.AssetDeleteCriteriaDTO(
+                        globalIdentifiers
+                    )
+                )
+            )
             .response()
         return responseResult.getMappingOrThrow { globalIdentifiers }
     }
 
     override suspend fun setGroupEncryptionDetails(
-        groupId: String,
+        groupId: GroupId,
         recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>,
     ) {
         TODO("Not yet implemented")
     }
 
-    override suspend fun deleteGroup(groupId: String) {
+    override suspend fun deleteGroup(groupId: GroupId) {
         TODO("Not yet implemented")
     }
 
-    override suspend fun retrieveGroupUserEncryptionDetails(groupId: String): List<RecipientEncryptionDetailsDTO> {
+    override suspend fun retrieveGroupUserEncryptionDetails(groupId: GroupId): List<RecipientEncryptionDetailsDTO> {
         TODO("Not yet implemented")
     }
 
     override suspend fun addReactions(
-        reactions: List<UserReaction>,
-        toGroupId: String
+        reactions: List<UserReactionDTO>,
+        toGroupId: GroupId
     ): List<ReactionOutputDTO> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun removeReaction(reaction: UserReaction, fromGroupId: String) {
+    override suspend fun removeReaction(reaction: UserReactionDTO, fromGroupId: GroupId) {
         TODO("Not yet implemented")
     }
 
     @OptIn(ExperimentalSerializationApi::class)
     override suspend fun retrieveInteractions(
-        inGroupId: String,
+        inGroupId: GroupId,
         per: Int,
         page: Int,
         before: String?
@@ -551,7 +559,7 @@ class SafehillApiImpl(
     @OptIn(ExperimentalSerializationApi::class)
     override suspend fun addMessages(
         messages: List<MessageInputDTO>,
-        groupId: String
+        groupId: GroupId
     ): List<MessageOutputDTO> {
         require(messages.size == 1) {
             "Can only add one message at a time."
@@ -610,5 +618,4 @@ class SafehillApiImpl(
             }
         }
     }
-
 }

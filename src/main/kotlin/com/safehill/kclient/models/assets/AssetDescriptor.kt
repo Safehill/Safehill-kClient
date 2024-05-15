@@ -2,9 +2,12 @@ package com.safehill.kclient.models.assets
 
 import com.github.kittinunf.fuel.core.ResponseDeserializable
 import com.safehill.kclient.models.serde.AssetDescriptorSerializer
+import com.safehill.kclient.models.users.UserIdentifier
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.util.*
+
+typealias GroupId = String
 
 @Serializable(with = AssetDescriptorSerializer::class)
 interface AssetDescriptor : RemoteAssetIdentifiable {
@@ -33,12 +36,12 @@ interface AssetDescriptor : RemoteAssetIdentifiable {
             val createdAt: Date?
         }
 
-        val sharedByUserIdentifier: String
-        val sharedWithUserIdentifiersInGroup: Map<String, String>
+        val sharedByUserIdentifier: UserIdentifier
         /// Maps user public identifiers to asset group identifiers
-        val groupInfoById: Map<String, GroupInfo>
+        val sharedWithUserIdentifiersInGroup: Map<UserIdentifier, GroupId>
+        val groupInfoById: Map<GroupId, GroupInfo>
 
-        fun userSharingInfo(userId: String): GroupInfo? {
+        fun userSharingInfo(userId: UserIdentifier): GroupInfo? {
             this.sharedWithUserIdentifiersInGroup[userId]?.let {
                 return this.groupInfoById[it]
             }
@@ -46,8 +49,8 @@ interface AssetDescriptor : RemoteAssetIdentifiable {
         }
     }
 
-    override val globalIdentifier: String
-    override val localIdentifier: String?
+    override val globalIdentifier: AssetGlobalIdentifier
+    override val localIdentifier: AssetLocalIdentifier?
     val creationDate: Date?
     var uploadState: UploadState
     var sharingInfo: SharingInfo

@@ -1,8 +1,9 @@
-package com.safehill.kclient.network
+package com.safehill.kclient.network.local
 
 import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
+import com.safehill.kclient.network.SafehillApi
 
 interface LocalServerInterface : SafehillApi {
     suspend fun createOrUpdateUser(
