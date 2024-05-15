@@ -111,18 +111,6 @@ interface SafehillApi {
         threadId: String
     ): List<ConversationThreadAssetDTO>
 
-//    func getAssets(
-//    inThread threadId: String,
-//    completionHandler: @escaping (Result<[ConversationThreadAssetDTO], Error>) -> ()
-//    ) {
-//        self.post(
-//            "threads/retrieve/\(threadId)/assets",
-//            parameters: nil,
-//            requiresAuthentication: true,
-//        completionHandler: completionHandler
-//        )
-//    }
-
 
     /// Retrieve assets data and metadata
     /// - Parameters:
