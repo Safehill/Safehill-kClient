@@ -1,17 +1,17 @@
 package com.safehill.kcrypto
 
-import com.safehill.kclient.api.SafehillApiImpl
-import com.safehill.kclient.api.dtos.SHAuthChallengeResponseDTO
-import com.safehill.kclient.api.dtos.SHAuthResolvedChallengeDTO
-import com.safehill.kclient.models.SHLocalUser
-import com.safehill.kcrypto.models.SHKeyPair
-import com.safehill.kcrypto.models.SHLocalCryptoUser
-import com.safehill.kcrypto.models.SHPrivateKey
-import com.safehill.kcrypto.models.SHPublicKey
-import com.safehill.kcrypto.models.SHShareablePayload
-import com.safehill.kcrypto.models.SHSignature
-import com.safehill.kcrypto.models.SHSymmetricKey
-import com.safehill.kcrypto.models.SHSymmetricKeySize
+import com.safehill.kclient.network.remote.RemoteServer
+import com.safehill.kclient.models.dtos.AuthChallengeResponseDTO
+import com.safehill.kclient.models.dtos.AuthResolvedChallengeDTO
+import com.safehill.kclient.models.users.LocalUser
+import com.safehill.kcrypto.models.SafehillKeyPair
+import com.safehill.kcrypto.models.LocalCryptoUser
+import com.safehill.kcrypto.models.SafehillPrivateKey
+import com.safehill.kcrypto.models.SafehillPublicKey
+import com.safehill.kcrypto.models.ShareablePayload
+import com.safehill.kcrypto.models.SafehillSignature
+import com.safehill.kcrypto.models.SymmetricKey
+import com.safehill.kcrypto.models.SymmetricKeySize
 import com.safehill.kcrypto.models.SHUserContext
 import org.junit.jupiter.api.Test
 import java.util.Arrays
@@ -27,20 +27,20 @@ class CipherTests {
 
     @Test
     fun testGenerateOTP() {
-        val secret = SHCypher.generateRandomIV()
-        val (code1, _) = SHCypher.generateOTPCode(secret = secret, digits = 6)
+        val secret = SafehillCypher.generateRandomIV()
+        val (code1, _) = SafehillCypher.generateOTPCode(secret = secret, digits = 6)
         assertEquals(code1.length, 6)
 
-        val (code2, _) = SHCypher.generateOTPCode(secret = secret, digits = 6)
+        val (code2, _) = SafehillCypher.generateOTPCode(secret = secret, digits = 6)
         assertEquals(code1.length, 6)
         assertEquals(code1, code2)
 
-        val (code3, _) = SHCypher.generateOTPCode(
+        val (code3, _) = SafehillCypher.generateOTPCode(
             secret = secret,
             digits = 6,
             timeStepInSeconds = 1
         )
-        val (code4, valid4) = SHCypher.generateOTPCode(
+        val (code4, valid4) = SafehillCypher.generateOTPCode(
             secret = secret,
             digits = 6,
             timeStepInSeconds = 1
@@ -49,21 +49,21 @@ class CipherTests {
 
         Thread.sleep(valid4 + 1)
 
-        val (code5, _) = SHCypher.generateOTPCode(
+        val (code5, _) = SafehillCypher.generateOTPCode(
             secret = secret,
             digits = 6,
             timeStepInSeconds = 1
         )
         assertNotEquals(code4, code5)
 
-        val (code6, _) = SHCypher.generateOTPCode(
+        val (code6, _) = SafehillCypher.generateOTPCode(
             secret = secret,
             digits = 6,
             timeStepInSeconds = 2
         )
         assertNotEquals(code5, code6)
 
-        val (code7, _) = SHCypher.generateOTPCode(
+        val (code7, _) = SafehillCypher.generateOTPCode(
             secret = secret,
             digits = 6,
             timeStepInSeconds = 2
@@ -72,34 +72,34 @@ class CipherTests {
 
         Thread.sleep(1100)
 
-        val (code8, valid8) = SHCypher.generateOTPCode(
+        val (code8, valid8) = SafehillCypher.generateOTPCode(
             secret = secret,
             digits = 6,
             timeStepInSeconds = 2
         )
         Thread.sleep(max(0, valid8 - 100))
-        val (code9, valid9) = SHCypher.generateOTPCode(
+        val (code9, valid9) = SafehillCypher.generateOTPCode(
             secret = secret,
             digits = 6,
             timeStepInSeconds = 2
         )
         assertEquals(code8, code9)
         Thread.sleep(valid9 + 1)
-        val (code10, _) = SHCypher.generateOTPCode(
+        val (code10, _) = SafehillCypher.generateOTPCode(
             secret = secret,
             digits = 6,
             timeStepInSeconds = 2
         )
         assertNotEquals(code9, code10)
 
-        val newSecret = SHCypher.generateRandomIV()
-        val (code11, valid11) = SHCypher.generateOTPCode(
+        val newSecret = SafehillCypher.generateRandomIV()
+        val (code11, valid11) = SafehillCypher.generateOTPCode(
             secret = newSecret,
             digits = 6,
             timeStepInSeconds = 2
         )
         Thread.sleep(max(0, valid11 - 100))
-        val (code12, _) = SHCypher.generateOTPCode(
+        val (code12, _) = SafehillCypher.generateOTPCode(
             secret = newSecret,
             digits = 6,
             timeStepInSeconds = 2
@@ -110,18 +110,18 @@ class CipherTests {
     @Test
     fun testEncryptDecryptSharedSecretStaticIV() {
         val stringToEncrypt = "Text to encrypt"
-        val encryptionKey = SHSymmetricKey().secretKeySpec.encoded
+        val encryptionKey = SymmetricKey().secretKeySpec.encoded
 
         val STATIC_IV: ByteArray = Base64.getDecoder().decode("/5RWVwIP//+i///Z")
 
         // Encrypt
         val cipherText =
-            SHCypher.encrypt(stringToEncrypt.toByteArray(), encryptionKey, iv = STATIC_IV)
+            SafehillCypher.encrypt(stringToEncrypt.toByteArray(), encryptionKey, iv = STATIC_IV)
         assertNotNull(cipherText)
 
         // Base64 Encoded CipherText
         val cipherText2 =
-            SHCypher.encrypt(stringToEncrypt.toByteArray(), encryptionKey, iv = STATIC_IV)
+            SafehillCypher.encrypt(stringToEncrypt.toByteArray(), encryptionKey, iv = STATIC_IV)
         assertNotNull(cipherText2)
         assertEquals(
             Base64.getEncoder().encodeToString(cipherText),
@@ -129,7 +129,7 @@ class CipherTests {
         )
 
         // Decrypt
-        val decrypted = SHCypher.decrypt(cipherText, encryptionKey)
+        val decrypted = SafehillCypher.decrypt(cipherText, encryptionKey)
         assertEquals(stringToEncrypt, String(decrypted))
     }
 
@@ -137,20 +137,20 @@ class CipherTests {
     fun testEncryptDecryptSharedSecret() {
         val base64Encoder = Base64.getEncoder()
         val stringToEncrypt = "Text to encrypt"
-        val encryptionKey = SHSymmetricKey().secretKeySpec.encoded
+        val encryptionKey = SymmetricKey().secretKeySpec.encoded
 
         // Generate IV
-        val iv = SHCypher.generateRandomIV()
+        val iv = SafehillCypher.generateRandomIV()
 
         // Encrypt
-        val cipherText = SHCypher.encrypt(stringToEncrypt.toByteArray(), encryptionKey, iv)
+        val cipherText = SafehillCypher.encrypt(stringToEncrypt.toByteArray(), encryptionKey, iv)
         assertNotNull(cipherText)
 
         // Base64 Encoded CipherText
-        val cipherText2 = SHCypher.encrypt(
+        val cipherText2 = SafehillCypher.encrypt(
             stringToEncrypt.toByteArray(),
             encryptionKey,
-            SHCypher.generateRandomIV()
+            SafehillCypher.generateRandomIV()
         )
         assertNotNull(cipherText2)
         val cypher1base1 = base64Encoder.encodeToString(cipherText)
@@ -162,7 +162,7 @@ class CipherTests {
         assertEquals(cypher2base1, cypher2base2)
 
         // Decrypt
-        val decrypted = SHCypher.decrypt(cipherText, encryptionKey)
+        val decrypted = SafehillCypher.decrypt(cipherText, encryptionKey)
         assertEquals(stringToEncrypt, String(decrypted))
 
         val base64Key = base64Encoder.encodeToString(encryptionKey)
@@ -191,17 +191,17 @@ class CipherTests {
         assertNotNull(cipherText)
         assertNotNull(encryptionKey)
 
-        val kotlinEncrypted = SHCypher.encrypt(clearString.toByteArray(), encryptionKey, iv)
+        val kotlinEncrypted = SafehillCypher.encrypt(clearString.toByteArray(), encryptionKey, iv)
         assertEquals(cipherTextBase64, base64Encoder.encodeToString(kotlinEncrypted))
 
-        val decrypted = SHCypher.decrypt(cipherText, encryptionKey, iv)
+        val decrypted = SafehillCypher.decrypt(cipherText, encryptionKey, iv)
         val decryptedValue = String(decrypted)
         assertEquals(decryptedValue, clearString)
 
         // Assert the `SHCypher.decrypt` method is flexible enough to deal with Swift-encrypted values
         // By applying the split implemented above on `AEADBadTagException` on first try
         val cipherText2 = base64Decoder.decode(encrypted)
-        val decrypted2 = SHCypher.decrypt(cipherText2, encryptionKey)
+        val decrypted2 = SafehillCypher.decrypt(cipherText2, encryptionKey)
         val decryptedValue2 = String(decrypted2)
         assertEquals(decryptedValue2, clearString)
     }
@@ -210,18 +210,18 @@ class CipherTests {
     fun testSimpleEncryptDecryptWithPublicKeySignature() {
         val string = "This is a test"
         val data = string.toByteArray()
-        val senderSignatureKeys = SHKeyPair.generate()
-        val receiverEncryptionKeys = SHKeyPair.generate()
-        val ephemeralSecret = SHKeyPair.generate()
+        val senderSignatureKeys = SafehillKeyPair.generate()
+        val receiverEncryptionKeys = SafehillKeyPair.generate()
+        val ephemeralSecret = SafehillKeyPair.generate()
 
-        val encrypted = SHCypher.encrypt(
+        val encrypted = SafehillCypher.encrypt(
             message = data,
             receiverPublicKey = receiverEncryptionKeys.public,
             ephemeralKey = ephemeralSecret,
             protocolSalt = STATIC_PROTOCOL_SALT,
             senderSignatureKey = senderSignatureKeys
         )
-        val decrypted = SHCypher.decrypt(
+        val decrypted = SafehillCypher.decrypt(
             sealedMessage = encrypted,
             encryptionKey = receiverEncryptionKeys,
             protocolSalt = STATIC_PROTOCOL_SALT,
@@ -236,15 +236,15 @@ class CipherTests {
         val string = "This is a test"
         val data = string.toByteArray()
 
-        val senderSignatureKeys = SHKeyPair.generate()
-        val receiverEncryptionKeys = SHKeyPair.generate()
+        val senderSignatureKeys = SafehillKeyPair.generate()
+        val receiverEncryptionKeys = SafehillKeyPair.generate()
 
-        val ephemeralSecret = SHKeyPair.generate()
-        val sharedIV = SHCypher.generateRandomIV()
+        val ephemeralSecret = SafehillKeyPair.generate()
+        val sharedIV = SafehillCypher.generateRandomIV()
 
-        val secret = SHSymmetricKey(SHSymmetricKeySize.BITS_256).secretKeySpec
-        val encryptedDataWithSecret = SHCypher.encrypt(data, secret.encoded, sharedIV)
-        val encryptedSecretUsingReceiverPublicKey = SHCypher.encrypt(
+        val secret = SymmetricKey(SymmetricKeySize.BITS_256).secretKeySpec
+        val encryptedDataWithSecret = SafehillCypher.encrypt(data, secret.encoded, sharedIV)
+        val encryptedSecretUsingReceiverPublicKey = SafehillCypher.encrypt(
             message = secret.encoded,
             receiverPublicKey = receiverEncryptionKeys.public,
             ephemeralKey = ephemeralSecret,
@@ -256,14 +256,14 @@ class CipherTests {
          SENDER shares `encryptedDataWithSecret` and `encryptedSecretUsingReceiverPublicKey` with RECEIVER.
          RECEIVER decrypts `encryptedSecretUsingReceiverPublicKey` to retrieve `decryptedSecret`, which can be used to decrypt `encryptedDataWithSecret`
          */
-        val decryptedSecretBytes = SHCypher.decrypt(
+        val decryptedSecretBytes = SafehillCypher.decrypt(
             sealedMessage = encryptedSecretUsingReceiverPublicKey,
             encryptionKey = receiverEncryptionKeys,
             protocolSalt = STATIC_PROTOCOL_SALT,
             signedBy = senderSignatureKeys.public
         )
-        val decryptedSecret = SHSymmetricKey(decryptedSecretBytes).secretKeySpec
-        val decryptedData = SHCypher.decrypt(encryptedDataWithSecret, decryptedSecret.encoded)
+        val decryptedSecret = SymmetricKey(decryptedSecretBytes).secretKeySpec
+        val decryptedData = SafehillCypher.decrypt(encryptedDataWithSecret, decryptedSecret.encoded)
         val decryptedString = String(decryptedData)
 
         assertEquals(string, decryptedString)
@@ -278,18 +278,18 @@ class CipherTests {
 
         val senderSignatureBase64 =
             "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEk5nINqQDigFdTIEI5BJ1o4E72RDs4S7qi1/9dYRGcLQhENITPpM9jYM7KMpeg1/xgTFWZL+pk9rhfNorHOat5A=="
-        val senderSignature = SHPublicKey.from(Base64.getDecoder().decode(senderSignatureBase64))
+        val senderSignature = SafehillPublicKey.from(Base64.getDecoder().decode(senderSignatureBase64))
 
         val receiverPrivateKeyBase64 =
             "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgZco8S8aWD0NBYHcRvuu/xhdY7b1YcnxkkjwOuXdKlOqhRANCAATbl2f801RNl2FIY2F/p2G0nydd2Wy6Kzo7i1Er8fGUnE97Nh+RvUYz+J7MxS4mek29n4OF4Aj14veEmojDTucI"
         val receiverPrivateKey =
-            SHPrivateKey.from(Base64.getDecoder().decode(receiverPrivateKeyBase64))
+            SafehillPrivateKey.from(Base64.getDecoder().decode(receiverPrivateKeyBase64))
         val receiverPublicKeyBase64 =
             "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE25dn/NNUTZdhSGNhf6dhtJ8nXdlsuis6O4tRK/HxlJxPezYfkb1GM/iezMUuJnpNvZ+DheAI9eL3hJqIw07nCA=="
         val receiverPublicKey =
-            SHPublicKey.from(Base64.getDecoder().decode(receiverPublicKeyBase64))
+            SafehillPublicKey.from(Base64.getDecoder().decode(receiverPublicKeyBase64))
 
-        val sharedIV = SHCypher.generateRandomIV()
+        val sharedIV = SafehillCypher.generateRandomIV()
 
         val encryptedDataWithSecret =
             Base64.getDecoder().decode("IsYvvvsGrKG0/Y4LmtvAFX7DHCJsVbH5b5wzsV/u6BOCNGT10x9tnFqX")
@@ -300,7 +300,7 @@ class CipherTests {
         val signatureBase64 =
             "MEYCIQDSLaclSCN3gC07e5GOiJH1KNz6+YkybcYlaJlVf0YLHwIhAPEEXOPp6I1I03/YyCFx8II/yXyapwa1BqXbiEDdepGR"
 
-        val encryptedSecretUsingReceiverPublicKey = SHShareablePayload(
+        val encryptedSecretUsingReceiverPublicKey = ShareablePayload(
             Base64.getDecoder().decode(ephemeralPublicKeyDataBase64),
             Base64.getDecoder().decode(cipherTextBase64),
             Base64.getDecoder().decode(signatureBase64),
@@ -311,7 +311,7 @@ class CipherTests {
          SENDER shares `encryptedDataWithSecret` and `encryptedSecretUsingReceiverPublicKey` with RECEIVER.
          RECEIVER decrypts `encryptedSecretUsingReceiverPublicKey` to retrieve `decryptedSecret`, which can be used to decrypt `encryptedDataWithSecret`
          */
-        val decryptedSecretBytes = SHCypher.decrypt(
+        val decryptedSecretBytes = SafehillCypher.decrypt(
             sealedMessage = encryptedSecretUsingReceiverPublicKey,
             userPrivateKey = receiverPrivateKey,
             userPublicKey = receiverPublicKey,
@@ -319,9 +319,9 @@ class CipherTests {
             iv = iv,
             signedBy = senderSignature
         )
-        val decryptedSecret = SHSymmetricKey(decryptedSecretBytes).secretKeySpec
+        val decryptedSecret = SymmetricKey(decryptedSecretBytes).secretKeySpec
         val decryptedData =
-            SHCypher.decrypt(encryptedDataWithSecret, decryptedSecret.encoded, sharedIV)
+            SafehillCypher.decrypt(encryptedDataWithSecret, decryptedSecret.encoded, sharedIV)
         val decryptedString = String(decryptedData)
 
         assertEquals(string, decryptedString)
@@ -329,12 +329,12 @@ class CipherTests {
 
     @Test
     fun testServerAuthenticationChallenge() {
-        val clientUser = SHLocalCryptoUser()
-        val serverUser = SHLocalCryptoUser()
+        val clientUser = LocalCryptoUser()
+        val serverUser = LocalCryptoUser()
 
         // SERVER creates challenge (prefixed with /**/ are server executions in a real world scenario)
         /**/
-        val challenge = SHSymmetricKey(SHSymmetricKeySize.BITS_128).secretKeySpec.encoded
+        val challenge = SymmetricKey(SymmetricKeySize.BITS_128).secretKeySpec.encoded
         /**/
         val encryptedChallenge = SHUserContext(serverUser).shareable(
             challenge,
@@ -344,7 +344,7 @@ class CipherTests {
 
         // Check the client would be able to verify it
         assert(
-            SHSignature.verify(
+            SafehillSignature.verify(
                 encryptedChallenge.ciphertext + encryptedChallenge.ephemeralPublicKeyData + clientUser.key.public.encoded,
                 encryptedChallenge.signature,
                 serverUser.publicSignature
@@ -389,7 +389,7 @@ class CipherTests {
             )
         )
 
-        val authChallenge = SHAuthChallengeResponseDTO(
+        val authChallenge = AuthChallengeResponseDTO(
             challengeBase64,
             ephemeralPublicKeyBase64,
             ephemeralPublicSignatureBase64,
@@ -400,15 +400,15 @@ class CipherTests {
         )
 
         // Client solves the challenge
-        val solvedChallenge: SHAuthResolvedChallengeDTO =
-            SafehillApiImpl(SHLocalUser(clientUser)).solveChallenge(authChallenge)
+        val solvedChallenge: AuthResolvedChallengeDTO =
+            RemoteServer(LocalUser(clientUser)).solveChallenge(authChallenge)
 
         val signedChallenge = Base64.getDecoder().decode(solvedChallenge.signedChallenge)
         val digest = Base64.getDecoder().decode(solvedChallenge.digest)
         val signedDigest = Base64.getDecoder().decode(solvedChallenge.signedDigest)
 
         // SERVER verifies the solved challenge
-        /**/ assert(SHSignature.verify(challenge, signedChallenge, clientUser.publicSignature))
-        /**/ assert(SHSignature.verify(digest, signedDigest, clientUser.publicSignature))
+        /**/ assert(SafehillSignature.verify(challenge, signedChallenge, clientUser.publicSignature))
+        /**/ assert(SafehillSignature.verify(digest, signedDigest, clientUser.publicSignature))
     }
 }

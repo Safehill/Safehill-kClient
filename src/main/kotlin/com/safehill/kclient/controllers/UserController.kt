@@ -1,6 +1,7 @@
 package com.safehill.kclient.controllers
 
-import com.safehill.kclient.models.SHServerUser
+import com.safehill.kclient.models.users.ServerUser
+import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.ServerProxy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -10,9 +11,9 @@ class UserController(
     private val serverProxy: ServerProxy
 ) {
 
-    private val usersCache = ConcurrentHashMap<String, SHServerUser>(50)
+    private val usersCache = ConcurrentHashMap<UserIdentifier, ServerUser>(50)
 
-    suspend fun getUsers(userIdentifiers: List<String>): Result<Map<String, SHServerUser>> {
+    suspend fun getUsers(userIdentifiers: List<UserIdentifier>): Result<Map<UserIdentifier, ServerUser>> {
         return withContext(Dispatchers.IO) {
             runCatching {
                 val distinctIdentifiers = userIdentifiers.toSet().toMutableList()
@@ -32,24 +33,23 @@ class UserController(
         }
     }
 
-    private suspend fun getUsersFromLocalOrServer(userIdentifiers: List<String>): Map<String, SHServerUser> {
+    private suspend fun getUsersFromLocalOrServer(userIdentifiers: List<UserIdentifier>): Map<UserIdentifier, ServerUser> {
         val localUsers = serverProxy.localServer.getUsers(userIdentifiers)
-        val remaining = userIdentifiers - localUsers.map { it.identifier }.toSet()
+        val remaining = userIdentifiers - localUsers.map { it.key }.toSet()
 
         val requiredUsers = if (remaining.isEmpty()) {
             localUsers
         } else {
             serverProxy.remoteServer.getUsers(remaining).also {
-                serverProxy.localServer.upsertUsers(it)
+                serverProxy.localServer.upsertUsers(it.values.toList())
             } + localUsers
         }
 
         return requiredUsers
-            .also(::cacheUser)
-            .associateBy { it.identifier }
+            .also { cacheUser(it.values) }
     }
 
-    private fun cacheUser(users: List<SHServerUser>) {
+    private fun cacheUser(users: Collection<ServerUser>) {
         users.forEach {
             usersCache.put(it.identifier, it)
         }
