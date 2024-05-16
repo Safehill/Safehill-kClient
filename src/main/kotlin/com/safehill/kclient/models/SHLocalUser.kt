@@ -1,6 +1,8 @@
 package com.safehill.kclient.models
 
 import com.safehill.kclient.api.dtos.SHAuthResponseDTO
+import com.safehill.kclient.errors.SHBackgroundOperationError
+import com.safehill.kclient.errors.SHLocalUserError
 import com.safehill.kcrypto.models.SHCryptoUser
 import com.safehill.kcrypto.models.SHLocalCryptoUser
 import com.safehill.kcrypto.models.SHShareablePayload
@@ -10,6 +12,7 @@ import java.util.Base64
 
 class SHLocalUser(
     var shUser: SHLocalCryptoUser,
+    val maybeEncryptionProtocolSalt: ByteArray? = null
 ) : SHServerUser {
 
     override val identifier: String
@@ -31,6 +34,52 @@ class SHLocalUser(
 
     var authToken: String? = null
     var encryptionSalt: ByteArray = byteArrayOf()
+
+    fun decrypt(
+        asset: SHEncryptedAsset,
+        quality: SHAssetQuality,
+        receivedFromUser: SHServerUser
+    ): SHDecryptedAsset {
+        val version = asset.encryptedVersions[quality]
+            ?: throw SHBackgroundOperationError.FatalError("No such version ${quality.name} for asset=${asset.globalIdentifier}")
+
+        val sharedSecret = SHShareablePayload(
+            ephemeralPublicKeyData = version.publicKeyData,
+            ciphertext = version.encryptedSecret,
+            signature = version.publicSignatureData
+        )
+
+        val decryptedData = decrypt(
+            data = version.encryptedData,
+            encryptedSecret = sharedSecret,
+            receivedFrom = receivedFromUser
+        )
+
+        return SHGenericDecryptedAsset(
+            globalIdentifier = asset.globalIdentifier,
+            localIdentifier = asset.localIdentifier,
+            decryptedVersions = mutableMapOf(quality to decryptedData),
+            creationDate = asset.creationDate
+        )
+
+    }
+
+    fun decrypt(
+        data: ByteArray,
+        encryptedSecret: SHShareablePayload,
+        receivedFrom: SHServerUser
+    ): ByteArray {
+        val salt = maybeEncryptionProtocolSalt ?: throw SHLocalUserError.MissingProtocolSalt
+
+        return SHUserContext(shUser)
+            .decrypt(
+                data,
+                encryptedSecret,
+                salt,
+                receivedFrom
+            )
+
+    }
 
     private fun updateUserDetails(given: SHServerUser?) {
         given?.let {
