@@ -1,7 +1,5 @@
-package com.safehill.kclient.models
+package com.safehill.kclient.models.assets
 
-import com.safehill.kclient.models.assets.AssetDescriptor
-import com.safehill.kclient.models.assets.DecryptedAsset
 import java.net.URI
 import java.util.Date
 

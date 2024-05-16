@@ -43,5 +43,4 @@ data class RemoteUser(
             return Json.decodeFromString(content)
         }
     }
-
 }

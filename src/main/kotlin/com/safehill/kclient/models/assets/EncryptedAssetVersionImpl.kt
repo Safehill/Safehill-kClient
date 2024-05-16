@@ -7,4 +7,3 @@ class EncryptedAssetVersionImpl(
     override val publicKeyData: ByteArray,
     override val publicSignatureData: ByteArray
 ) : EncryptedAssetVersion
-

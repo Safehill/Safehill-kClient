@@ -1,27 +1,26 @@
 package com.safehill.kclient.controllers
 
-import com.safehill.kclient.GlobalIdentifier
-import com.safehill.kclient.errors.SHBackgroundOperationError
-import com.safehill.kclient.models.SHAssetDescriptor
-import com.safehill.kclient.models.SHAssetQuality
-import com.safehill.kclient.models.SHDecryptedAsset
-import com.safehill.kclient.models.SHEncryptedAsset
-import com.safehill.kclient.models.SHLocalUser
+import com.safehill.kclient.errors.BackgroundOperationError
+import com.safehill.kclient.models.assets.AssetDescriptor
+import com.safehill.kclient.models.assets.AssetQuality
+import com.safehill.kclient.models.assets.DecryptedAsset
+import com.safehill.kclient.models.assets.EncryptedAsset
+import com.safehill.kclient.models.users.LocalUser
+import com.safehill.kclient.network.GlobalIdentifier
 import com.safehill.kclient.network.ServerProxy
-import com.safehill.kclient.network.ServerProxyInterface
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 
 class LocalAssetsStoreController(
-    private var serverProxy: ServerProxyInterface,
-    private var user: SHLocalUser,
+    private var serverProxy: ServerProxy,
+    private var user: LocalUser,
 ) {
     suspend fun encryptedAsset(
         globalIdentifier: GlobalIdentifier,
-        versions: List<SHAssetQuality>? = null,
+        versions: List<AssetQuality>? = null,
         cacheHiResolution: Boolean,
-    ): SHEncryptedAsset? {
+    ): EncryptedAsset? {
         val encryptedAssets = encryptedAssets(
             globalIdentifiers = listOf(globalIdentifier),
             versions = versions,
@@ -32,28 +31,28 @@ class LocalAssetsStoreController(
 
     suspend fun encryptedAssets(
         globalIdentifiers: List<GlobalIdentifier>,
-        versions: List<SHAssetQuality>? = null,
+        versions: List<AssetQuality>? = null,
         cacheHiResolution: Boolean,
-    ): Map<GlobalIdentifier, SHEncryptedAsset> {
+    ): Map<GlobalIdentifier, EncryptedAsset> {
         return CoroutineScope(Dispatchers.IO).async {
             return@async serverProxy.getLocalAssets(
                 globalIdentifiers = globalIdentifiers,
-                versions = versions ?: SHAssetQuality.entries,
+                versions = versions ?: AssetQuality.entries,
                 cacheHiResolution = cacheHiResolution
             )
         }.await()
     }
 
     private suspend fun decryptedAssetInternal(
-        encryptedAsset: SHEncryptedAsset,
-        quality: SHAssetQuality,
-        descriptor: SHAssetDescriptor,
-    ): SHDecryptedAsset {
+        encryptedAsset: EncryptedAsset,
+        quality: AssetQuality,
+        descriptor: AssetDescriptor,
+    ): DecryptedAsset {
         val user = user
         if (descriptor.sharingInfo.sharedByUserIdentifier == user.identifier) {
             return user.decrypt(encryptedAsset, quality, user)
         } else {
-            val usersDict = UserController(serverProxy as ServerProxy).getUsers(
+            val usersDict = UserController(serverProxy).getUsers(
                 listOf(descriptor.sharingInfo.sharedByUserIdentifier)
             ).getOrThrow()
             if (usersDict.size == 1) {
@@ -61,19 +60,19 @@ class LocalAssetsStoreController(
                 if (serverUser.identifier == descriptor.sharingInfo.sharedByUserIdentifier) {
                     return user.decrypt(encryptedAsset, quality, serverUser)
                 } else {
-                    throw SHBackgroundOperationError.UnexpectedData(usersDict)
+                    throw BackgroundOperationError.UnexpectedData(usersDict)
                 }
             } else {
-                throw SHBackgroundOperationError.UnexpectedData(usersDict)
+                throw BackgroundOperationError.UnexpectedData(usersDict)
             }
         }
     }
 
     suspend fun decryptedAsset(
-        encryptedAsset: SHEncryptedAsset,
-        quality: SHAssetQuality,
-        descriptor: SHAssetDescriptor? = null,
-    ): SHDecryptedAsset {
+        encryptedAsset: EncryptedAsset,
+        quality: AssetQuality,
+        descriptor: AssetDescriptor? = null,
+    ): DecryptedAsset {
         if (descriptor != null) {
             return decryptedAssetInternal(
                 encryptedAsset = encryptedAsset,
@@ -90,9 +89,8 @@ class LocalAssetsStoreController(
                     descriptor = foundDescriptor,
                 )
             } else {
-                throw SHBackgroundOperationError.MissingAssetInLocalServer(encryptedAsset.globalIdentifier)
+                throw BackgroundOperationError.MissingAssetInLocalServer(encryptedAsset.globalIdentifier)
             }
         }
     }
-
 }

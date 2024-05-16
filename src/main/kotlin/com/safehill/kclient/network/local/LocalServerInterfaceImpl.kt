@@ -6,6 +6,7 @@ import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
+import com.safehill.kclient.network.GlobalIdentifier
 import java.util.Date
 
 class LocalServerInterfaceImpl: LocalServerInterface {
@@ -42,6 +43,13 @@ class LocalServerInterfaceImpl: LocalServerInterface {
     }
 
     override suspend fun deleteThreads(threadIds: List<String>) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getAssetDescriptors(
+        globalIdentifiers: List<GlobalIdentifier>?,
+        filteringGroups: List<String>?
+    ): List<AssetDescriptor> {
         TODO("Not yet implemented")
     }
 

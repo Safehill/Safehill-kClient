@@ -8,4 +8,3 @@ class DecryptedAssetImpl(
     override var creationDate: Date?,
     override var decryptedVersions: Map<AssetQuality, ByteArray>
 ) : DecryptedAsset
-

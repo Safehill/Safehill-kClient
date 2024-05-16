@@ -22,4 +22,3 @@ class AssetDescriptorImpl(
         ) : AssetDescriptor.SharingInfo.GroupInfo {}
     }
 }
-

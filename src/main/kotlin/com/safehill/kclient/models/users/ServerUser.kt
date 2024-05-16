@@ -6,4 +6,3 @@ interface ServerUser: CryptoUser {
     val identifier: UserIdentifier
     val name: String
 }
-
