@@ -90,6 +90,10 @@ class LocalServerInterfaceImpl: LocalServerInterface {
         TODO("Not yet implemented")
     }
 
+    override suspend fun getAssets(threadId: String): List<ConversationThreadAssetDTO> {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun getAssetDescriptors(
         assetGlobalIdentifiers: List<AssetGlobalIdentifier>?,
         groupIds: List<GroupId>?,

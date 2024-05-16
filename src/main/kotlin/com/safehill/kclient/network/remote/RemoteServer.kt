@@ -10,14 +10,16 @@ import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.responseObject
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
-import com.safehill.kclient.models.assets.*
-import com.safehill.kclient.models.dtos.*
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetDescriptorUploadState
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAsset
+import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.assets.ShareableEncryptedAsset
+import com.safehill.kclient.models.dtos.AssetDescriptorFilterCriteriaDTO
+import com.safehill.kclient.models.dtos.AssetOutputDTO
+import com.safehill.kclient.models.dtos.AssetSearchCriteriaDTO
 import com.safehill.kclient.models.dtos.AuthChallengeRequestDTO
 import com.safehill.kclient.models.dtos.AuthChallengeResponseDTO
 import com.safehill.kclient.models.dtos.AuthResolvedChallengeDTO
@@ -39,8 +41,8 @@ import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
 import com.safehill.kclient.models.dtos.UserIdentifiersDTO
 import com.safehill.kclient.models.dtos.UserInputDTO
 import com.safehill.kclient.models.dtos.UserPhoneNumbersDTO
+import com.safehill.kclient.models.dtos.UserReactionDTO
 import com.safehill.kclient.models.dtos.UserUpdateDTO
-import com.safehill.kclient.models.interactions.UserReaction
 import com.safehill.kclient.models.serde.toIso8601String
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
@@ -54,8 +56,6 @@ import com.safehill.kcrypto.models.RemoteCryptoUser
 import com.safehill.kcrypto.models.ShareablePayload
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.builtins.MapSerializer
-import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.security.MessageDigest
@@ -312,7 +312,7 @@ class RemoteServer(
     }
 
     override suspend fun getAssets(threadId: String): List<ConversationThreadAssetDTO> {
-        val bearerToken = this.requestor.authToken ?: throw UnAuthorizedException
+        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
 
         return "/threads/retrieve/$threadId/assets".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
