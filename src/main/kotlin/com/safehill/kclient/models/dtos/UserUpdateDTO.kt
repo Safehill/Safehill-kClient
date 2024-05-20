@@ -10,4 +10,4 @@ data class UserUpdateDTO(
     val phoneNumber: String?,
     val publicKey: String?,
     val publicSignature: String?
-) {}
+)

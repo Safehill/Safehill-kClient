@@ -345,7 +345,7 @@ class RemoteServer(
         assets: List<EncryptedAsset>,
         groupId: GroupId,
         filterVersions: List<AssetQuality>?,
-    ): List<com.safehill.kclient.models.dtos.AssetOutputDTO> {
+    ): List<AssetOutputDTO> {
         if (assets.size > 1) {
             throw NotImplementedError("Current API only supports creating one asset per request")
         }
@@ -372,7 +372,7 @@ class RemoteServer(
         val shOutput = "/assets/create".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Gson().toJson(requestBody))
-            .responseObject(com.safehill.kclient.models.dtos.AssetOutputDTO.Deserializer())
+            .responseObject(AssetOutputDTO.Deserializer())
             .getOrThrow()
         return listOf(shOutput)
     }
@@ -465,7 +465,7 @@ class RemoteServer(
     }
 
     override suspend fun upload(
-        serverAsset: com.safehill.kclient.models.dtos.AssetOutputDTO,
+        serverAsset: AssetOutputDTO,
         asset: EncryptedAsset,
         filterVersions: List<AssetQuality>,
     ) {

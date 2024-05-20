@@ -7,4 +7,4 @@ data class UserSearchDTO(
     val query: String,
     val per: Int,
     val page: Int
-) {}
+)
