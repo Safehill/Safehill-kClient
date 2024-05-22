@@ -73,6 +73,12 @@ class RemoteServer(
     hostname: String = "localhost"
 ) : SafehillApi {
 
+    @OptIn(ExperimentalSerializationApi::class)
+    private val ignorantJson = Json {
+        ignoreUnknownKeys = true
+        explicitNulls = false
+    }
+
     // todo properly setup fuel configurations only once
     companion object {
         var alreadyInstantiated = false
@@ -348,13 +354,16 @@ class RemoteServer(
         val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
         val assetFilterCriteriaDTO = AssetSearchCriteriaDTO(
             globalIdentifiers = globalIdentifiers,
-            versionNames = versions?.map { it.name }
+            versionNames = versions?.map { it.toString() }
         )
 
         val assetOutputDTOs = "/assets/retrieve".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Json.encodeToString(assetFilterCriteriaDTO))
-            .responseObject(AssetOutputDTO.ListDeserializer())
+            .responseObject(
+                loader = ListSerializer(AssetOutputDTO.serializer()),
+                json = ignorantJson
+            )
             .getOrThrow()
 
         return S3Proxy.fetchAssets(assetOutputDTOs)
@@ -392,7 +401,7 @@ class RemoteServer(
         val shOutput = "/assets/create".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Gson().toJson(requestBody))
-            .responseObject(AssetOutputDTO.Deserializer())
+            .responseObject(AssetOutputDTO.serializer())
             .getOrThrow()
         return listOf(shOutput)
     }
