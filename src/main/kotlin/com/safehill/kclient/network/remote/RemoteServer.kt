@@ -354,7 +354,7 @@ class RemoteServer(
         val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
         val assetFilterCriteriaDTO = AssetSearchCriteriaDTO(
             globalIdentifiers = globalIdentifiers,
-            versionNames = versions?.map { it.toString() }
+            versionNames = versions?.map { it.value }
         )
 
         val assetOutputDTOs = "/assets/retrieve".httpPost()

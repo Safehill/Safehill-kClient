@@ -11,12 +11,11 @@ import com.safehill.kclient.models.assets.EncryptedAssetVersion
 import com.safehill.kclient.models.assets.EncryptedAssetVersionImpl
 import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.dtos.AssetVersionOutputDTO
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import java.lang.Exception
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 
 class S3Proxy {
 
@@ -34,13 +33,16 @@ class S3Proxy {
                 .filterNotNull()
                 .associateBy { it.globalIdentifier }
         }
-
-        private suspend fun fetchAsset(asset: AssetOutputDTO, coroutineScope: CoroutineScope): EncryptedAsset? {
+        private suspend fun fetchAsset(
+            asset: AssetOutputDTO,
+            coroutineScope: CoroutineScope
+        ): EncryptedAsset? {
             val deferredResults = asset.versions.map { serverAssetVersion ->
                 coroutineScope.async {
                     try {
                         fetchAssetVersion(serverAssetVersion)
                     } catch (e: Exception) {
+                        println(e)
                         // TODO: Propagate errors instead of just swallowing them
                         null
                     }
@@ -66,7 +68,7 @@ class S3Proxy {
         private suspend fun fetchAssetVersion(assetVersion: AssetVersionOutputDTO): EncryptedAssetVersion? {
             assetVersion.presignedURL?.let { url ->
                 return EncryptedAssetVersionImpl(
-                    quality = AssetQuality.valueOf(assetVersion.versionName),
+                    quality = AssetQuality.entries.first { it.value == assetVersion.versionName },
                     encryptedData = fetchData(url),
                     encryptedSecret = assetVersion.encryptedSecret,
                     publicKeyData = assetVersion.publicKeyData,
