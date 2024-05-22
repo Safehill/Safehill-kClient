@@ -2,14 +2,15 @@ package com.safehill.kclient.tasks
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.time.Duration
 
-public class BackgroundTaskProcessor<T: BackgroundTask>(private val coroutineScope: CoroutineScope) {
+class BackgroundTaskProcessor<T : BackgroundTask>(private val coroutineScope: CoroutineScope) {
 
     internal val taskQueue = ConcurrentLinkedQueue<T>()
     private val processingMutex = Mutex()
@@ -39,7 +40,7 @@ public class BackgroundTaskProcessor<T: BackgroundTask>(private val coroutineSco
         taskQueue.add(task)
     }
 
-    fun addTaskRepeatedly(task: T, repeatingIntervalMillis: Long) {
+    fun addTaskRepeatedly(task: T, repeatingIntervalDuration: Duration) {
         repeatingLifecycle = coroutineScope.launch {
             while (isActive) {
                 if (currentJob?.isActive != true && taskQueue.isEmpty()) {
@@ -47,7 +48,7 @@ public class BackgroundTaskProcessor<T: BackgroundTask>(private val coroutineSco
                 } else {
                     // Skip this cycle, as a task of the same kind is already running
                 }
-                delay(repeatingIntervalMillis)
+                delay(repeatingIntervalDuration)
             }
         }
     }

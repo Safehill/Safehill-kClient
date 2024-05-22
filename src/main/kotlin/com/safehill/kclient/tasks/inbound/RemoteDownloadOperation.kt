@@ -1,14 +1,19 @@
 package com.safehill.kclient.tasks.inbound
 
-import com.safehill.kclient.models.assets.*
+import com.safehill.kclient.controllers.UserController
+import com.safehill.kclient.models.assets.AssetDescriptor
+import com.safehill.kclient.models.assets.AssetGlobalIdentifier
+import com.safehill.kclient.models.assets.AssetQuality
+import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.ServerProxy
 
-public class RemoteDownloadOperation(
+class RemoteDownloadOperation(
     val serverProxy: ServerProxy,
-    override var listeners: List<DownloadOperationListener>
+    override val listeners: List<DownloadOperationListener>,
+    private val userController: UserController
 ) : AbstractDownloadOperation() {
 
     companion object {
@@ -23,8 +28,7 @@ public class RemoteDownloadOperation(
     }
 
     override suspend fun getUsers(withIdentifiers: List<UserIdentifier>): Map<UserIdentifier, ServerUser> {
-        // TODO: Define a user cache layer so that we don't have to make an HTTP call for cached users if this method is called multiple times
-        return serverProxy.getUsers(withIdentifiers)
+        return userController.getUsers(withIdentifiers).getOrThrow()
     }
 
     override suspend fun getEncryptedAssets(
