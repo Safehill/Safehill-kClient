@@ -6,5 +6,5 @@ class DecryptedAssetImpl(
     override val globalIdentifier: AssetGlobalIdentifier,
     override val localIdentifier: AssetLocalIdentifier?,
     override val creationDate: Date?,
-    override val decryptedVersions: Map<AssetQuality, ByteArray>
+    override var decryptedVersions: Map<AssetQuality, ByteArray>
 ) : DecryptedAsset

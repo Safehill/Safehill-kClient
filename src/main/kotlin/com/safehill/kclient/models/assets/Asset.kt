@@ -100,6 +100,6 @@ data class AndroidAsset(
 )
 
 data class BackedUpAndroidAsset(
-    val globalIdentifier: String?,
+    val globalIdentifier: String,
     val androidAsset: AndroidAsset
 )
