@@ -10,7 +10,10 @@ import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.time.Duration
 
-class BackgroundTaskProcessor<T : BackgroundTask>(private val coroutineScope: CoroutineScope) {
+class BackgroundTaskProcessor<T : BackgroundTask>(
+    processorScope: CoroutineScope,
+    private val jobScope: CoroutineScope
+) {
 
     internal val taskQueue = ConcurrentLinkedQueue<T>()
     private val processingMutex = Mutex()
@@ -18,7 +21,7 @@ class BackgroundTaskProcessor<T : BackgroundTask>(private val coroutineScope: Co
     private var repeatingLifecycle: Job? = null
 
     init {
-        coroutineScope.launch {
+        processorScope.launch {
             while (isActive) {
                 if (currentJob?.isActive != true && taskQueue.isNotEmpty()) {
                     processTasks()
@@ -28,7 +31,7 @@ class BackgroundTaskProcessor<T : BackgroundTask>(private val coroutineScope: Co
     }
 
     private fun processTasks() {
-        currentJob = coroutineScope.launch {
+        currentJob = jobScope.launch {
             processingMutex.withLock {
                 val task = taskQueue.poll()
                 task?.run()
@@ -41,7 +44,7 @@ class BackgroundTaskProcessor<T : BackgroundTask>(private val coroutineScope: Co
     }
 
     fun addTaskRepeatedly(task: T, repeatingIntervalDuration: Duration) {
-        repeatingLifecycle = coroutineScope.launch {
+        repeatingLifecycle = jobScope.launch {
             while (isActive) {
                 if (currentJob?.isActive != true && taskQueue.isEmpty()) {
                     addTask(task)
