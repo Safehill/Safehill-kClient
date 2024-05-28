@@ -98,6 +98,14 @@ class LocalServerInterfaceImpl: LocalServerInterface {
         TODO("Not yet implemented")
     }
 
+    override fun create(
+        assets: List<EncryptedAsset>,
+        groupId: Map<GlobalIdentifier, AssetDescriptor>,
+        filterVersions: AssetDescriptor.UploadState
+    ) {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun getAssetDescriptors(
         assetGlobalIdentifiers: List<AssetGlobalIdentifier>?,
         groupIds: List<GroupId>?,

@@ -1,6 +1,7 @@
 package com.safehill.kclient.network.local
 
 import com.safehill.kclient.models.assets.AssetDescriptor
+import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
@@ -26,5 +27,11 @@ interface LocalServerInterface : SafehillApi {
     suspend fun deleteThreads(threadIds: List<String>)
 
     suspend fun getAssetDescriptors(globalIdentifiers: List<GlobalIdentifier>?, filteringGroups: List<String>?): List<AssetDescriptor>
+
+    fun create(
+        assets: List<EncryptedAsset>,
+        groupId: Map<GlobalIdentifier, AssetDescriptor>,
+        filterVersions: AssetDescriptor.UploadState
+    )
 
 }

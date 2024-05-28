@@ -3,83 +3,109 @@ package com.safehill.kclient.models.assets
 import java.net.URI
 import java.util.Date
 
-enum class Asset {
-    FROM_ANDROID_LIBRARY {
-        override fun debugType() = "fromApplePhotosLibrary"
-        override fun identifier() = androidAsset.localIdentifier
-        override fun localIdentifier() = androidAsset.localIdentifier
-        override fun globalIdentifier() = null
-        override fun creationDate() = androidAsset.creationDate
-        override fun isFromLocalLibrary() = true
-        override fun isDownloading() = false
-        override fun isFromRemoteLibrary() = false
-        override fun width() = androidAsset.pixelWidth
-        override fun height() = androidAsset.pixelHeight
-    },
-    FROM_ANDROID_LIBRARY_BACKED_UP {
-        override fun debugType() = "fromApplePhotosLibraryBackedUp"
-        override fun identifier() = backedUpAndroidAsset.androidAsset.localIdentifier
-        override fun localIdentifier() = backedUpAndroidAsset.androidAsset.localIdentifier
-        override fun globalIdentifier() = backedUpAndroidAsset.androidAsset.globalIdentifier
-        override fun creationDate() = backedUpAndroidAsset.androidAsset.creationDate
-        override fun isFromLocalLibrary() = true
-        override fun isDownloading() = false
-        override fun isFromRemoteLibrary() = true
-        override fun width() = backedUpAndroidAsset.androidAsset.pixelWidth
-        override fun height() = backedUpAndroidAsset.androidAsset.pixelHeight
-    },
-    DOWNLOADING {
-        override fun debugType() = "downloading"
-        override fun identifier() = assetDescriptor.localIdentifier ?: assetDescriptor.globalIdentifier
-        override fun localIdentifier() = assetDescriptor.localIdentifier
-        override fun globalIdentifier() = assetDescriptor.globalIdentifier
-        override fun creationDate() = assetDescriptor.creationDate
-        override fun isFromLocalLibrary() = false
-        override fun isDownloading() = true
-        override fun isFromRemoteLibrary() = true
-        override fun width() = null
-        override fun height() = null
-    },
-    DOWNLOADED {
-        override fun debugType() = "downloaded"
-        override fun identifier() = decryptedAsset.localIdentifier ?: decryptedAsset.globalIdentifier
-        override fun localIdentifier() = decryptedAsset.localIdentifier
-        override fun globalIdentifier() = decryptedAsset.globalIdentifier
-        override fun creationDate() = decryptedAsset.creationDate
-        override fun isFromLocalLibrary() = false
-        override fun isDownloading() = false
-        override fun isFromRemoteLibrary() = true
-        override fun width() = null
-        override fun height() = null
-    };
-
-    abstract fun debugType(): String
-    abstract fun identifier(): String
-    abstract fun localIdentifier(): String?
-    abstract fun globalIdentifier(): String?
-    abstract fun creationDate(): Date?
-    abstract fun isFromLocalLibrary(): Boolean
-    abstract fun isDownloading(): Boolean
-    abstract fun isFromRemoteLibrary(): Boolean
-    abstract fun width(): Int?
-    abstract fun height(): Int?
-
-
-    lateinit var androidAsset: AndroidAsset
-    lateinit var backedUpAndroidAsset: BackedUpAndroidAsset
-    lateinit var assetDescriptor: AssetDescriptor
-    lateinit var decryptedAsset: DecryptedAsset
-}
-
 data class AndroidAsset(
     val localIdentifier: String,
-    val globalIdentifier: String?,
     val creationDate: Date?,
     val pixelWidth: Int?,
     val pixelHeight: Int?,
-    val uri: URI?
+    val uri: URI?,
+    val displayName: String?
 )
 
 data class BackedUpAndroidAsset(
+    val globalIdentifier: String?,
     val androidAsset: AndroidAsset
 )
+
+sealed class Asset {
+    data class FromAndroidPhotosLibrary(val androidAsset: AndroidAsset) : Asset()
+    data class FromAndroidPhotosLibraryBackedUp(val backedUpAndroidAsset: BackedUpAndroidAsset) : Asset()
+    data class Downloading(val assetDescriptor: AssetDescriptor) : Asset()
+    data class Downloaded(val decryptedAsset: DecryptedAsset) : Asset()
+
+    val debugType: String
+        get() = when (this) {
+            is FromAndroidPhotosLibrary -> "fromAndroidPhotosLibrary"
+            is FromAndroidPhotosLibraryBackedUp -> "fromAndroidPhotosLibraryBackedUp"
+            is Downloading -> "downloading"
+            is Downloaded -> "downloaded"
+        }
+
+    val identifier: String
+        get() = when (this) {
+            is FromAndroidPhotosLibrary -> androidAsset.localIdentifier
+            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.androidAsset.localIdentifier
+            is Downloading -> assetDescriptor.localIdentifier ?: assetDescriptor.globalIdentifier
+            is Downloaded -> decryptedAsset.localIdentifier ?: decryptedAsset.globalIdentifier
+        }
+
+    val localIdentifier: String?
+        get() = when (this) {
+            is FromAndroidPhotosLibrary -> androidAsset.localIdentifier
+            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.androidAsset.localIdentifier
+            is Downloading -> assetDescriptor.localIdentifier
+            is Downloaded -> decryptedAsset.localIdentifier
+        }
+
+    val globalIdentifier: String?
+        get() = when (this) {
+            is FromAndroidPhotosLibrary -> null
+            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.globalIdentifier
+            is Downloading -> assetDescriptor.globalIdentifier
+            is Downloaded -> decryptedAsset.globalIdentifier
+        }
+
+    val uri: URI?
+        get() = when (this) {
+            is FromAndroidPhotosLibrary -> androidAsset.uri
+            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.androidAsset.uri
+            is Downloading -> null
+            is Downloaded -> null
+        }
+
+    val creationDate: Date?
+        get() = when (this) {
+            is FromAndroidPhotosLibrary -> androidAsset.creationDate
+            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.androidAsset.creationDate
+            is Downloading -> assetDescriptor.creationDate
+            is Downloaded -> decryptedAsset.creationDate
+        }
+
+    val isFromLocalLibrary: Boolean
+        get() = when (this) {
+            is FromAndroidPhotosLibrary, is FromAndroidPhotosLibraryBackedUp -> true
+            else -> false
+        }
+
+    val isDownloading: Boolean
+        get() = this is Downloading
+
+    val isFromRemoteLibrary: Boolean
+        get() = when (this) {
+            is Downloaded, is FromAndroidPhotosLibraryBackedUp, is Downloading -> true
+            else -> false
+        }
+
+    val uploadState: AssetDescriptor.UploadState
+        get() {
+//            val auc = AssetsUploadController.shared
+//            return localIdentifier?.let { auc.uploadState(it) }
+//                ?: globalIdentifier?.let { auc.uploadState(it) }
+//                ?: AssetDescriptor.UploadState.NotStarted
+            return AssetDescriptor.UploadState.NotStarted
+        }
+
+    val width: Int?
+        get() = when (this) {
+            is FromAndroidPhotosLibrary -> androidAsset.pixelWidth
+            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.androidAsset.pixelWidth
+            else -> null
+        }
+
+    val height: Int?
+        get() = when (this) {
+            is FromAndroidPhotosLibrary -> androidAsset.pixelHeight
+            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.androidAsset.pixelHeight
+            else -> null
+        }
+}
