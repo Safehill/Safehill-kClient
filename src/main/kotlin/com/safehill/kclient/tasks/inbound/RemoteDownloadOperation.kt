@@ -44,7 +44,6 @@ class RemoteDownloadOperation(
     val serverProxy: ServerProxy,
     override val listeners: List<DownloadOperationListener>,
     private val userController: UserController,
-    val restorationDelegate: AssetActivityRestorationDelegate
 ) : AbstractDownloadOperation() {
 
     companion object {
