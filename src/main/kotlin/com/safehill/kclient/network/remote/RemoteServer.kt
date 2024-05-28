@@ -17,6 +17,7 @@ import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.assets.ShareableEncryptedAsset
+import com.safehill.kclient.models.dtos.AssetDescriptorDTO
 import com.safehill.kclient.models.dtos.AssetDescriptorFilterCriteriaDTO
 import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.dtos.AssetSearchCriteriaDTO
@@ -24,6 +25,7 @@ import com.safehill.kclient.models.dtos.AuthChallengeRequestDTO
 import com.safehill.kclient.models.dtos.AuthChallengeResponseDTO
 import com.safehill.kclient.models.dtos.AuthResolvedChallengeDTO
 import com.safehill.kclient.models.dtos.AuthResponseDTO
+import com.safehill.kclient.models.dtos.ConversationThreadAssetDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.CreateOrUpdateThreadDTO
 import com.safehill.kclient.models.dtos.GetInteractionDTO
@@ -42,6 +44,7 @@ import com.safehill.kclient.models.dtos.UserInputDTO
 import com.safehill.kclient.models.dtos.UserPhoneNumbersDTO
 import com.safehill.kclient.models.dtos.UserReactionDTO
 import com.safehill.kclient.models.dtos.UserUpdateDTO
+import com.safehill.kclient.models.dtos.toAssetDescriptor
 import com.safehill.kclient.models.serde.toIso8601String
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
@@ -69,6 +72,12 @@ class RemoteServer(
     private val environment: RemoteServerEnvironment = RemoteServerEnvironment.Development,
     hostname: String = "localhost"
 ) : SafehillApi {
+
+    @OptIn(ExperimentalSerializationApi::class)
+    private val ignorantJson = Json {
+        ignoreUnknownKeys = true
+        explicitNulls = false
+    }
 
     // todo properly setup fuel configurations only once
     companion object {
@@ -274,6 +283,7 @@ class RemoteServer(
             .items
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
     @Throws
     override suspend fun getAssetDescriptors(after: Date?): List<AssetDescriptor> {
         val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
@@ -286,10 +296,19 @@ class RemoteServer(
         return "/assets/descriptors/retrieve".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Json.encodeToString(descriptorFilterCriteriaDTO))
-            .responseObject(AssetDescriptor.ListDeserializer())
+            .responseObject(
+                json = Json {
+                    ignoreUnknownKeys = true
+                    explicitNulls = false
+                }, loader = ListSerializer(
+                    AssetDescriptorDTO.serializer()
+                )
+            )
             .getOrThrow()
+            .map(AssetDescriptorDTO::toAssetDescriptor)
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
     @Throws
     override suspend fun getAssetDescriptors(
         assetGlobalIdentifiers: List<AssetGlobalIdentifier>?,
@@ -306,7 +325,24 @@ class RemoteServer(
         return "/assets/descriptors/retrieve".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Json.encodeToString(descriptorFilterCriteriaDTO))
-            .responseObject(AssetDescriptor.ListDeserializer())
+            .responseObject(
+                json = Json {
+                    ignoreUnknownKeys = true
+                    explicitNulls = false
+                }, loader = ListSerializer(
+                    AssetDescriptorDTO.serializer()
+                )
+            )
+            .getOrThrow()
+            .map(AssetDescriptorDTO::toAssetDescriptor)
+    }
+
+    override suspend fun getAssets(threadId: String): List<ConversationThreadAssetDTO> {
+        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
+
+        return "/threads/retrieve/$threadId/assets".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .responseObject(ListSerializer(ConversationThreadAssetDTO.serializer()))
             .getOrThrow()
     }
 
@@ -318,13 +354,16 @@ class RemoteServer(
         val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
         val assetFilterCriteriaDTO = AssetSearchCriteriaDTO(
             globalIdentifiers = globalIdentifiers,
-            versionNames = versions?.map { it.name }
+            versionNames = versions?.map { it.value }
         )
 
         val assetOutputDTOs = "/assets/retrieve".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Json.encodeToString(assetFilterCriteriaDTO))
-            .responseObject(AssetOutputDTO.ListDeserializer())
+            .responseObject(
+                loader = ListSerializer(AssetOutputDTO.serializer()),
+                json = ignorantJson
+            )
             .getOrThrow()
 
         return S3Proxy.fetchAssets(assetOutputDTOs)
@@ -362,7 +401,7 @@ class RemoteServer(
         val shOutput = "/assets/create".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Gson().toJson(requestBody))
-            .responseObject(AssetOutputDTO.Deserializer())
+            .responseObject(AssetOutputDTO.serializer())
             .getOrThrow()
         return listOf(shOutput)
     }
@@ -371,7 +410,10 @@ class RemoteServer(
         TODO("Not yet implemented")
     }
 
-    override suspend fun unshare(assetId: AssetGlobalIdentifier, userPublicIdentifier: UserIdentifier) {
+    override suspend fun unshare(
+        assetId: AssetGlobalIdentifier,
+        userPublicIdentifier: UserIdentifier
+    ) {
         TODO("Not yet implemented")
     }
 
@@ -473,7 +515,13 @@ class RemoteServer(
 
         val responseResult = "/assets/delete".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Gson().toJson(com.safehill.kclient.models.dtos.AssetDeleteCriteriaDTO(globalIdentifiers)))
+            .body(
+                Gson().toJson(
+                    com.safehill.kclient.models.dtos.AssetDeleteCriteriaDTO(
+                        globalIdentifiers
+                    )
+                )
+            )
             .response()
         return responseResult.getMappingOrThrow { globalIdentifiers }
     }

@@ -3,23 +3,11 @@ package com.safehill.kclient.models.assets
 import java.net.URI
 import java.util.Date
 
-data class AndroidAsset(
-    val localIdentifier: String,
-    val creationDate: Date?,
-    val pixelWidth: Int?,
-    val pixelHeight: Int?,
-    val uri: URI?,
-    val displayName: String?
-)
-
-data class BackedUpAndroidAsset(
-    val globalIdentifier: String?,
-    val androidAsset: AndroidAsset
-)
-
 sealed class Asset {
     data class FromAndroidPhotosLibrary(val androidAsset: AndroidAsset) : Asset()
-    data class FromAndroidPhotosLibraryBackedUp(val backedUpAndroidAsset: BackedUpAndroidAsset) : Asset()
+    data class FromAndroidPhotosLibraryBackedUp(val backedUpAndroidAsset: BackedUpAndroidAsset) :
+        Asset()
+
     data class Downloading(val assetDescriptor: AssetDescriptor) : Asset()
     data class Downloaded(val decryptedAsset: DecryptedAsset) : Asset()
 
@@ -53,14 +41,6 @@ sealed class Asset {
             is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.globalIdentifier
             is Downloading -> assetDescriptor.globalIdentifier
             is Downloaded -> decryptedAsset.globalIdentifier
-        }
-
-    val uri: URI?
-        get() = when (this) {
-            is FromAndroidPhotosLibrary -> androidAsset.uri
-            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.androidAsset.uri
-            is Downloading -> null
-            is Downloaded -> null
         }
 
     val creationDate: Date?
@@ -109,3 +89,16 @@ sealed class Asset {
             else -> null
         }
 }
+
+data class AndroidAsset(
+    val localIdentifier: String,
+    val globalIdentifier: String?,
+    val creationDate: Date?,
+    val pixelWidth: Int?,
+    val pixelHeight: Int?,
+    val uri: URI?
+)
+
+data class BackedUpAndroidAsset(
+    val androidAsset: AndroidAsset
+)

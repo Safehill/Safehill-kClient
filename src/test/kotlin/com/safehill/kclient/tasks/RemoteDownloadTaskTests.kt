@@ -1,5 +1,6 @@
 package com.safehill.kclient.tasks
 
+import com.safehill.kclient.controllers.UserController
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.DecryptedAsset
 import com.safehill.kclient.models.dtos.AuthResponseDTO
@@ -12,7 +13,13 @@ import com.safehill.kclient.network.remote.RemoteServer
 import com.safehill.kclient.tasks.inbound.DownloadOperationListener
 import com.safehill.kclient.tasks.inbound.RemoteDownloadOperation
 import com.safehill.kcrypto.models.LocalCryptoUser
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlin.random.Random
 import kotlin.test.Test
 
@@ -81,7 +88,7 @@ class RemoteDownloadTaskTests {
         }
     }
 
-    class DummyRemoteDownloadListener: DownloadOperationListener {
+    class DummyRemoteDownloadListener : DownloadOperationListener {
         override fun received(
             assetDescriptors: List<AssetDescriptor>,
             referencingUsers: Map<UserIdentifier, ServerUser>,
@@ -97,7 +104,8 @@ class RemoteDownloadTaskTests {
     @Test
     fun testRemoteDownload() = runBlocking {
         val coroutineScope = CoroutineScope(Job() + Dispatchers.Default)
-        val remoteDownloadProcessor = BackgroundTaskProcessor<RemoteDownloadOperation>(coroutineScope)
+        val remoteDownloadProcessor =
+            BackgroundTaskProcessor<RemoteDownloadOperation>(coroutineScope)
 
         val cryptoUser = LocalCryptoUser()
         val localUser = LocalUser(cryptoUser)
@@ -108,7 +116,13 @@ class RemoteDownloadTaskTests {
         val remoteServer = RemoteServer(localUser)
         val serverProxy = ServerProxyImpl(localServer, remoteServer, serverUser)
 
-        val remoteDownloadOperation = RemoteDownloadOperation(serverProxy, listOf(DummyRemoteDownloadListener()))
+        val userController = UserController(serverProxy)
+
+
+        val remoteDownloadOperation = RemoteDownloadOperation(
+            serverProxy, listOf(DummyRemoteDownloadListener()), userController
+        )
+
         remoteDownloadProcessor.addTask(remoteDownloadOperation)
 
         delay(500)

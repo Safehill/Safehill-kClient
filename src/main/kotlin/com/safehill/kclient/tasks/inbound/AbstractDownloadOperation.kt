@@ -8,7 +8,7 @@ import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.tasks.BackgroundTask
 import com.safehill.kcrypto.models.ShareablePayload
 
-abstract class AbstractDownloadOperation: DownloadOperation, BackgroundTask {
+abstract class AbstractDownloadOperation : DownloadOperation, BackgroundTask {
 
     suspend fun getUsersInDescriptors(descriptors: List<AssetDescriptor>): Map<UserIdentifier, ServerUser> {
         val userIds = descriptors
@@ -18,13 +18,22 @@ abstract class AbstractDownloadOperation: DownloadOperation, BackgroundTask {
     }
 
     override suspend fun run() {
-        val descriptors = getDescriptors()
-        val users = this.getUsersInDescriptors(descriptors)
+        try {
+            val descriptors = getDescriptors()
+            val users = this.getUsersInDescriptors(descriptors)
 
-        listeners.forEach { listener -> listener.received(descriptors, referencingUsers = users) }
+            listeners.forEach { listener ->
+                listener.received(
+                    descriptors,
+                    referencingUsers = users
+                )
+            }
 
-        if (descriptors.isNotEmpty()) {
-            process(descriptors)
+            if (descriptors.isNotEmpty()) {
+                process(descriptors)
+            }
+        } catch (e: Exception) {
+            println(e.message)
         }
     }
 
@@ -37,7 +46,7 @@ abstract class AbstractDownloadOperation: DownloadOperation, BackgroundTask {
         descriptors.forEach { descriptor ->
             allUsersDict[descriptor.sharingInfo.sharedByUserIdentifier]?.let { senderUser ->
                 assetsDict[descriptor.globalIdentifier]?.let { encryptedAsset ->
-                    encryptedAsset.encryptedVersions.get(quality)?.let { assetVersion ->
+                    encryptedAsset.encryptedVersions[quality]?.let { assetVersion ->
                         val sharedSecret = ShareablePayload(
                             ephemeralPublicKeyData = assetVersion.publicKeyData,
                             ciphertext = assetVersion.encryptedSecret,
@@ -57,7 +66,7 @@ abstract class AbstractDownloadOperation: DownloadOperation, BackgroundTask {
                             decryptedVersions = mapOf(quality to decryptedData)
                         )
 
-                        listeners.forEach { it.fetched(decryptedAsset)}
+                        listeners.forEach { it.fetched(decryptedAsset) }
 
                         RemoteDownloadOperation.alreadyProcessed.add(descriptor.globalIdentifier)
                     }

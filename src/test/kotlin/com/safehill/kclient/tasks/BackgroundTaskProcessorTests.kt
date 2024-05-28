@@ -1,10 +1,17 @@
 package com.safehill.kclient.tasks
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.milliseconds
 
 class BackgroundTaskProcessorTests {
 
@@ -34,7 +41,7 @@ class BackgroundTaskProcessorTests {
         private val id: Int,
         private val counter: AtomicInteger,
         private val duration: Long
-    ): BackgroundTask {
+    ) : BackgroundTask {
         override suspend fun run() {
             val beforeCounter = counter.get()
             println("Task $id started. Counter: $beforeCounter")
@@ -80,7 +87,7 @@ class BackgroundTaskProcessorTests {
         val processor = BackgroundTaskProcessor<BackgroundTask>(coroutineScope)
         val counter = AtomicInteger(0)
         val task = TestBackgroundTaskWithAtomicCounter(counter, 100)
-        processor.addTaskRepeatedly(task, 200)
+        processor.addTaskRepeatedly(task, 200.milliseconds)
         Thread.sleep(1000) // Wait for tasks to complete
         coroutineScope.cancel()
 
@@ -90,12 +97,30 @@ class BackgroundTaskProcessorTests {
     }
 
     @Test
+    fun `multiple tasks added should be executed sequentially rather than in parallel`() {
+        val coroutineScope = CoroutineScope(Job() + Dispatchers.Default)
+        val processor = BackgroundTaskProcessor<BackgroundTask>(coroutineScope)
+        val counter = AtomicInteger(0)
+        val task = TestBackgroundTaskWithAtomicCounter(counter, 100)
+        for (i in 1..20) {
+            processor.addTask(task)
+        }
+
+        Thread.sleep(1000) // Wait for tasks to complete
+        coroutineScope.cancel()
+
+        assertEquals(10, counter.get()) // Should execute 5 times in 1 second
+        assertFalse(coroutineScope.isActive)
+    }
+
+
+    @Test
     fun testNoTwoTasksRunning() {
         val coroutineScope = CoroutineScope(Job() + Dispatchers.Default)
         val processor = BackgroundTaskProcessor<BackgroundTask>(coroutineScope)
         val counter = AtomicInteger(0)
         val task = TestBackgroundTaskWithAtomicCounter(counter, 250)
-        processor.addTaskRepeatedly(task, 100)
+        processor.addTaskRepeatedly(task, 100.milliseconds)
         Thread.sleep(500) // Wait for tasks to complete
         processor.stopRepeat()
         coroutineScope.cancel()
