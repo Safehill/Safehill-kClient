@@ -1,15 +1,10 @@
 package com.safehill.kclient.models.assets
 
-import com.github.kittinunf.fuel.core.ResponseDeserializable
-import com.safehill.kclient.models.serde.AssetDescriptorSerializer
 import com.safehill.kclient.models.users.UserIdentifier
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import java.util.*
+import java.util.Date
 
 typealias GroupId = String
 
-@Serializable(with = AssetDescriptorSerializer::class)
 interface AssetDescriptor : RemoteAssetIdentifiable {
 
     enum class UploadState {
@@ -25,10 +20,8 @@ interface AssetDescriptor : RemoteAssetIdentifiable {
         }
     }
 
-    @Serializable(with = AssetDescriptorSerializer.SharingInfoSerializer::class)
     interface SharingInfo {
 
-        @Serializable(with = AssetDescriptorSerializer.SharingInfoSerializer.GroupInfoSerializer::class)
         interface GroupInfo {
             /// The name of the asset group (optional)
             val name: String?
@@ -55,10 +48,5 @@ interface AssetDescriptor : RemoteAssetIdentifiable {
     var uploadState: UploadState
     var sharingInfo: SharingInfo
 
-    class ListDeserializer : ResponseDeserializable<List<AssetDescriptor>> {
-        override fun deserialize(content: String): List<AssetDescriptor> {
-            return Json.decodeFromString(content)
-        }
-    }
 }
 

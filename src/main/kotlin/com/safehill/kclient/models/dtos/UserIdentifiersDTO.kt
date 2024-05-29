@@ -6,4 +6,4 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class UserIdentifiersDTO(
     val userIdentifiers: List<UserIdentifier>
-) {}
+)

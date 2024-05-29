@@ -8,4 +8,3 @@ class EncryptedAssetImpl(
     override var creationDate: Date?,
     override var encryptedVersions: Map<AssetQuality, EncryptedAssetVersion>
 ) : EncryptedAsset
-

@@ -2,14 +2,18 @@ package com.safehill.kclient.tasks
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.time.Duration
 
-public class BackgroundTaskProcessor<T: BackgroundTask>(private val coroutineScope: CoroutineScope) {
+class BackgroundTaskProcessor<T : BackgroundTask>(
+    processorScope: CoroutineScope,
+    private val jobScope: CoroutineScope
+) {
 
     internal val taskQueue = ConcurrentLinkedQueue<T>()
     private val processingMutex = Mutex()
@@ -17,7 +21,7 @@ public class BackgroundTaskProcessor<T: BackgroundTask>(private val coroutineSco
     private var repeatingLifecycle: Job? = null
 
     init {
-        coroutineScope.launch {
+        processorScope.launch {
             while (isActive) {
                 if (currentJob?.isActive != true && taskQueue.isNotEmpty()) {
                     processTasks()
@@ -27,7 +31,7 @@ public class BackgroundTaskProcessor<T: BackgroundTask>(private val coroutineSco
     }
 
     private fun processTasks() {
-        currentJob = coroutineScope.launch {
+        currentJob = jobScope.launch {
             processingMutex.withLock {
                 val task = taskQueue.poll()
                 task?.run()
@@ -39,15 +43,15 @@ public class BackgroundTaskProcessor<T: BackgroundTask>(private val coroutineSco
         taskQueue.add(task)
     }
 
-    fun addTaskRepeatedly(task: T, repeatingIntervalMillis: Long) {
-        repeatingLifecycle = coroutineScope.launch {
+    fun addTaskRepeatedly(task: T, repeatingIntervalDuration: Duration) {
+        repeatingLifecycle = jobScope.launch {
             while (isActive) {
                 if (currentJob?.isActive != true && taskQueue.isEmpty()) {
                     addTask(task)
                 } else {
                     // Skip this cycle, as a task of the same kind is already running
                 }
-                delay(repeatingIntervalMillis)
+                delay(repeatingIntervalDuration)
             }
         }
     }

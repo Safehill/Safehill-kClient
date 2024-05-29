@@ -8,4 +8,4 @@ data class AuthResolvedChallengeDTO(
     val signedChallenge: String,
     val digest: String,
     val signedDigest: String
-) {}
+)
