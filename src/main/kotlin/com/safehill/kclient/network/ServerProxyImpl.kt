@@ -287,6 +287,13 @@ class ServerProxyImpl(
         return remoteServer.signIn()
     }
 
+    override suspend fun registerDevice(deviceId: String, token: String): String {
+        return remoteServer.registerDevice(
+            deviceId = deviceId,
+            token = token
+        )
+    }
+
 
     override suspend fun getAllLocalUsers(): List<ServerUser> {
         TODO("Not yet implemented")

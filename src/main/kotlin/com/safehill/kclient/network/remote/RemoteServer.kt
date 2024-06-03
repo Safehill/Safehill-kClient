@@ -39,6 +39,7 @@ import com.safehill.kclient.models.dtos.RemoteUserPhoneNumberMatchDto
 import com.safehill.kclient.models.dtos.RemoteUserSearchDTO
 import com.safehill.kclient.models.dtos.RetrieveThreadDTO
 import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
+import com.safehill.kclient.models.dtos.UserDeviceTokenDTO
 import com.safehill.kclient.models.dtos.UserIdentifiersDTO
 import com.safehill.kclient.models.dtos.UserInputDTO
 import com.safehill.kclient.models.dtos.UserPhoneNumbersDTO
@@ -224,6 +225,22 @@ class RemoteServer(
             .responseObject(AuthResponseDTO.Deserializer())
             .getOrThrow()
 
+    }
+
+    override suspend fun registerDevice(deviceId: String, token: String): String {
+        val bearerToken =
+            this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
+
+        val userTokenRequest = UserDeviceTokenDTO(
+            deviceId = deviceId,
+            token = token,
+            tokenType = 1
+        )
+        return "/users/devices/register".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Json.encodeToString(userTokenRequest))
+            .responseString()
+            .getOrThrow()
     }
 
     @Throws
