@@ -9,7 +9,7 @@ import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.assets.ShareableEncryptedAsset
 import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.dtos.AuthResponseDTO
-import com.safehill.kclient.models.dtos.ConversationThreadAssetDTO
+import com.safehill.kclient.models.dtos.ConversationThreadAssetsDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.HashedPhoneNumber
 import com.safehill.kclient.models.dtos.InteractionsGroupDTO
@@ -112,7 +112,7 @@ interface SafehillApi {
 
     suspend fun getAssets(
         threadId: String
-    ): List<ConversationThreadAssetDTO>
+    ): ConversationThreadAssetsDTO
 
 
     /// Retrieve assets data and metadata
