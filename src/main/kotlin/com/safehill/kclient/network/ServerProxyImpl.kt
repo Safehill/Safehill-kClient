@@ -81,7 +81,12 @@ class ServerProxyImpl(
 
     override suspend fun getAssets(threadId: String): ConversationThreadAssetsDTO {
         return try {
-            remoteServer.getAssets(threadId)
+            remoteServer.getAssets(threadId).also {
+                localServer.addThreadAssets(
+                    threadId = threadId,
+                    conversationThreadAssetsDTO = it
+                )
+            }
         } catch (e: Exception) {
             localServer.getAssets(threadId = threadId)
         }
