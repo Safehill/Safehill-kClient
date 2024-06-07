@@ -12,7 +12,6 @@ class OutboundQueueItem(
     val groupId: GroupId,
     val recipients: List<ServerUser>
 ) {
-
     enum class OperationType {
         Upload, Share
     }
