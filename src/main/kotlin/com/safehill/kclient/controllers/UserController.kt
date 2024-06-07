@@ -51,7 +51,7 @@ class UserController(
 
     private fun cacheUser(users: Collection<ServerUser>) {
         users.forEach {
-            usersCache.put(it.identifier, it)
+            usersCache[it.identifier] = it
         }
     }
 }

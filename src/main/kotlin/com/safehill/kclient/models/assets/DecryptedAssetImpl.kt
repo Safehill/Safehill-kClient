@@ -5,7 +5,6 @@ import java.util.Date
 class DecryptedAssetImpl(
     override val globalIdentifier: AssetGlobalIdentifier,
     override val localIdentifier: AssetLocalIdentifier?,
-    override var creationDate: Date?,
+    override val creationDate: Date?,
     override var decryptedVersions: Map<AssetQuality, ByteArray>
 ) : DecryptedAsset
-

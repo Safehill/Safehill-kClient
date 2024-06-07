@@ -8,4 +8,4 @@ data class UserInputDTO(
     val publicKey: String,
     val publicSignature: String,
     val name: String
-) {}
+)
