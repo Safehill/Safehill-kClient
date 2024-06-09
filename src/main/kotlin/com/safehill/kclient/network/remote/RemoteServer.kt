@@ -1,10 +1,7 @@
 package com.safehill.kclient.network.remote
 
-import com.github.kittinunf.fuel.core.FuelManager
 import com.github.kittinunf.fuel.core.HttpException
 import com.github.kittinunf.fuel.core.ResponseResultOf
-import com.github.kittinunf.fuel.core.interceptors.LogRequestInterceptor
-import com.github.kittinunf.fuel.core.interceptors.LogResponseInterceptor
 import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.responseObject
@@ -69,38 +66,13 @@ import java.util.Date
 // For Fuel how to see https://www.baeldung.com/kotlin/fuel
 
 class RemoteServer(
-    override var requestor: LocalUser,
-    private val environment: RemoteServerEnvironment = RemoteServerEnvironment.Development,
-    hostname: String = "localhost"
+    override var requestor: LocalUser
 ) : SafehillApi {
 
     @OptIn(ExperimentalSerializationApi::class)
     private val ignorantJson = Json {
         ignoreUnknownKeys = true
         explicitNulls = false
-    }
-
-    // todo properly setup fuel configurations only once
-    companion object {
-        var alreadyInstantiated = false
-    }
-
-    init {
-        if (!alreadyInstantiated) {
-            FuelManager.instance.basePath = when (this.environment) {
-                RemoteServerEnvironment.Development -> "http://${hostname}:8080"
-                RemoteServerEnvironment.Production -> "https://app.safehill.io:443"
-            }
-            FuelManager.instance.baseHeaders = mapOf("Content-type" to "application/json")
-            FuelManager.instance.timeoutInMillisecond = 10000
-            FuelManager.instance.timeoutReadInMillisecond = 30000
-
-            // The client should control whether they want logging or not
-            // Printing for now
-            FuelManager.instance.addRequestInterceptor(LogRequestInterceptor)
-            FuelManager.instance.addResponseInterceptor(LogResponseInterceptor)
-            alreadyInstantiated = true
-        }
     }
 
     @Throws

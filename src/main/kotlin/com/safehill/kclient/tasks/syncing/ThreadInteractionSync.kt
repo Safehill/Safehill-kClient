@@ -3,6 +3,7 @@ package com.safehill.kclient.tasks.syncing
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.network.ServerProxy
+import com.safehill.kclient.network.WebSocketApi
 import com.safehill.kclient.tasks.BackgroundTask
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
@@ -11,7 +12,8 @@ import java.time.Instant
 
 class ThreadInteractionSync(
     private val serverProxy: ServerProxy,
-    private val threadInteractionSyncListener: InteractionSyncListener
+    private val threadInteractionSyncListener: InteractionSyncListener,
+    private val webSocketApi: WebSocketApi
 ) : BackgroundTask {
 
     override suspend fun run() {

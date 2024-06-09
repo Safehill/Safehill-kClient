@@ -1,19 +1,23 @@
 package com.safehill.kclient.controllers
 
+import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.InteractionsGroupDTO
 import com.safehill.kclient.models.dtos.MessageInputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
+import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.ServerProxy
-import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
-import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kcrypto.base64.base64EncodedString
 import com.safehill.kcrypto.models.EncryptedData
 import com.safehill.kcrypto.models.SymmetricKey
 import java.util.Base64
 
-class UserInteractionController(
+/**
+ * Obtain [UserInteractionController]'s instance from configured [com.safehill.SafehillClient]
+ */
+
+class UserInteractionController internal constructor(
     private val serverProxy: ServerProxy,
     private val currentUser: LocalUser,
 ) {
