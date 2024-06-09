@@ -70,6 +70,11 @@ interface SafehillApi {
     ///   - the response with the auth token if credentials are valid
     suspend fun signIn(): AuthResponseDTO
 
+    suspend fun registerDevice(
+        deviceId: String,
+        token: String,
+    ): String
+
     /// Get a User's public key and public signature
     /// - Parameters:
     ///   - userIdentifiers: the unique identifiers for the users. If NULL, retrieves all the connected users

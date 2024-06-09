@@ -103,6 +103,10 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         TODO("Not yet implemented")
     }
 
+    override suspend fun registerDevice(deviceId: String, token: String): String {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun getUsers(withIdentifiers: List<UserIdentifier>): Map<UserIdentifier, RemoteUser> {
         TODO("Not yet implemented")
     }
