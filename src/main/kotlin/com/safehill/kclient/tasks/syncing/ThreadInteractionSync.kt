@@ -2,6 +2,7 @@ package com.safehill.kclient.tasks.syncing
 
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
+import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.WebSocketApi
 import com.safehill.kclient.tasks.BackgroundTask
@@ -13,11 +14,17 @@ import java.time.Instant
 class ThreadInteractionSync(
     private val serverProxy: ServerProxy,
     private val threadInteractionSyncListener: InteractionSyncListener,
-    private val webSocketApi: WebSocketApi
+    private val webSocketApi: WebSocketApi,
+    private val currentUser: LocalUser,
+    private val deviceId: String
 ) : BackgroundTask {
 
     override suspend fun run() {
         syncThreadInteractions()
+        webSocketApi.connectToSocket(
+            currentUser = currentUser,
+            deviceId = deviceId
+        )
     }
 
     private suspend fun syncThreadInteractions() {
