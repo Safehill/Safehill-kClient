@@ -2,6 +2,13 @@ package com.safehill.kclient.tasks.syncing
 
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
+import com.safehill.kclient.models.dtos.websockets.ConnectionAck
+import com.safehill.kclient.models.dtos.websockets.TextMessage
+import com.safehill.kclient.models.dtos.websockets.ThreadAssets
+import com.safehill.kclient.models.dtos.websockets.ThreadCreated
+import com.safehill.kclient.models.dtos.websockets.UnknownMessage
+import com.safehill.kclient.models.dtos.websockets.WebSocketMessage
+import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.WebSocketApi
@@ -20,12 +27,70 @@ class ThreadInteractionSync(
 ) : BackgroundTask {
 
     override suspend fun run() {
-        syncThreadInteractions()
-        webSocketApi.connectToSocket(
-            currentUser = currentUser,
-            deviceId = deviceId
+        coroutineScope {
+            syncThreadInteractions()
+            webSocketApi.connectToSocket(
+                currentUser = currentUser,
+                deviceId = deviceId,
+            ) { socketData ->
+                println("Socket Data: $socketData")
+                launch {
+                    socketData.handle()
+                }
+            }
+        }
+
+    }
+
+    private suspend fun WebSocketMessage.handle() {
+        when (this) {
+            is TextMessage -> {
+                this.notifyTextMessage()
+            }
+
+            is ThreadAssets -> {
+               this.notifyNewAssetInThread()
+            }
+
+            is ThreadCreated -> {
+                this.notifyCreationOfThread()
+            }
+
+            UnknownMessage, is ConnectionAck -> {}
+        }
+    }
+
+    private suspend fun ThreadCreated.notifyCreationOfThread(){
+        threadInteractionSyncListener.didAddThread(
+            threadDTO = thread
         )
     }
+
+    private suspend fun ThreadAssets.notifyNewAssetInThread(){
+        threadInteractionSyncListener
+    }
+
+    private suspend fun TextMessage.notifyTextMessage() {
+        when (anchorType) {
+            InteractionAnchor.THREAD -> {
+                threadInteractionSyncListener.didReceiveTextMessages(
+                    messageDtos = listOf(this.toMessageDTO()),
+                    threadId = this.anchorId
+                )
+            }
+
+            InteractionAnchor.GROUP -> {}
+        }
+    }
+
+    private fun TextMessage.toMessageDTO() = MessageOutputDTO(
+        interactionId = interactionId,
+        senderUserIdentifier = senderPublicIdentifier,
+        inReplyToAssetGlobalIdentifier = inReplyToAssetGlobalIdentifier,
+        encryptedMessage = encryptedMessage,
+        createdAt = sentAt,
+        inReplyToInteractionId = inReplyToInteractionId
+    )
 
     private suspend fun syncThreadInteractions() {
         coroutineScope {

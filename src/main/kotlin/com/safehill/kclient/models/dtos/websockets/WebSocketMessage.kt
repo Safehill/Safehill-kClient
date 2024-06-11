@@ -2,6 +2,7 @@ package com.safehill.kclient.models.dtos.websockets
 
 import com.safehill.kclient.models.dtos.ConversationThreadAssetDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
+import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.models.serde.InstantSerializer
 import kotlinx.serialization.Serializable
 import java.time.Instant
@@ -17,8 +18,8 @@ data class ConnectionAck(
 
 @Serializable
 data class TextMessage(
-    val interactionId: String?,
-    val anchorType: String,
+    val interactionId: String,
+    val anchorType: InteractionAnchor,
     val anchorId: String,
     val inReplyToAssetGlobalIdentifier: String?,
     val inReplyToInteractionId: String?,

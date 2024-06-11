@@ -70,7 +70,7 @@ class SafehillClient private constructor(
                     requestor = currentUser
                 ),
                 webSocketApi = WebSocketApi(
-                    url = buildWsURL()
+                    socketUrl = buildWsURL()
                 ),
                 currentUser = currentUser
             )
