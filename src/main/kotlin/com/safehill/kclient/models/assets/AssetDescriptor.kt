@@ -1,6 +1,7 @@
 package com.safehill.kclient.models.assets
 
 import com.safehill.kclient.models.users.UserIdentifier
+import java.time.Instant
 import java.util.Date
 
 typealias GroupId = String
@@ -44,7 +45,7 @@ interface AssetDescriptor : RemoteAssetIdentifiable {
 
     override val globalIdentifier: AssetGlobalIdentifier
     override val localIdentifier: AssetLocalIdentifier?
-    val creationDate: Date?
+    val creationDate: Instant?
     var uploadState: UploadState
     var sharingInfo: SharingInfo
 

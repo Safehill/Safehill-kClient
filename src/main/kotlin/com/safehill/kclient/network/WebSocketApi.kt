@@ -62,6 +62,7 @@ class WebSocketApi internal constructor(
         )
         session.incoming.consumeEach { frame ->
             if (frame is Frame.Text) {
+                println(frame.readText())
                 val socketData = Json.decodeFromString(
                     deserializer = WebSocketMessageDeserializer,
                     string = frame.readText()

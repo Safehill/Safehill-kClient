@@ -59,6 +59,7 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.security.MessageDigest
+import java.time.Instant
 import java.util.Base64
 import java.util.Date
 
@@ -371,11 +372,11 @@ class RemoteServer(
 
         val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
 
-        val assetCreatedAt = asset.creationDate ?: run { Date(0) }
+        val assetCreatedAt = asset.creationDate ?: run { Instant.MIN }
         val requestBody = com.safehill.kclient.models.dtos.AssetInputDTO(
             asset.globalIdentifier,
             asset.localIdentifier,
-            assetCreatedAt.toIso8601String(),
+            assetCreatedAt,
             groupId,
             asset.encryptedVersions.map {
                 com.safehill.kclient.models.dtos.AssetVersionInputDTO(

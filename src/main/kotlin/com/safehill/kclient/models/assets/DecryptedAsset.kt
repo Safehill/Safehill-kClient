@@ -1,8 +1,8 @@
 package com.safehill.kclient.models.assets
 
-import java.util.Date
+import java.time.Instant
 
 interface DecryptedAsset: RemoteAssetIdentifiable {
     var decryptedVersions: Map<AssetQuality, ByteArray>
-    val creationDate: Date?
+    val creationDate: Instant?
 }

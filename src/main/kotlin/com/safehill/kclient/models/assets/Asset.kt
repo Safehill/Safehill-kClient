@@ -1,7 +1,7 @@
 package com.safehill.kclient.models.assets
 
 import java.net.URI
-import java.util.Date
+import java.time.Instant
 
 sealed class Asset {
     data class FromAndroidPhotosLibrary(val androidAsset: AndroidAsset) : Asset()
@@ -43,7 +43,7 @@ sealed class Asset {
             is Downloaded -> decryptedAsset.globalIdentifier
         }
 
-    val creationDate: Date?
+    val creationDate: Instant?
         get() = when (this) {
             is FromAndroidPhotosLibrary -> androidAsset.creationDate
             is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.androidAsset.creationDate
@@ -92,7 +92,7 @@ sealed class Asset {
 
 data class AndroidAsset(
     val localIdentifier: String,
-    val creationDate: Date?,
+    val creationDate: Instant?,
     val pixelWidth: Int?,
     val pixelHeight: Int?,
     val uri: URI?,

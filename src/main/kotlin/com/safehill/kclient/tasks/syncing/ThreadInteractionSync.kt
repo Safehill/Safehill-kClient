@@ -1,5 +1,6 @@
 package com.safehill.kclient.tasks.syncing
 
+import com.safehill.kclient.models.dtos.ConversationThreadAssetDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.dtos.websockets.ConnectionAck
@@ -49,7 +50,7 @@ class ThreadInteractionSync(
             }
 
             is ThreadAssets -> {
-               this.notifyNewAssetInThread()
+                this.notifyNewAssetInThread()
             }
 
             is ThreadCreated -> {
@@ -60,14 +61,17 @@ class ThreadInteractionSync(
         }
     }
 
-    private suspend fun ThreadCreated.notifyCreationOfThread(){
+    private suspend fun ThreadCreated.notifyCreationOfThread() {
         threadInteractionSyncListener.didAddThread(
             threadDTO = thread
         )
     }
 
-    private suspend fun ThreadAssets.notifyNewAssetInThread(){
-        threadInteractionSyncListener
+    private suspend fun ThreadAssets.notifyNewAssetInThread() {
+        threadInteractionSyncListener.didReceivePhotoMessages(
+            threadId = threadId,
+            conversationThreadAssetDtos = assets
+        )
     }
 
     private suspend fun TextMessage.notifyTextMessage() {
@@ -162,4 +166,9 @@ interface InteractionSyncListener {
     suspend fun didAddThread(threadDTO: ConversationThreadOutputDTO)
 
     suspend fun didReceiveTextMessages(messageDtos: List<MessageOutputDTO>, threadId: String)
+
+    suspend fun didReceivePhotoMessages(
+        threadId: String,
+        conversationThreadAssetDtos: List<ConversationThreadAssetDTO>
+    )
 }
