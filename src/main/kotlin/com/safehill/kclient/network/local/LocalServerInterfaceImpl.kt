@@ -13,6 +13,7 @@ import com.safehill.kclient.models.dtos.ConversationThreadAssetsDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.HashedPhoneNumber
 import com.safehill.kclient.models.dtos.InteractionsGroupDTO
+import com.safehill.kclient.models.dtos.InteractionsSummaryDTO
 import com.safehill.kclient.models.dtos.MessageInputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.dtos.ReactionOutputDTO
@@ -165,6 +166,10 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         assetId: AssetGlobalIdentifier,
         userPublicIdentifier: UserIdentifier
     ) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun topLevelInteractionsSummary(): InteractionsSummaryDTO {
         TODO("Not yet implemented")
     }
 

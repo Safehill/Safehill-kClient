@@ -28,6 +28,7 @@ import com.safehill.kclient.models.dtos.CreateOrUpdateThreadDTO
 import com.safehill.kclient.models.dtos.GetInteractionDTO
 import com.safehill.kclient.models.dtos.HashedPhoneNumber
 import com.safehill.kclient.models.dtos.InteractionsGroupDTO
+import com.safehill.kclient.models.dtos.InteractionsSummaryDTO
 import com.safehill.kclient.models.dtos.MessageInputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.dtos.ReactionOutputDTO
@@ -405,6 +406,15 @@ class RemoteServer(
         userPublicIdentifier: UserIdentifier
     ) {
         TODO("Not yet implemented")
+    }
+
+    override suspend fun topLevelInteractionsSummary(): InteractionsSummaryDTO {
+        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+
+        return "interactions/summary".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .responseObject<InteractionsSummaryDTO>()
+            .getOrThrow()
     }
 
     override suspend fun retrieveThread(usersIdentifiers: List<UserIdentifier>): ConversationThreadOutputDTO? {

@@ -8,6 +8,7 @@ import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.ServerProxy
+import com.safehill.kclient.util.safeApiCall
 import com.safehill.kcrypto.base64.base64EncodedString
 import com.safehill.kcrypto.models.EncryptedData
 import com.safehill.kcrypto.models.SymmetricKey
@@ -58,7 +59,7 @@ class UserInteractionController internal constructor(
         threadId: String,
         limit: Int
     ): Result<InteractionsGroupDTO> {
-        return runCatching {
+        return safeApiCall {
             serverProxy.retrieveInteractions(
                 inGroupId = threadId,
                 per = limit,
@@ -67,22 +68,6 @@ class UserInteractionController internal constructor(
             )
         }
     }
-
-    suspend fun retrieveLocalInteractions(
-        threadId: String,
-        limit: Int,
-        before: String?
-    ): Result<List<MessageOutputDTO>> {
-        return runCatching {
-            serverProxy.localServer.retrieveInteractions(
-                inGroupId = threadId,
-                per = limit,
-                before = before,
-                page = 1
-            ).messages
-        }
-    }
-
 
     suspend fun setUpThread(withUsers: List<ServerUser>): ConversationThreadOutputDTO {
         val usersAndSelf = (withUsers + currentUser).distinctBy { it.identifier }

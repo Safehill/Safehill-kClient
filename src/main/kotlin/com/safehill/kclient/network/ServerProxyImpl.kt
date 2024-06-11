@@ -14,6 +14,7 @@ import com.safehill.kclient.models.dtos.ConversationThreadAssetsDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.HashedPhoneNumber
 import com.safehill.kclient.models.dtos.InteractionsGroupDTO
+import com.safehill.kclient.models.dtos.InteractionsSummaryDTO
 import com.safehill.kclient.models.dtos.MessageInputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.dtos.ReactionOutputDTO
@@ -126,6 +127,10 @@ class ServerProxyImpl(
         remoteServer.unshare(assetId, userPublicIdentifier)
     }
 
+    override suspend fun topLevelInteractionsSummary(): InteractionsSummaryDTO {
+        return remoteServer.topLevelInteractionsSummary()
+    }
+
     override suspend fun retrieveThread(usersIdentifiers: List<UserIdentifier>): ConversationThreadOutputDTO? {
         return localServer.retrieveThread(usersIdentifiers) ?: remoteServer.retrieveThread(
             usersIdentifiers
@@ -208,12 +213,17 @@ class ServerProxyImpl(
         before: String?
     ): InteractionsGroupDTO {
         return try {
-            retrieveRemoteInteractions(
+            remoteServer.retrieveInteractions(
                 inGroupId = inGroupId,
                 per = per,
                 page = page,
                 before = before
-            )
+            ).also {
+                localServer.insertMessages(
+                    messages = it.messages,
+                    threadId = inGroupId
+                )
+            }
         } catch (e: Exception) {
             println("failed to fetch interactions from server. Returning local version. $e ${e.message}")
             localServer.retrieveInteractions(
@@ -223,20 +233,6 @@ class ServerProxyImpl(
                 before = before
             )
         }
-    }
-
-    suspend fun retrieveRemoteInteractions(
-        inGroupId: GroupId,
-        per: Int,
-        page: Int,
-        before: String?
-    ): InteractionsGroupDTO {
-        return remoteServer.retrieveInteractions(
-            inGroupId = inGroupId,
-            per = per,
-            page = page,
-            before = before
-        )
     }
 
     override suspend fun addMessages(
