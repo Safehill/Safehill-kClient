@@ -32,6 +32,7 @@ class WebSocketApi internal constructor(
         install(Logging) {
             this.logger = object : Logger {
                 override fun log(message: String) {
+                    //todo discuss way or properly logging from library
                     println("Socket message $message")
                 }
             }
@@ -57,7 +58,6 @@ class WebSocketApi internal constructor(
             ) {
                 this.incoming.consumeEach { frame ->
                     if (frame is Frame.Text) {
-                        println(frame.readText())
                         val socketData = Json.decodeFromString(
                             deserializer = WebSocketMessageDeserializer,
                             string = frame.readText()
