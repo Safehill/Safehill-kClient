@@ -89,6 +89,7 @@ class ServerProxyImpl(
                 )
             }
         } catch (e: Exception) {
+            println("failed to fetch assets from server. Returning local version. $e ${e.message}")
             localServer.getAssets(threadId = threadId)
         }
     }
