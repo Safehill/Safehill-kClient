@@ -413,7 +413,7 @@ class RemoteServer(
 
         return "interactions/summary".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .responseObject<InteractionsSummaryDTO>()
+            .responseObject<InteractionsSummaryDTO>(json = ignorantJson)
             .getOrThrow()
     }
 
