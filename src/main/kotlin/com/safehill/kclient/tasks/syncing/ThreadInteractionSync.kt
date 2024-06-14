@@ -64,7 +64,11 @@ class ThreadInteractionSync(
     private suspend fun ThreadCreated.notifyCreationOfThread() {
         threadInteractionSyncListener.didAddThread(
             threadDTO = thread
-        )
+        ).also {
+            serverProxy.localServer.createOrUpdateThread(
+                threads = listOf(thread)
+            )
+        }
     }
 
     private suspend fun ThreadAssets.notifyNewAssetInThread() {
@@ -80,7 +84,12 @@ class ThreadInteractionSync(
                 threadInteractionSyncListener.didReceiveTextMessages(
                     messageDtos = listOf(this.toMessageDTO()),
                     threadId = this.anchorId
-                )
+                ).also {
+                    serverProxy.localServer.insertMessages(
+                        messages = listOf(this.toMessageDTO()),
+                        threadId = this.anchorId
+                    )
+                }
             }
 
             InteractionAnchor.GROUP -> {}
