@@ -26,9 +26,13 @@ import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.local.LocalServerInterface
+import com.safehill.kclient.util.runCatchingPreservingCancellationException
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.util.Date
 
@@ -129,7 +133,30 @@ class ServerProxyImpl(
     }
 
     override suspend fun topLevelInteractionsSummary(): InteractionsSummaryDTO {
-        return remoteServer.topLevelInteractionsSummary()
+        return runCatchingPreservingCancellationException {
+            remoteServer.topLevelInteractionsSummary().also {
+                storeInteractionSummary(it)
+            }
+        }.getOrElse {
+            localServer.topLevelInteractionsSummary()
+        }
+    }
+
+    private suspend fun storeInteractionSummary(interactionsSummaryDTO: InteractionsSummaryDTO) {
+        coroutineScope {
+            interactionsSummaryDTO.summaryByThreadId.map { (threadId, threadInteractionSummary) ->
+                async {
+                    localServer.createOrUpdateThread(listOf(threadInteractionSummary.thread))
+                    val message = threadInteractionSummary.lastEncryptedMessage
+                    if (message != null) {
+                        localServer.insertMessages(
+                            threadId = threadId,
+                            messages = listOf(message)
+                        )
+                    }
+                }
+            }.awaitAll()
+        }
     }
 
     override suspend fun retrieveThread(usersIdentifiers: List<UserIdentifier>): ConversationThreadOutputDTO? {
