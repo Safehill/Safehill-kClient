@@ -56,7 +56,6 @@ class S3Proxy {
                 .filterNotNull()
                 .associateBy { it.globalIdentifier }
         }
-
         private suspend fun fetchAsset(
             asset: AssetOutputDTO,
             coroutineScope: CoroutineScope

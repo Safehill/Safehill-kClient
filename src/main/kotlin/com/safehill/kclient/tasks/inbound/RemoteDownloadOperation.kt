@@ -43,7 +43,7 @@ interface AssetActivityRestorationDelegate {
 class RemoteDownloadOperation(
     val serverProxy: ServerProxy,
     override val listeners: List<DownloadOperationListener>,
-    private val userController: UserController,
+    private val userController: UserController
 ) : AbstractDownloadOperation() {
 
     companion object {
