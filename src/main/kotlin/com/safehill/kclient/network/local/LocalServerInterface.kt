@@ -1,9 +1,10 @@
 package com.safehill.kclient.network.local
 
 import com.safehill.kclient.models.assets.AssetDescriptor
+import com.safehill.kclient.models.assets.EncryptedAsset
+import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.users.RemoteUser
-import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.network.GlobalIdentifier
 import com.safehill.kclient.network.SafehillApi
 

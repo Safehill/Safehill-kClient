@@ -8,16 +8,8 @@ import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
-import com.safehill.kclient.network.GlobalIdentifier
 import com.safehill.kclient.network.ServerProxy
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.util.Date
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
+
 interface AssetActivityRestorationDelegate {
     // Notify the delegate that the restoration started.
     fun didStartRestoration()

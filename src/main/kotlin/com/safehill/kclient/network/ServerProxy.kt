@@ -3,12 +3,7 @@ package com.safehill.kclient.network
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAsset
-import com.safehill.kclient.models.users.RemoteUser
-import com.safehill.kclient.models.assets.AssetDescriptor
-import com.safehill.kclient.models.assets.AssetQuality
-import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.users.ServerUser
-import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.local.LocalServerInterface
 
 typealias GlobalIdentifier = String
