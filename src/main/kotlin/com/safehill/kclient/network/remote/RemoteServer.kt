@@ -1,11 +1,9 @@
 package com.safehill.kclient.network.remote
 
 import com.github.kittinunf.fuel.core.HttpException
-import com.github.kittinunf.fuel.core.ResponseResultOf
 import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.responseObject
-import com.github.kittinunf.result.Result
 import com.google.gson.Gson
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetDescriptorUploadState
@@ -50,7 +48,8 @@ import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.SafehillApi
-import com.safehill.kclient.network.exceptions.SafehillHttpException
+import com.safehill.kclient.network.api.authorization.AuthorizationApi
+import com.safehill.kclient.network.api.authorization.AuthorizationApiImpl
 import com.safehill.kclient.network.exceptions.UnauthorizedSafehillHttpException
 import com.safehill.kcrypto.SafehillCypher
 import com.safehill.kcrypto.models.RemoteCryptoUser
@@ -68,8 +67,9 @@ import java.util.Date
 // For Fuel how to see https://www.baeldung.com/kotlin/fuel
 
 class RemoteServer(
-    override var requestor: LocalUser
-) : SafehillApi {
+    override val requestor: LocalUser
+) : SafehillApi,
+    AuthorizationApi by AuthorizationApiImpl(requestor) {
 
     @OptIn(ExperimentalSerializationApi::class)
     private val ignorantJson = Json {
@@ -611,40 +611,4 @@ class RemoteServer(
             .getOrThrow().run(::listOf)
     }
 
-
-    private fun <T, R> ResponseResultOf<T>.getMappingOrThrow(transform: (T) -> R): R {
-        val value = getOrThrow()
-        return transform(value)
-    }
-
-    private fun <T> ResponseResultOf<T>.getOrElseOnSafehillException(transform: (SafehillHttpException) -> T): T {
-        return try {
-            this.getOrThrow()
-        } catch (e: Exception) {
-            if (e is SafehillHttpException) {
-                transform(e)
-            } else {
-                throw e
-            }
-        }
-    }
-
-    private fun <T> ResponseResultOf<T>.getOrThrow(): T {
-        return when (val result = this.third) {
-            is Result.Success -> result.value
-            is Result.Failure -> {
-                val fuelError = result.error
-                val exception = fuelError.exception
-                throw if (exception is HttpException) {
-                    SafehillHttpException(
-                        fuelError.response.statusCode,
-                        fuelError.response.responseMessage,
-                        exception
-                    )
-                } else {
-                    exception
-                }
-            }
-        }
-    }
 }
