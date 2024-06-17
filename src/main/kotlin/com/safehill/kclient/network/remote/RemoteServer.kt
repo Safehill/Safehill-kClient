@@ -50,6 +50,9 @@ import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.SafehillApi
 import com.safehill.kclient.network.api.authorization.AuthorizationApi
 import com.safehill.kclient.network.api.authorization.AuthorizationApiImpl
+import com.safehill.kclient.network.api.getMappingOrThrow
+import com.safehill.kclient.network.api.getOrElseOnSafehillException
+import com.safehill.kclient.network.api.getOrThrow
 import com.safehill.kclient.network.exceptions.UnauthorizedSafehillHttpException
 import com.safehill.kcrypto.SafehillCypher
 import com.safehill.kcrypto.models.RemoteCryptoUser
