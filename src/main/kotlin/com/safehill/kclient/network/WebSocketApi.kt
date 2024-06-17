@@ -9,6 +9,7 @@ import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.plugins.websocket.webSocket
+import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.parameter
 import io.ktor.http.HttpMethod
 import io.ktor.http.Url
@@ -19,6 +20,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.serialization.json.Json
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.coroutines.coroutineContext
@@ -30,6 +32,8 @@ import kotlin.time.Duration.Companion.seconds
 class WebSocketApi internal constructor(
     private val socketUrl: Url
 ) {
+
+    private val connectionMutex = Mutex()
 
     private val _socketMessage = MutableSharedFlow<WebSocketMessage>()
     val socketMessages = _socketMessage.asSharedFlow()
@@ -46,33 +50,52 @@ class WebSocketApi internal constructor(
         install(WebSockets)
     }
 
+    private suspend fun connectToSocketInternal(
+        currentUser: LocalUser,
+        deviceId: String
+    ) {
+        httpClient.webSocket(
+            method = HttpMethod.Get,
+            host = socketUrl.host,
+            path = "ws/messages",
+            port = socketUrl.port,
+            request = {
+                this.bearerAuth(
+                    currentUser.authToken ?: error("Trying to connect to socket without authToken")
+                )
+                parameter("deviceId", deviceId)
+            }
+        ) {
+            this.incoming.consumeEach { frame ->
+                if (frame is Frame.Text) {
+                    val socketData = Json.decodeFromString(
+                        deserializer = WebSocketMessageDeserializer,
+                        string = frame.readText()
+                    )
+                    println("Socket message $socketData")
+                    _socketMessage.emit(socketData)
+                }
+            }
+        }
+    }
+
     suspend fun connectToSocket(
         currentUser: LocalUser,
         deviceId: String
     ) {
-        monitorSocketConnection {
-            httpClient.webSocket(
-                method = HttpMethod.Get,
-                host = socketUrl.host,
-                path = "ws/messages",
-                port = socketUrl.port,
-                request = {
-                    this.headers["Authorization"] = "Bearer ${currentUser.authToken}"
-                    parameter("deviceId", deviceId)
-                }
-            ) {
-                this.incoming.consumeEach { frame ->
-                    if (frame is Frame.Text) {
-                        val socketData = Json.decodeFromString(
-                            deserializer = WebSocketMessageDeserializer,
-                            string = frame.readText()
-                        )
-                        println("Socket message $socketData")
-                        _socketMessage.emit(socketData)
-                    }
+        try {
+            if (connectionMutex.tryLock()) {
+                monitorSocketConnection {
+                    connectToSocketInternal(
+                        currentUser = currentUser,
+                        deviceId = deviceId
+                    )
                 }
             }
+        } finally {
+            connectionMutex.unlock()
         }
+
     }
 
     /**
