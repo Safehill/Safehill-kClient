@@ -88,6 +88,13 @@ sealed class Asset {
             is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.androidAsset.pixelHeight
             else -> null
         }
+
+    val uri: URI?
+        get() = when (this) {
+            is FromAndroidPhotosLibrary -> androidAsset.uri
+            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.androidAsset.uri
+            else -> null
+        }
 }
 
 data class AndroidAsset(
