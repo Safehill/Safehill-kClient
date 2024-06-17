@@ -9,7 +9,7 @@ import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.assets.ShareableEncryptedAsset
 import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.dtos.AuthResponseDTO
-import com.safehill.kclient.models.dtos.ConversationThreadAssetDTO
+import com.safehill.kclient.models.dtos.ConversationThreadAssetsDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.HashedPhoneNumber
 import com.safehill.kclient.models.dtos.InteractionsGroupDTO
@@ -26,7 +26,7 @@ import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.GlobalIdentifier
 import java.util.Date
 
-class LocalServerInterfaceImpl: LocalServerInterface {
+class LocalServerInterfaceImpl : LocalServerInterface {
     override suspend fun createOrUpdateUser(
         identifier: String,
         name: String,
@@ -87,7 +87,11 @@ class LocalServerInterfaceImpl: LocalServerInterface {
         TODO("Not yet implemented")
     }
 
-    override suspend fun updateUser(name: String?, phoneNumber: String?, email: String?): ServerUser {
+    override suspend fun updateUser(
+        name: String?,
+        phoneNumber: String?,
+        email: String?
+    ): ServerUser {
         TODO("Not yet implemented")
     }
 
@@ -119,7 +123,14 @@ class LocalServerInterfaceImpl: LocalServerInterface {
         TODO("Not yet implemented")
     }
 
-    override suspend fun getAssets(threadId: String): List<ConversationThreadAssetDTO> {
+    override suspend fun addThreadAssets(
+        threadId: String,
+        conversationThreadAssetsDTO: ConversationThreadAssetsDTO
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getAssets(threadId: String): ConversationThreadAssetsDTO {
         TODO("Not yet implemented")
     }
 
@@ -150,7 +161,10 @@ class LocalServerInterfaceImpl: LocalServerInterface {
         TODO("Not yet implemented")
     }
 
-    override suspend fun unshare(assetId: AssetGlobalIdentifier, userPublicIdentifier: UserIdentifier) {
+    override suspend fun unshare(
+        assetId: AssetGlobalIdentifier,
+        userPublicIdentifier: UserIdentifier
+    ) {
         TODO("Not yet implemented")
     }
 
@@ -197,7 +211,10 @@ class LocalServerInterfaceImpl: LocalServerInterface {
         TODO("Not yet implemented")
     }
 
-    override suspend fun addReactions(reactions: List<UserReactionDTO>, toGroupId: GroupId): List<ReactionOutputDTO> {
+    override suspend fun addReactions(
+        reactions: List<UserReactionDTO>,
+        toGroupId: GroupId
+    ): List<ReactionOutputDTO> {
         TODO("Not yet implemented")
     }
 
@@ -214,7 +231,10 @@ class LocalServerInterfaceImpl: LocalServerInterface {
         TODO("Not yet implemented")
     }
 
-    override suspend fun addMessages(messages: List<MessageInputDTO>, groupId: GroupId): List<MessageOutputDTO> {
+    override suspend fun addMessages(
+        messages: List<MessageInputDTO>,
+        groupId: GroupId
+    ): List<MessageOutputDTO> {
         TODO("Not yet implemented")
     }
 
