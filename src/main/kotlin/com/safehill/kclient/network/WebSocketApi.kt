@@ -16,6 +16,8 @@ import io.ktor.websocket.Frame
 import io.ktor.websocket.readText
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
 import kotlinx.serialization.json.Json
 import kotlin.coroutines.cancellation.CancellationException
@@ -28,11 +30,15 @@ import kotlin.time.Duration.Companion.seconds
 class WebSocketApi internal constructor(
     private val socketUrl: Url
 ) {
+
+    private val _socketMessage = MutableSharedFlow<WebSocketMessage>()
+    val socketMessages = _socketMessage.asSharedFlow()
+
     private val httpClient = HttpClient(CIO) {
         install(Logging) {
             this.logger = object : Logger {
                 override fun log(message: String) {
-                    //todo discuss way or properly logging from library
+                    //todo discuss way of properly logging from library
                     println("Socket message $message")
                 }
             }
@@ -42,8 +48,7 @@ class WebSocketApi internal constructor(
 
     suspend fun connectToSocket(
         currentUser: LocalUser,
-        deviceId: String,
-        onSocketData: (WebSocketMessage) -> Unit
+        deviceId: String
     ) {
         monitorSocketConnection {
             httpClient.webSocket(
@@ -62,7 +67,8 @@ class WebSocketApi internal constructor(
                             deserializer = WebSocketMessageDeserializer,
                             string = frame.readText()
                         )
-                        onSocketData(socketData)
+                        println("Socket message $socketData")
+                        _socketMessage.emit(socketData)
                     }
                 }
             }

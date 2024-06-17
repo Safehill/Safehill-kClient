@@ -11,7 +11,6 @@ import com.safehill.kclient.models.dtos.websockets.ThreadCreated
 import com.safehill.kclient.models.dtos.websockets.UnknownMessage
 import com.safehill.kclient.models.dtos.websockets.WebSocketMessage
 import com.safehill.kclient.models.interactions.InteractionAnchor
-import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.WebSocketApi
 import com.safehill.kclient.tasks.BackgroundTask
@@ -23,22 +22,14 @@ import kotlinx.coroutines.launch
 class ThreadInteractionSync(
     private val serverProxy: ServerProxy,
     private val threadInteractionSyncListener: InteractionSyncListener,
-    private val webSocketApi: WebSocketApi,
-    private val currentUser: LocalUser,
-    private val deviceId: String
+    private val webSocketApi: WebSocketApi
 ) : BackgroundTask {
 
     override suspend fun run() {
         coroutineScope {
             syncThreadInteractionSummary()
-            webSocketApi.connectToSocket(
-                currentUser = currentUser,
-                deviceId = deviceId,
-            ) { socketData ->
-                println("Socket Data: $socketData")
-                launch {
-                    socketData.handle()
-                }
+            webSocketApi.socketMessages.collect {
+                launch { it.handle() }
             }
         }
     }

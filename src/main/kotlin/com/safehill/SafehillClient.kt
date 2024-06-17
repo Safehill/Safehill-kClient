@@ -27,6 +27,10 @@ class SafehillClient private constructor(
         )
     }
 
+    suspend fun connectToSocket(deviceId: String) {
+        webSocketApi.connectToSocket(deviceId = deviceId, currentUser = currentUser)
+    }
+
     class Builder(
         private val localServer: LocalServerInterface,
         private val currentUser: LocalUser,
