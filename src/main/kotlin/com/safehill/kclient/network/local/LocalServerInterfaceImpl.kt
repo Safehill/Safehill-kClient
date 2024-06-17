@@ -166,7 +166,6 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         assetId: AssetGlobalIdentifier,
         userPublicIdentifier: UserIdentifier
     ) {
-        TODO("Not yet implemented")
     }
 
     override suspend fun topLevelInteractionsSummary(): InteractionsSummaryDTO {
@@ -184,7 +183,7 @@ class LocalServerInterfaceImpl : LocalServerInterface {
     override suspend fun upload(
         serverAsset: AssetOutputDTO,
         asset: EncryptedAsset,
-        filterVersions: List<AssetQuality>,
+        filterVersions: List<AssetQuality>
     ) {
         TODO("Not yet implemented")
     }
@@ -192,7 +191,7 @@ class LocalServerInterfaceImpl : LocalServerInterface {
     override suspend fun markAsset(
         assetGlobalIdentifier: AssetGlobalIdentifier,
         quality: AssetQuality,
-        asState: AssetDescriptorUploadState,
+        asState: AssetDescriptorUploadState
     ) {
         TODO("Not yet implemented")
     }
@@ -203,7 +202,7 @@ class LocalServerInterfaceImpl : LocalServerInterface {
 
     override suspend fun setGroupEncryptionDetails(
         groupId: GroupId,
-        recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>,
+        recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>
     ) {
         TODO("Not yet implemented")
     }
@@ -231,7 +230,7 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         inGroupId: GroupId,
         per: Int,
         page: Int,
-        before: String?,
+        before: String?
     ): InteractionsGroupDTO {
         TODO("Not yet implemented")
     }
