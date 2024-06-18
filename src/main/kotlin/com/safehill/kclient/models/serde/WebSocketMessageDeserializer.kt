@@ -1,6 +1,7 @@
 package com.safehill.kclient.models.serde
 
 import com.safehill.kclient.models.dtos.websockets.ConnectionAck
+import com.safehill.kclient.models.dtos.websockets.NewConnectionRequest
 import com.safehill.kclient.models.dtos.websockets.ReactionChange
 import com.safehill.kclient.models.dtos.websockets.TextMessage
 import com.safehill.kclient.models.dtos.websockets.ThreadAssets
@@ -44,7 +45,10 @@ object WebSocketMessageDeserializer : DeserializationStrategy<WebSocketMessage> 
 
     private fun WebSocketDataSurrogate.getContentData(messageType: MessageType): String {
         return when (messageType) {
-            MessageType.CONNECTION_ACK, MessageType.MESSAGE, MessageType.ASSETS_SHARE -> {
+            MessageType.CONNECTION_ACK,
+            MessageType.MESSAGE,
+            MessageType.ASSETS_SHARE,
+            MessageType.CONNECTION_REQUEST -> {
                 this.content
             }
 
@@ -87,7 +91,9 @@ enum class MessageType(
     REACTION_ADD("reaction-add", ReactionChange.serializer()),
     REACTION_REMOVE("reaction-remove", ReactionChange.serializer()),
     THREAD_ADD("thread-add", ThreadCreated.serializer()),
-    ASSETS_SHARE("assets-share", ThreadAssets.serializer())
+    ASSETS_SHARE("assets-share", ThreadAssets.serializer()),
+    CONNECTION_REQUEST("connection-request", NewConnectionRequest.serializer())
+
 }
 
 @Serializable

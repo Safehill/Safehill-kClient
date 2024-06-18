@@ -89,8 +89,8 @@ class RemoteServer(
             name = name
         )
         return "/users/create".httpPost()
-            .body(Gson().toJson(requestBody))
-            .responseObject(RemoteUser.Deserializer())
+            .body(Json.encodeToString(requestBody))
+            .responseObject<RemoteUser>(ignorantJson)
             .getOrThrow()
     }
 
@@ -111,7 +111,7 @@ class RemoteServer(
 
         "/users/code/send".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Gson().toJson(requestBody))
+            .body(Json.encodeToString(requestBody))
             .response()
             .getOrThrow()
 
@@ -135,8 +135,8 @@ class RemoteServer(
         )
         return "/users/update".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Gson().toJson(requestBody))
-            .responseObject(RemoteUser.Deserializer())
+            .body(Json.encodeToString(requestBody))
+            .responseObject<RemoteUser>()
             .getOrThrow()
     }
 

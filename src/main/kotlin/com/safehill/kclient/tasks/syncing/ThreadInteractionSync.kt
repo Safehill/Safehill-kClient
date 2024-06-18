@@ -4,11 +4,10 @@ import com.safehill.kclient.models.dtos.ConversationThreadAssetDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.InteractionsThreadSummaryDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
-import com.safehill.kclient.models.dtos.websockets.ConnectionAck
+import com.safehill.kclient.models.dtos.websockets.InteractionSocketMessage
 import com.safehill.kclient.models.dtos.websockets.TextMessage
 import com.safehill.kclient.models.dtos.websockets.ThreadAssets
 import com.safehill.kclient.models.dtos.websockets.ThreadCreated
-import com.safehill.kclient.models.dtos.websockets.UnknownMessage
 import com.safehill.kclient.models.dtos.websockets.WebSocketMessage
 import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.network.ServerProxy
@@ -36,19 +35,23 @@ class ThreadInteractionSync(
 
     private suspend fun WebSocketMessage.handle() {
         when (this) {
-            is TextMessage -> {
-                this.notifyTextMessage()
+            is InteractionSocketMessage -> {
+                when (this) {
+                    is TextMessage -> {
+                        this.notifyTextMessage()
+                    }
+
+                    is ThreadAssets -> {
+                        this.notifyNewAssetInThread()
+                    }
+
+                    is ThreadCreated -> {
+                        this.notifyCreationOfThread()
+                    }
+                }
             }
 
-            is ThreadAssets -> {
-                this.notifyNewAssetInThread()
-            }
-
-            is ThreadCreated -> {
-                this.notifyCreationOfThread()
-            }
-
-            UnknownMessage, is ConnectionAck -> {}
+            else -> {}
         }
     }
 
