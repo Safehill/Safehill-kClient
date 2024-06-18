@@ -9,13 +9,6 @@ import java.time.Instant
 
 
 @Serializable
-data class ConnectionAck(
-    val userPublicIdentifier: String,
-    val deviceId: String
-) : InteractionSocketMessage
-
-
-@Serializable
 data class TextMessage(
     val interactionId: String,
     val anchorType: InteractionAnchor,
