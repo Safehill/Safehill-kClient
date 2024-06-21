@@ -1,5 +1,7 @@
 package com.safehill.kclient.models.dtos
 
+import java.time.Instant
+
 
 interface UserMessageDTO {
     val interactionId: String?
@@ -7,5 +9,5 @@ interface UserMessageDTO {
     val inReplyToAssetGlobalIdentifier: String?
     val inReplyToInteractionId: String?
     val encryptedMessage: String // base64EncodedData with the cipher
-    val createdAt: String? // ISO8601 formatted datetime
+    val createdAt: Instant? // ISO8601 formatted datetime
 }

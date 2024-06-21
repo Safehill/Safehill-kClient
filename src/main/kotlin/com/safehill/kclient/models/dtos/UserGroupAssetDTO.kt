@@ -5,9 +5,8 @@ import kotlinx.serialization.Serializable
 import java.time.Instant
 
 @Serializable
-data class ConversationThreadAssetDTO(
+data class UserGroupAssetDTO(
     val globalIdentifier: String,
     val addedByUserIdentifier: String,
-    @Serializable(with = InstantSerializer::class) val addedAt: Instant,
-    val groupId: String
+    @Serializable(with = InstantSerializer::class) val addedAt: Instant
 )
