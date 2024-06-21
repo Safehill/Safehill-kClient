@@ -27,7 +27,7 @@ import com.safehill.kclient.models.dtos.AuthChallengeRequestDTO
 import com.safehill.kclient.models.dtos.AuthChallengeResponseDTO
 import com.safehill.kclient.models.dtos.AuthResolvedChallengeDTO
 import com.safehill.kclient.models.dtos.AuthResponseDTO
-import com.safehill.kclient.models.dtos.ConversationThreadAssetDTO
+import com.safehill.kclient.models.dtos.ConversationThreadAssetsDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.CreateOrUpdateThreadDTO
 import com.safehill.kclient.models.dtos.GetInteractionDTO
@@ -344,12 +344,12 @@ class RemoteServer(
             .map(AssetDescriptorDTO::toAssetDescriptor)
     }
 
-    override suspend fun getAssets(threadId: String): List<ConversationThreadAssetDTO> {
+    override suspend fun getAssets(threadId: String): ConversationThreadAssetsDTO {
         val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
 
         return "/threads/retrieve/$threadId/assets".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .responseObject(ListSerializer(ConversationThreadAssetDTO.serializer()))
+            .responseObject(ConversationThreadAssetsDTO.serializer())
             .getOrThrow()
     }
 

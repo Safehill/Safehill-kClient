@@ -10,7 +10,7 @@ import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.assets.ShareableEncryptedAsset
 import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.dtos.AuthResponseDTO
-import com.safehill.kclient.models.dtos.ConversationThreadAssetDTO
+import com.safehill.kclient.models.dtos.ConversationThreadAssetsDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.HashedPhoneNumber
 import com.safehill.kclient.models.dtos.InteractionsGroupDTO
@@ -79,9 +79,16 @@ class ServerProxyImpl(
         return remoteServer.getAssetDescriptors(after)
     }
 
-    override suspend fun getAssets(threadId: String): List<ConversationThreadAssetDTO> {
-        return localServer.getAssets(threadId = threadId).ifEmpty {
-            remoteServer.getAssets(threadId = threadId)
+    override suspend fun getAssets(threadId: String): ConversationThreadAssetsDTO {
+        return try {
+            remoteServer.getAssets(threadId).also {
+                localServer.addThreadAssets(
+                    threadId = threadId,
+                    conversationThreadAssetsDTO = it
+                )
+            }
+        } catch (e: Exception) {
+            localServer.getAssets(threadId = threadId)
         }
     }
 
@@ -330,13 +337,14 @@ class ServerProxyImpl(
         // An asset with `.lowResolution` only will trigger the loading of the next quality version in the background
         versionsToRetrieve.add(AssetQuality.LowResolution)
 
-        val map  = localServer.getAssets(globalIdentifiers, versions)
+        val map = localServer.getAssets(globalIdentifiers, versions)
 
         // Always cache the `.midResolution` if the `.lowResolution` is the only version available
         map.forEach { (globalIdentifier, encryptedAsset) ->
             if (versionsToRetrieve.size > 1 &&
                 encryptedAsset.encryptedVersions.size == 1 &&
-                encryptedAsset.encryptedVersions.keys.first() == AssetQuality.LowResolution) {
+                encryptedAsset.encryptedVersions.keys.first() == AssetQuality.LowResolution
+            ) {
                 GlobalScope.launch(Dispatchers.Default) {
                     cacheAssets(listOf(globalIdentifier), AssetQuality.MidResolution)
                 }
@@ -368,14 +376,17 @@ class ServerProxyImpl(
 
             if (AssetQuality.HighResolution in requestedVersions &&
                 encryptedAsset.encryptedVersions.containsKey(AssetQuality.MidResolution) &&
-                AssetQuality.HighResolution !in encryptedAsset.encryptedVersions) {
+                AssetQuality.HighResolution !in encryptedAsset.encryptedVersions
+            ) {
                 // If `.hiResolution` was requested, use the `.midResolution` version if available under that key
-                newEncryptedVersions[AssetQuality.HighResolution] = encryptedAsset.encryptedVersions[AssetQuality.MidResolution]!!
+                newEncryptedVersions[AssetQuality.HighResolution] =
+                    encryptedAsset.encryptedVersions[AssetQuality.MidResolution]!!
 
                 // Populate the rest of the versions based on the `requestedVersions`
                 requestedVersions.forEach { version ->
                     if (version != AssetQuality.HighResolution &&
-                        encryptedAsset.encryptedVersions.containsKey(version)) {
+                        encryptedAsset.encryptedVersions.containsKey(version)
+                    ) {
                         newEncryptedVersions[version] = encryptedAsset.encryptedVersions[version]!!
                     }
                 }
