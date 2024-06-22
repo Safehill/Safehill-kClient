@@ -442,7 +442,7 @@ class RemoteServer(
     override suspend fun retrieveThread(threadId: String): ConversationThreadOutputDTO? {
         val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
 
-        return "/threads/retrieve/".httpPost()
+        return "/threads/retrieve/$threadId".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .responseObject(
                 ConversationThreadOutputDTO.serializer(),
