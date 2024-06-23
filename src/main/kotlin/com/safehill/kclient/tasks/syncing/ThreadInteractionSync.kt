@@ -24,11 +24,16 @@ class ThreadInteractionSync(
     private val webSocketApi: WebSocketApi
 ) : BackgroundTask {
 
+    private val singleTaskExecutor = SingleTaskExecutor()
     override suspend fun run() {
-        coroutineScope {
-            syncThreadInteractionSummary()
-            webSocketApi.socketMessages.collect {
-                launch { it.handle() }
+        singleTaskExecutor.execute {
+            coroutineScope {
+                launch { syncThreadInteractionSummary() }
+                launch {
+                    webSocketApi.socketMessages.collect {
+                        launch { it.handle() }
+                    }
+                }
             }
         }
     }
