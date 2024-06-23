@@ -227,7 +227,7 @@ class RemoteServer(
 
     }
 
-    override suspend fun registerDevice(deviceId: String, token: String): String {
+    override suspend fun registerDevice(deviceId: String, token: String) {
         val bearerToken =
             this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
 
@@ -236,7 +236,7 @@ class RemoteServer(
             token = token,
             tokenType = 1
         )
-        return "/users/devices/register".httpPost()
+        "/users/devices/register".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(Json.encodeToString(userTokenRequest))
             .responseString()
