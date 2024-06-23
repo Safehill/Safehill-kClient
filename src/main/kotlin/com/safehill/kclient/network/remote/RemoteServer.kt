@@ -28,6 +28,7 @@ import com.safehill.kclient.models.dtos.AuthResponseDTO
 import com.safehill.kclient.models.dtos.ConversationThreadAssetsDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.CreateOrUpdateThreadDTO
+import com.safehill.kclient.models.dtos.FCM_TOKEN_TYPE
 import com.safehill.kclient.models.dtos.GetInteractionDTO
 import com.safehill.kclient.models.dtos.HashedPhoneNumber
 import com.safehill.kclient.models.dtos.InteractionsGroupDTO
@@ -234,7 +235,7 @@ class RemoteServer(
         val userTokenRequest = UserDeviceTokenDTO(
             deviceId = deviceId,
             token = token,
-            tokenType = 1
+            tokenType = FCM_TOKEN_TYPE
         )
         "/users/devices/register".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
