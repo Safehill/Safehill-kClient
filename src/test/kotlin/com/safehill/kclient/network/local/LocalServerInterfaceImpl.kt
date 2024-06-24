@@ -24,6 +24,7 @@ import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.GlobalIdentifier
+import com.safehill.kcrypto.models.LocalCryptoUser
 import java.util.Date
 
 class LocalServerInterfaceImpl : LocalServerInterface {
@@ -33,49 +34,49 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         publicKeyData: ByteArray,
         publicSignatureData: ByteArray,
     ) {
-        error("Should not call this method")
+        throw UnsupportedOperationException("Local Server should not perform such operations.")
     }
 
     override suspend fun createOrUpdateThread(threads: List<ConversationThreadOutputDTO>) {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun createOrUpdateThread(
         name: String?,
         recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>,
     ): ConversationThreadOutputDTO {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun insertMessages(messages: List<MessageOutputDTO>, threadId: String) {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun retrieveLastMessage(threadId: String): MessageOutputDTO? {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun upsertUsers(remoteUsers: List<RemoteUser>) {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun deleteThreads(threadIds: List<String>) {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun getAssetDescriptors(
         globalIdentifiers: List<GlobalIdentifier>?,
         filteringGroups: List<String>?
     ): List<AssetDescriptor> {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override var requestor: LocalUser
-        get() = error("Should not access requestor")
+        get() = LocalUser(LocalCryptoUser())
         set(value) {}
 
     override suspend fun createUser(name: String): ServerUser {
-        error("Should not call this method")
+        throw UnsupportedOperationException("Local Server should not create user with a name")
     }
 
     override suspend fun sendCodeToUser(
@@ -84,7 +85,7 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         code: String,
         medium: SendCodeToUserRequestDTO.Medium,
     ) {
-        error("Should not call this method")
+        throw UnsupportedOperationException("Local Server should not send code to the user.")
     }
 
     override suspend fun updateUser(
@@ -92,46 +93,46 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         phoneNumber: String?,
         email: String?
     ): ServerUser {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun deleteAccount() {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun signIn(): AuthResponseDTO {
-        error("Should not call this method")
+        throw UnsupportedOperationException("Local Server should not sign in.")
     }
 
     override suspend fun registerDevice(deviceId: String, token: String) {
-        error("Should not call this method")
+        throw UnsupportedOperationException("Local Server should not register device.")
     }
 
     override suspend fun getUsers(withIdentifiers: List<UserIdentifier>): Map<UserIdentifier, RemoteUser> {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<HashedPhoneNumber>): Map<HashedPhoneNumber, RemoteUser> {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun searchUsers(query: String, per: Int, page: Int): List<RemoteUser> {
-        error("Should not call this method")
+        throw UnsupportedOperationException("Local Server should not perform such operations as of now.")
     }
 
     override suspend fun getAssetDescriptors(after: Date?): List<AssetDescriptor> {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun addThreadAssets(
         threadId: String,
         conversationThreadAssetsDTO: ConversationThreadAssetsDTO
     ) {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun getAssets(threadId: String): ConversationThreadAssetsDTO {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun getAssetDescriptors(
@@ -139,14 +140,14 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         groupIds: List<GroupId>?,
         after: Date?
     ): List<AssetDescriptor> {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun getAssets(
         globalIdentifiers: List<AssetGlobalIdentifier>,
         versions: List<AssetQuality>?,
     ): Map<AssetGlobalIdentifier, EncryptedAsset> {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun create(
@@ -154,26 +155,26 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         groupId: GroupId,
         filterVersions: List<AssetQuality>?,
     ): List<AssetOutputDTO> {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun share(asset: ShareableEncryptedAsset) {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun unshare(
         assetId: AssetGlobalIdentifier,
         userPublicIdentifier: UserIdentifier
     ) {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun retrieveThread(usersIdentifiers: List<UserIdentifier>): ConversationThreadOutputDTO? {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun retrieveThread(threadId: String): ConversationThreadOutputDTO? {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun upload(
@@ -181,7 +182,7 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         asset: EncryptedAsset,
         filterVersions: List<AssetQuality>,
     ) {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun markAsset(
@@ -189,37 +190,37 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         quality: AssetQuality,
         asState: AssetDescriptorUploadState,
     ) {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun deleteAssets(globalIdentifiers: List<AssetGlobalIdentifier>): List<AssetGlobalIdentifier> {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun setGroupEncryptionDetails(
         groupId: GroupId,
         recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>,
     ) {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun deleteGroup(groupId: GroupId) {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun retrieveGroupUserEncryptionDetails(groupId: GroupId): List<RecipientEncryptionDetailsDTO> {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun addReactions(
         reactions: List<UserReactionDTO>,
         toGroupId: GroupId
     ): List<ReactionOutputDTO> {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun removeReaction(reaction: UserReactionDTO, fromGroupId: GroupId) {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun retrieveInteractions(
@@ -228,17 +229,17 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         page: Int,
         before: String?,
     ): InteractionsGroupDTO {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun addMessages(
         messages: List<MessageInputDTO>,
         groupId: GroupId
     ): List<MessageOutputDTO> {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 
     override suspend fun listThreads(): List<ConversationThreadOutputDTO> {
-        error("Should not call this method")
+        TODO("Not yet implemented")
     }
 }
