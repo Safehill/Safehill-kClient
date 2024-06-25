@@ -24,6 +24,8 @@ import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.GlobalIdentifier
+import com.safehill.kclient.network.exceptions.SafehillError
+import com.safehill.kcrypto.models.LocalCryptoUser
 import java.util.Date
 
 class LocalServerInterfaceImpl : LocalServerInterface {
@@ -33,7 +35,7 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         publicKeyData: ByteArray,
         publicSignatureData: ByteArray,
     ) {
-        TODO("Not yet implemented")
+        throw SafehillError.ServerError.UnSupportedOperation
     }
 
     override suspend fun createOrUpdateThread(threads: List<ConversationThreadOutputDTO>) {
@@ -71,11 +73,11 @@ class LocalServerInterfaceImpl : LocalServerInterface {
     }
 
     override var requestor: LocalUser
-        get() = TODO("Not yet implemented")
+        get() = LocalUser(LocalCryptoUser())
         set(value) {}
 
     override suspend fun createUser(name: String): ServerUser {
-        TODO("Not yet implemented")
+        throw SafehillError.ServerError.UnSupportedOperation
     }
 
     override suspend fun sendCodeToUser(
@@ -84,7 +86,7 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         code: String,
         medium: SendCodeToUserRequestDTO.Medium,
     ) {
-        TODO("Not yet implemented")
+        throw SafehillError.ServerError.UnSupportedOperation
     }
 
     override suspend fun updateUser(
@@ -100,7 +102,11 @@ class LocalServerInterfaceImpl : LocalServerInterface {
     }
 
     override suspend fun signIn(): AuthResponseDTO {
-        TODO("Not yet implemented")
+        throw SafehillError.ServerError.UnSupportedOperation
+    }
+
+    override suspend fun registerDevice(deviceId: String, token: String) {
+        throw SafehillError.ServerError.UnSupportedOperation
     }
 
     override suspend fun getUsers(withIdentifiers: List<UserIdentifier>): Map<UserIdentifier, RemoteUser> {
@@ -112,7 +118,7 @@ class LocalServerInterfaceImpl : LocalServerInterface {
     }
 
     override suspend fun searchUsers(query: String, per: Int, page: Int): List<RemoteUser> {
-        TODO("Not yet implemented")
+        throw SafehillError.ServerError.UnSupportedOperation
     }
 
     override suspend fun getAssetDescriptors(after: Date?): List<AssetDescriptor> {

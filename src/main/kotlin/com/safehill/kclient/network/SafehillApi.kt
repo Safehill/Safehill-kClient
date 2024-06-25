@@ -70,6 +70,16 @@ interface SafehillApi {
     ///   - the response with the auth token if credentials are valid
     suspend fun signIn(): AuthResponseDTO
 
+    /**
+     * Register a device with the server for push notifications and sockets.
+     * @param deviceId the device id for the device to register.
+     * @param token the token on which FCM will push the notifications.
+     */
+    suspend fun registerDevice(
+        deviceId: String,
+        token: String,
+    )
+
     /// Get a User's public key and public signature
     /// - Parameters:
     ///   - userIdentifiers: the unique identifiers for the users. If NULL, retrieves all the connected users
