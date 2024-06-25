@@ -1,5 +1,6 @@
 package com.safehill.kclient.network.remote
 
+import com.github.kittinunf.fuel.core.FuelError
 import com.github.kittinunf.fuel.core.FuelManager
 import com.github.kittinunf.fuel.core.HttpException
 import com.github.kittinunf.fuel.core.ResponseResultOf
@@ -10,6 +11,7 @@ import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.responseObject
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
+import com.safehill.kclient.models.GenericFailureResponse
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetDescriptorUploadState
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
@@ -53,12 +55,12 @@ import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.SafehillApi
-import com.safehill.kclient.network.exceptions.SafehillHttpException
-import com.safehill.kclient.network.exceptions.UnauthorizedSafehillHttpException
+import com.safehill.kclient.network.exceptions.SafehillError
 import com.safehill.kcrypto.SafehillCypher
 import com.safehill.kcrypto.models.RemoteCryptoUser
 import com.safehill.kcrypto.models.ShareablePayload
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -124,7 +126,8 @@ class RemoteServer(
         code: String,
         medium: SendCodeToUserRequestDTO.Medium,
     ) {
-        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
+        val bearerToken =
+            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
 
         val requestBody = SendCodeToUserRequestDTO(
             countryCode = countryCode,
@@ -147,7 +150,8 @@ class RemoteServer(
         phoneNumber: String?,
         email: String?,
     ): ServerUser {
-        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
+        val bearerToken =
+            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
 
         val requestBody = UserUpdateDTO(
             identifier = null,
@@ -166,7 +170,8 @@ class RemoteServer(
 
     @Throws
     override suspend fun deleteAccount() {
-        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
+        val bearerToken =
+            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
 
         "/users/safe_delete".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
@@ -230,7 +235,7 @@ class RemoteServer(
 
     override suspend fun registerDevice(deviceId: String, token: String) {
         val bearerToken =
-            this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
+            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
 
         val userTokenRequest = UserDeviceTokenDTO(
             deviceId = deviceId,
@@ -247,7 +252,7 @@ class RemoteServer(
     @Throws
     override suspend fun getUsers(withIdentifiers: List<UserIdentifier>): Map<UserIdentifier, RemoteUser> {
         val bearerToken =
-            this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
+            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
 
         if (withIdentifiers.isEmpty()) {
             return emptyMap()
@@ -269,7 +274,7 @@ class RemoteServer(
 
     override suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<HashedPhoneNumber>): Map<HashedPhoneNumber, RemoteUser> {
         val bearerToken =
-            this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
+            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
 
         if (hashedPhoneNumbers.isEmpty()) {
             return mapOf()
@@ -286,7 +291,8 @@ class RemoteServer(
 
     @Throws
     override suspend fun searchUsers(query: String, per: Int, page: Int): List<RemoteUser> {
-        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
+        val bearerToken =
+            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
 
         return "/users/search".httpGet(
             listOf(
@@ -304,7 +310,8 @@ class RemoteServer(
     @OptIn(ExperimentalSerializationApi::class)
     @Throws
     override suspend fun getAssetDescriptors(after: Date?): List<AssetDescriptor> {
-        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
+        val bearerToken =
+            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
         val descriptorFilterCriteriaDTO = AssetDescriptorFilterCriteriaDTO(
             after = after?.toIso8601String(),
             globalIdentifiers = null,
@@ -333,7 +340,8 @@ class RemoteServer(
         groupIds: List<GroupId>?,
         after: Date?
     ): List<AssetDescriptor> {
-        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
+        val bearerToken =
+            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
         val descriptorFilterCriteriaDTO = AssetDescriptorFilterCriteriaDTO(
             after = after?.toIso8601String(),
             globalIdentifiers = assetGlobalIdentifiers,
@@ -356,7 +364,8 @@ class RemoteServer(
     }
 
     override suspend fun getAssets(threadId: String): ConversationThreadAssetsDTO {
-        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
+        val bearerToken =
+            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
 
         return "/threads/retrieve/$threadId/assets".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
@@ -369,7 +378,8 @@ class RemoteServer(
         globalIdentifiers: List<AssetGlobalIdentifier>,
         versions: List<AssetQuality>?,
     ): Map<AssetGlobalIdentifier, EncryptedAsset> {
-        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
+        val bearerToken =
+            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
         val assetFilterCriteriaDTO = AssetSearchCriteriaDTO(
             globalIdentifiers = globalIdentifiers,
             versionNames = versions?.map { it.value }
@@ -398,7 +408,8 @@ class RemoteServer(
         }
         val asset = assets.first()
 
-        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
+        val bearerToken =
+            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
 
         val assetCreatedAt = asset.creationDate ?: run { Date(0) }
         val requestBody = com.safehill.kclient.models.dtos.AssetInputDTO(
@@ -441,7 +452,7 @@ class RemoteServer(
 
     @OptIn(ExperimentalSerializationApi::class)
     override suspend fun retrieveThread(threadId: String): ConversationThreadOutputDTO? {
-        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+        val bearerToken = this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
 
         return "/threads/retrieve/$threadId".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
@@ -452,7 +463,7 @@ class RemoteServer(
                 }
             )
             .getOrElseOnSafehillException {
-                if (it.statusCode == SafehillHttpStatusCode.NotFound) {
+                if (it is SafehillError.ClientError.NotFound) {
                     null
                 } else {
                     throw it
@@ -468,7 +479,7 @@ class RemoteServer(
 
     @OptIn(ExperimentalSerializationApi::class)
     private fun listThreads(usersIdentifiers: List<UserIdentifier>?): List<ConversationThreadOutputDTO> {
-        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+        val bearerToken = this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
 
         val request = usersIdentifiers?.let {
             RetrieveThreadDTO(
@@ -494,7 +505,7 @@ class RemoteServer(
         name: String?,
         recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>
     ): ConversationThreadOutputDTO {
-        val bearerToken = this.requestor.authToken ?: throw HttpException(401, "unauthorized")
+        val bearerToken = this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
 
         val request = CreateOrUpdateThreadDTO(
             name = name,
@@ -529,7 +540,8 @@ class RemoteServer(
 
     @Throws
     override suspend fun deleteAssets(globalIdentifiers: List<AssetGlobalIdentifier>): List<AssetGlobalIdentifier> {
-        val bearerToken = this.requestor.authToken ?: throw UnauthorizedSafehillHttpException
+        val bearerToken =
+            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
 
         val responseResult = "/assets/delete".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
@@ -578,10 +590,7 @@ class RemoteServer(
         before: String?
     ): InteractionsGroupDTO {
         val bearerToken =
-            this.requestor.authToken ?: throw HttpException(
-                401,
-                "unauthorized"
-            )
+            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
 
         val requestBody = GetInteractionDTO(
             per = per,
@@ -612,10 +621,7 @@ class RemoteServer(
             "Can only add one message at a time."
         }
         val bearerToken =
-            this.requestor.authToken ?: throw HttpException(
-                401,
-                "unauthorized"
-            )
+            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
 
         return "interactions/user-threads/$groupId/messages".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
@@ -635,11 +641,11 @@ class RemoteServer(
         return transform(value)
     }
 
-    private fun <T> ResponseResultOf<T>.getOrElseOnSafehillException(transform: (SafehillHttpException) -> T): T {
+    private fun <T> ResponseResultOf<T>.getOrElseOnSafehillException(transform: (SafehillError) -> T): T {
         return try {
             this.getOrThrow()
         } catch (e: Exception) {
-            if (e is SafehillHttpException) {
+            if (e is SafehillError) {
                 transform(e)
             } else {
                 throw e
@@ -654,13 +660,37 @@ class RemoteServer(
                 val fuelError = result.error
                 val exception = fuelError.exception
                 throw if (exception is HttpException) {
-                    SafehillHttpException(
-                        fuelError.response.statusCode,
-                        fuelError.response.responseMessage,
-                        exception
-                    )
+                    fuelError.getSafehillError()
                 } else {
                     exception
+                }
+            }
+        }
+    }
+
+    private fun FuelError.getSafehillError(): SafehillError {
+        return when (this.response.statusCode) {
+            401 -> SafehillError.ClientError.Unauthorized
+            402 -> SafehillError.ClientError.PaymentRequired
+            404 -> SafehillError.ClientError.NotFound
+            405 -> SafehillError.ClientError.MethodNotAllowed
+            409 -> SafehillError.ClientError.Conflict
+            501 -> SafehillError.ServerError.NotImplemented
+            503 -> SafehillError.ServerError.BadGateway
+            else -> {
+                val responseMessage = this.response.responseMessage
+                val message = try {
+                    val failure = Json.decodeFromString<GenericFailureResponse>(responseMessage)
+                    failure.reason
+                } catch (e: SerializationException) {
+                    null
+                } catch (e: IllegalArgumentException) {
+                    null
+                }
+                if (this.response.statusCode in 400..500) {
+                    SafehillError.ClientError.BadRequest(message ?: "Bad or malformed request")
+                } else {
+                    SafehillError.ServerError.Generic(message ?: "A server error occurred")
                 }
             }
         }
