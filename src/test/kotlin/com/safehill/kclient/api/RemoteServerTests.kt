@@ -1,19 +1,18 @@
 package com.safehill.kclient.api
 
-import com.safehill.kclient.models.dtos.AuthResponseDTO
-import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAssetImpl
 import com.safehill.kclient.models.assets.EncryptedAssetVersionImpl
 import com.safehill.kclient.models.dtos.AssetOutputDTO
+import com.safehill.kclient.models.dtos.AuthResponseDTO
+import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
+import com.safehill.kclient.network.exceptions.SafehillError
 import com.safehill.kclient.network.remote.RemoteServer
-import com.safehill.kclient.network.exceptions.SafehillHttpException
-import com.safehill.kclient.network.remote.SafehillHttpStatusCode
-import com.safehill.kcrypto.models.SafehillKeyPair
 import com.safehill.kcrypto.models.LocalCryptoUser
+import com.safehill.kcrypto.models.SafehillKeyPair
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -339,8 +338,8 @@ class RemoteServerTests {
             val userId = localUser.shUser.identifier
             try {
                 api.getUsers(listOf(userId))[userId]
-            } catch (e: SafehillHttpException) {
-                assert(e.statusCode == SafehillHttpStatusCode.UnAuthorized)
+            } catch (e: SafehillError) {
+                assert(e is SafehillError.ClientError.Unauthorized)
             }
 
             createUserOnServer(this, localUser)
@@ -353,8 +352,8 @@ class RemoteServerTests {
 
             try {
                 api.getUsers(listOf(userId))[userId]
-            } catch (e: SafehillHttpException) {
-                assert(e.statusCode == SafehillHttpStatusCode.UnAuthorized)
+            } catch (e: SafehillError) {
+                assert(e is SafehillError.ClientError.Unauthorized)
             }
         }
     }
@@ -367,8 +366,8 @@ class RemoteServerTests {
         runBlocking {
             try {
                 api.signIn()
-            } catch (e: SafehillHttpException) {
-                assert(e.statusCode == SafehillHttpStatusCode.NotFound)
+            } catch (e: SafehillError) {
+                assert(e is SafehillError.ClientError.NotFound)
             }
         }
     }
