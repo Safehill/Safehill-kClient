@@ -24,6 +24,7 @@ import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.GlobalIdentifier
+import com.safehill.kclient.network.exceptions.SafehillError
 import com.safehill.kcrypto.models.LocalCryptoUser
 import java.util.Date
 
@@ -34,7 +35,7 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         publicKeyData: ByteArray,
         publicSignatureData: ByteArray,
     ) {
-        throw UnsupportedOperationException("Local Server should not perform such operations.")
+        throw SafehillError.ServerError.UnSupportedOperation
     }
 
     override suspend fun createOrUpdateThread(threads: List<ConversationThreadOutputDTO>) {
@@ -76,7 +77,7 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         set(value) {}
 
     override suspend fun createUser(name: String): ServerUser {
-        throw UnsupportedOperationException("Local Server should not create user with a name")
+        throw SafehillError.ServerError.UnSupportedOperation
     }
 
     override suspend fun sendCodeToUser(
@@ -85,7 +86,7 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         code: String,
         medium: SendCodeToUserRequestDTO.Medium,
     ) {
-        throw UnsupportedOperationException("Local Server should not send code to the user.")
+        throw SafehillError.ServerError.UnSupportedOperation
     }
 
     override suspend fun updateUser(
@@ -101,11 +102,11 @@ class LocalServerInterfaceImpl : LocalServerInterface {
     }
 
     override suspend fun signIn(): AuthResponseDTO {
-        throw UnsupportedOperationException("Local Server should not sign in.")
+        throw SafehillError.ServerError.UnSupportedOperation
     }
 
     override suspend fun registerDevice(deviceId: String, token: String) {
-        throw UnsupportedOperationException("Local Server should not register device.")
+        throw SafehillError.ServerError.UnSupportedOperation
     }
 
     override suspend fun getUsers(withIdentifiers: List<UserIdentifier>): Map<UserIdentifier, RemoteUser> {
@@ -117,7 +118,7 @@ class LocalServerInterfaceImpl : LocalServerInterface {
     }
 
     override suspend fun searchUsers(query: String, per: Int, page: Int): List<RemoteUser> {
-        throw UnsupportedOperationException("Local Server should not perform such operations as of now.")
+        throw SafehillError.ServerError.UnSupportedOperation
     }
 
     override suspend fun getAssetDescriptors(after: Date?): List<AssetDescriptor> {
