@@ -1,11 +1,9 @@
 ## Installation instructions
 
-1. Install IntelliJ Idea
-2. Either run configuration "Build Fat JAR" or run the following from the project root
-    ```bash
-    ./gradlew build
-    ```
-3. Copy the jar built in `./build/libs/safehill-kcrypto-0.1.jar`
-4. Paste it to `app/libs` in the Android Studio project 
-5. Right click on it in Android Studio and select "Add as a Library"
-6. Add all transitive dependencies to the Android project (see depedencies section of `build.gradle.kts`)
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Safehill/Safehill-kCrypto.git
+   ```
+2. In the target app, add ```includeBuild("PATH")``` in settings.gradle.kts where ```PATH``` is the path to the cloned KCrypto project.
+3. Add ```implementation("com.safehill:Safehill-kCrypto")``` in app level build.gradle.kts.
+4. Sync the project.

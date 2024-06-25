@@ -1,5 +1,6 @@
 package com.safehill.kclient.network.api
 
+import com.github.kittinunf.fuel.core.FuelError
 import com.github.kittinunf.fuel.core.HttpException
 import com.github.kittinunf.fuel.core.Request
 import com.github.kittinunf.fuel.core.ResponseResultOf
@@ -8,10 +9,11 @@ import com.github.kittinunf.fuel.core.extensions.authentication
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.responseObject
 import com.github.kittinunf.result.Result
+import com.safehill.kclient.models.GenericFailureResponse
 import com.safehill.kclient.models.users.LocalUser
-import com.safehill.kclient.network.exceptions.SafehillHttpException
-import com.safehill.kclient.network.exceptions.UnauthorizedSafehillHttpException
+import com.safehill.kclient.network.exceptions.SafehillError
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -69,25 +71,54 @@ inline fun <reified Req> BaseApi.createPostRequest(
 }
 
 fun AuthenticatedRequest.bearer(token: String?): Request {
-    if (token == null) throw UnauthorizedSafehillHttpException
+    if (token == null) throw SafehillError.ClientError.Unauthorized
     return this.bearer(token)
 }
 
-fun <T> ResponseResultOf<T>.getOrElseOnSafehillException(transform: (SafehillHttpException) -> T): T {
+private fun FuelError.getSafehillError(): SafehillError {
+    return when (this.response.statusCode) {
+        401 -> SafehillError.ClientError.Unauthorized
+        402 -> SafehillError.ClientError.PaymentRequired
+        404 -> SafehillError.ClientError.NotFound
+        405 -> SafehillError.ClientError.MethodNotAllowed
+        409 -> SafehillError.ClientError.Conflict
+        501 -> SafehillError.ServerError.NotImplemented
+        503 -> SafehillError.ServerError.BadGateway
+        else -> {
+            val responseMessage = this.response.responseMessage
+            val message = try {
+                val failure = Json.decodeFromString<GenericFailureResponse>(responseMessage)
+                failure.reason
+            } catch (e: SerializationException) {
+                null
+            } catch (e: IllegalArgumentException) {
+                null
+            }
+            if (this.response.statusCode in 400..500) {
+                SafehillError.ClientError.BadRequest(message ?: "Bad or malformed request")
+            } else {
+                SafehillError.ServerError.Generic(message ?: "A server error occurred")
+            }
+        }
+    }
+}
+
+
+fun <T, R> ResponseResultOf<T>.getMappingOrThrow(transform: (T) -> R): R {
+    val value = getOrThrow()
+    return transform(value)
+}
+
+fun <T> ResponseResultOf<T>.getOrElseOnSafehillError(transform: (SafehillError) -> T): T {
     return try {
         this.getOrThrow()
     } catch (e: Exception) {
-        if (e is SafehillHttpException) {
+        if (e is SafehillError) {
             transform(e)
         } else {
             throw e
         }
     }
-}
-
-fun <T, R> ResponseResultOf<T>.getMappingOrThrow(transform: (T) -> R): R {
-    val value = getOrThrow()
-    return transform(value)
 }
 
 fun <T> ResponseResultOf<T>.getOrThrow(): T {
@@ -97,11 +128,7 @@ fun <T> ResponseResultOf<T>.getOrThrow(): T {
             val fuelError = result.error
             val exception = fuelError.exception
             throw if (exception is HttpException) {
-                SafehillHttpException(
-                    fuelError.response.statusCode,
-                    fuelError.response.responseMessage,
-                    exception
-                )
+                fuelError.getSafehillError()
             } else {
                 exception
             }

@@ -2,7 +2,7 @@ package com.safehill.kclient.models.interactions
 
 import kotlinx.serialization.SerialName
 
-enum class InteractionAnchor(val serverKey: String) {
+enum class InteractionAnchor(val value: String) {
     @SerialName("user-threads")
     THREAD("user-threads"),
 

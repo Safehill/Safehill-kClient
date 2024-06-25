@@ -321,8 +321,8 @@ class ServerProxyImpl(
         return remoteServer.signIn()
     }
 
-    override suspend fun registerDevice(deviceId: String, token: String): String {
-        return remoteServer.registerDevice(
+    override suspend fun registerDevice(deviceId: String, token: String) {
+        remoteServer.registerDevice(
             deviceId = deviceId,
             token = token
         )
