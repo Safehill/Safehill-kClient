@@ -45,6 +45,11 @@ sealed class SafehillError(
             private fun readResolve(): Any = NoData
         }
 
+        data object UnSupportedOperation : ServerError("UnSupportedOperation") {
+            private fun readResolve(): Any = UnSupportedOperation
+
+        }
+
         class UnexpectedResponse(message: String) :
             ServerError("Unexpected response from server: $message")
 
