@@ -106,7 +106,7 @@ class ThreadInteractionSync(
                     it.value.thread
                 }
                 val localThreads = serverProxy.localServer.listThreads()
-                deleteUnwantedThreadsLocally(
+                deleteThreadsNoLongerOnRemote(
                     allThreads = allThreads,
                     localThreads = localThreads
                 )
@@ -119,7 +119,7 @@ class ThreadInteractionSync(
         }
     }
 
-    private fun CoroutineScope.deleteUnwantedThreadsLocally(
+    private fun CoroutineScope.deleteThreadsNoLongerOnRemote(
         allThreads: List<ConversationThreadOutputDTO>,
         localThreads: List<ConversationThreadOutputDTO>
     ) {
