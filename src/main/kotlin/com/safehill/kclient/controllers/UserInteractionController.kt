@@ -1,19 +1,24 @@
 package com.safehill.kclient.controllers
 
+import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.InteractionsGroupDTO
 import com.safehill.kclient.models.dtos.MessageInputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
+import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.ServerProxy
-import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
-import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
+import com.safehill.kclient.util.safeApiCall
 import com.safehill.kcrypto.base64.base64EncodedString
 import com.safehill.kcrypto.models.EncryptedData
 import com.safehill.kcrypto.models.SymmetricKey
 import java.util.Base64
 
-class UserInteractionController(
+/**
+ * Obtain [UserInteractionController]'s instance from configured [com.safehill.SafehillClient]
+ */
+
+class UserInteractionController internal constructor(
     private val serverProxy: ServerProxy,
     private val currentUser: LocalUser,
 ) {
@@ -54,7 +59,7 @@ class UserInteractionController(
         threadId: String,
         limit: Int
     ): Result<InteractionsGroupDTO> {
-        return runCatching {
+        return safeApiCall {
             serverProxy.retrieveInteractions(
                 inGroupId = threadId,
                 per = limit,
@@ -63,22 +68,6 @@ class UserInteractionController(
             )
         }
     }
-
-    suspend fun retrieveLocalInteractions(
-        threadId: String,
-        limit: Int,
-        before: String?
-    ): Result<List<MessageOutputDTO>> {
-        return runCatching {
-            serverProxy.localServer.retrieveInteractions(
-                inGroupId = threadId,
-                per = limit,
-                before = before,
-                page = 1
-            ).messages
-        }
-    }
-
 
     suspend fun setUpThread(withUsers: List<ServerUser>): ConversationThreadOutputDTO {
         val usersAndSelf = (withUsers + currentUser).distinctBy { it.identifier }

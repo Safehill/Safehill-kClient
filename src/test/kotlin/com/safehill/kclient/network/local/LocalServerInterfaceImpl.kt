@@ -19,6 +19,26 @@ import com.safehill.kclient.models.dtos.ReactionOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
 import com.safehill.kclient.models.dtos.UserReactionDTO
+import com.safehill.kclient.models.assets.AssetDescriptor
+import com.safehill.kclient.models.assets.AssetDescriptorUploadState
+import com.safehill.kclient.models.assets.AssetGlobalIdentifier
+import com.safehill.kclient.models.assets.AssetQuality
+import com.safehill.kclient.models.assets.EncryptedAsset
+import com.safehill.kclient.models.assets.GroupId
+import com.safehill.kclient.models.assets.ShareableEncryptedAsset
+import com.safehill.kclient.models.dtos.AssetOutputDTO
+import com.safehill.kclient.models.dtos.AuthResponseDTO
+import com.safehill.kclient.models.dtos.ConversationThreadAssetsDTO
+import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
+import com.safehill.kclient.models.dtos.HashedPhoneNumber
+import com.safehill.kclient.models.dtos.InteractionsGroupDTO
+import com.safehill.kclient.models.dtos.InteractionsSummaryDTO
+import com.safehill.kclient.models.dtos.MessageInputDTO
+import com.safehill.kclient.models.dtos.MessageOutputDTO
+import com.safehill.kclient.models.dtos.ReactionOutputDTO
+import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
+import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
+import com.safehill.kclient.models.dtos.UserReactionDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
@@ -167,6 +187,9 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         assetId: AssetGlobalIdentifier,
         userPublicIdentifier: UserIdentifier
     ) {
+    }
+
+    override suspend fun topLevelInteractionsSummary(): InteractionsSummaryDTO {
         TODO("Not yet implemented")
     }
 
@@ -181,7 +204,7 @@ class LocalServerInterfaceImpl : LocalServerInterface {
     override suspend fun upload(
         serverAsset: AssetOutputDTO,
         asset: EncryptedAsset,
-        filterVersions: List<AssetQuality>,
+        filterVersions: List<AssetQuality>
     ) {
         TODO("Not yet implemented")
     }
@@ -189,7 +212,7 @@ class LocalServerInterfaceImpl : LocalServerInterface {
     override suspend fun markAsset(
         assetGlobalIdentifier: AssetGlobalIdentifier,
         quality: AssetQuality,
-        asState: AssetDescriptorUploadState,
+        asState: AssetDescriptorUploadState
     ) {
         TODO("Not yet implemented")
     }
@@ -200,7 +223,7 @@ class LocalServerInterfaceImpl : LocalServerInterface {
 
     override suspend fun setGroupEncryptionDetails(
         groupId: GroupId,
-        recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>,
+        recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>
     ) {
         TODO("Not yet implemented")
     }
@@ -228,7 +251,7 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         inGroupId: GroupId,
         per: Int,
         page: Int,
-        before: String?,
+        before: String?
     ): InteractionsGroupDTO {
         TODO("Not yet implemented")
     }

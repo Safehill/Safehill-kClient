@@ -1,12 +1,13 @@
 package com.safehill.kclient.models.assets
 
 import com.safehill.kclient.models.users.UserIdentifier
+import java.time.Instant
 import java.util.Date
 
 data class AssetDescriptorImpl(
     override val globalIdentifier: AssetGlobalIdentifier,
     override val localIdentifier: AssetLocalIdentifier?,
-    override val creationDate: Date?,
+    override val creationDate: Instant?,
     override var uploadState: AssetDescriptor.UploadState,
     override var sharingInfo: AssetDescriptor.SharingInfo
 ) : AssetDescriptor {
