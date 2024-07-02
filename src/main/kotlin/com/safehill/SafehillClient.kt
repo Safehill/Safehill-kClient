@@ -13,6 +13,8 @@ import com.safehill.kclient.network.remote.RemoteServer
 import com.safehill.kclient.network.remote.RemoteServerEnvironment
 import io.ktor.http.URLBuilder
 import io.ktor.http.URLProtocol
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+import java.security.Security
 
 class SafehillClient private constructor(
     val serverProxy: ServerProxy,
@@ -63,7 +65,12 @@ class SafehillClient private constructor(
             FuelManager.instance.addResponseInterceptor(LogResponseInterceptor)
         }
 
+        private fun setupBouncyCastle() {
+            Security.addProvider(BouncyCastleProvider())
+        }
+
         fun build(): SafehillClient {
+            setupBouncyCastle()
             setUpFuelConfiguration()
             return SafehillClient(
                 serverProxy = ServerProxyImpl(
