@@ -14,6 +14,7 @@ import com.safehill.kclient.models.dtos.ConversationThreadAssetsDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.HashedPhoneNumber
 import com.safehill.kclient.models.dtos.InteractionsGroupDTO
+import com.safehill.kclient.models.dtos.InteractionsSummaryDTO
 import com.safehill.kclient.models.dtos.MessageInputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.dtos.ReactionOutputDTO
@@ -25,9 +26,13 @@ import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.local.LocalServerInterface
+import com.safehill.kclient.util.runCatchingPreservingCancellationException
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.util.Date
 
@@ -88,6 +93,7 @@ class ServerProxyImpl(
                 )
             }
         } catch (e: Exception) {
+            println("failed to fetch assets from server. Returning local version. $e ${e.message}")
             localServer.getAssets(threadId = threadId)
         }
     }
@@ -124,6 +130,33 @@ class ServerProxyImpl(
         userPublicIdentifier: UserIdentifier
     ) {
         remoteServer.unshare(assetId, userPublicIdentifier)
+    }
+
+    override suspend fun topLevelInteractionsSummary(): InteractionsSummaryDTO {
+        return runCatchingPreservingCancellationException {
+            remoteServer.topLevelInteractionsSummary().also {
+                storeInteractionSummary(it)
+            }
+        }.getOrElse {
+            localServer.topLevelInteractionsSummary()
+        }
+    }
+
+    private suspend fun storeInteractionSummary(interactionsSummaryDTO: InteractionsSummaryDTO) {
+        coroutineScope {
+            interactionsSummaryDTO.summaryByThreadId.map { (threadId, threadInteractionSummary) ->
+                async {
+                    localServer.createOrUpdateThread(listOf(threadInteractionSummary.thread))
+                    val message = threadInteractionSummary.lastEncryptedMessage
+                    if (message != null) {
+                        localServer.insertMessages(
+                            threadId = threadId,
+                            messages = listOf(message)
+                        )
+                    }
+                }
+            }.awaitAll()
+        }
     }
 
     override suspend fun retrieveThread(usersIdentifiers: List<UserIdentifier>): ConversationThreadOutputDTO? {
@@ -208,12 +241,17 @@ class ServerProxyImpl(
         before: String?
     ): InteractionsGroupDTO {
         return try {
-            retrieveRemoteInteractions(
+            remoteServer.retrieveInteractions(
                 inGroupId = inGroupId,
                 per = per,
                 page = page,
                 before = before
-            )
+            ).also {
+                localServer.insertMessages(
+                    messages = it.messages,
+                    threadId = inGroupId
+                )
+            }
         } catch (e: Exception) {
             println("failed to fetch interactions from server. Returning local version. $e ${e.message}")
             localServer.retrieveInteractions(
@@ -223,20 +261,6 @@ class ServerProxyImpl(
                 before = before
             )
         }
-    }
-
-    suspend fun retrieveRemoteInteractions(
-        inGroupId: GroupId,
-        per: Int,
-        page: Int,
-        before: String?
-    ): InteractionsGroupDTO {
-        return remoteServer.retrieveInteractions(
-            inGroupId = inGroupId,
-            per = per,
-            page = page,
-            before = before
-        )
     }
 
     override suspend fun addMessages(

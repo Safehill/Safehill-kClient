@@ -1,14 +1,14 @@
 package com.safehill.kclient.models.dtos
 
-import com.safehill.kclient.models.serde.ISO8601DateSerializer
+import com.safehill.kclient.models.serde.InstantSerializer
 import kotlinx.serialization.Serializable
-import java.util.Date
+import java.time.Instant
 
 @Serializable
 data class AssetOutputDTO(
     val globalIdentifier: String,
     val localIdentifier: String?,
-    @Serializable(with = ISO8601DateSerializer::class) val creationDate: Date?,
+    @Serializable(with = InstantSerializer::class) val creationDate: Instant?,
     val groupId: String,
     val versions: List<AssetVersionOutputDTO>,
 )

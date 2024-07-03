@@ -20,6 +20,13 @@ dependencies {
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
     implementation("dev.turingcomplete:kotlin-onetimepassword:2.4.0")
+
+    val ktor_version = "2.3.11"
+    implementation("io.ktor:ktor-client-core:$ktor_version")
+    implementation("io.ktor:ktor-client-cio:$ktor_version")
+    implementation("io.ktor:ktor-client-logging:$ktor_version")
+    implementation("io.ktor:ktor-client-websockets:$ktor_version")
+
     testImplementation(kotlin("test"))
     testImplementation("org.mockito:mockito-core:4.8.1")
     implementation(kotlin("stdlib"))
@@ -40,6 +47,6 @@ tasks.withType<Jar> {
     }
 }
 
-java{
+java {
     withSourcesJar()
 }

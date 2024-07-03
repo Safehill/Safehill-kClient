@@ -1,10 +1,10 @@
 package com.safehill.kclient.models.assets
 
-import java.util.Date
+import java.time.Instant
 
 class DecryptedAssetImpl(
     override val globalIdentifier: AssetGlobalIdentifier,
     override val localIdentifier: AssetLocalIdentifier?,
-    override val creationDate: Date?,
+    override val creationDate: Instant?,
     override var decryptedVersions: Map<AssetQuality, ByteArray>
 ) : DecryptedAsset
