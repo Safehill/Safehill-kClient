@@ -40,7 +40,10 @@ class SafehillClient private constructor(
     ) {
         private fun buildWsURL() = URLBuilder().apply {
             this.host = remoteServerEnvironment.hostName
-            this.protocol = URLProtocol.WS
+            this.protocol = when (remoteServerEnvironment) {
+                is RemoteServerEnvironment.Development -> URLProtocol.WS
+                RemoteServerEnvironment.Production -> URLProtocol.WSS
+            }
             this.port = 8080
         }.build()
 
