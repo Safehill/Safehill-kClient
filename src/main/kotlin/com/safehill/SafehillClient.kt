@@ -44,7 +44,7 @@ class SafehillClient private constructor(
                 is RemoteServerEnvironment.Development -> URLProtocol.WS
                 RemoteServerEnvironment.Production -> URLProtocol.WSS
             }
-            this.port = 8080
+            this.port = remoteServerEnvironment.port
         }.build()
 
         private fun buildRestApiUrl() = URLBuilder().apply {
