@@ -12,6 +12,7 @@ inline fun <T> runCatchingPreservingCancellationException(
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
+        println("Error $e")
         Result.failure(e)
     }
 }

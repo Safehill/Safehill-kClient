@@ -40,8 +40,11 @@ class SafehillClient private constructor(
     ) {
         private fun buildWsURL() = URLBuilder().apply {
             this.host = remoteServerEnvironment.hostName
-            this.protocol = URLProtocol.WS
-            this.port = 8080
+            this.protocol = when (remoteServerEnvironment) {
+                is RemoteServerEnvironment.Development -> URLProtocol.WS
+                RemoteServerEnvironment.Production -> URLProtocol.WSS
+            }
+            this.port = remoteServerEnvironment.port
         }.build()
 
         private fun buildRestApiUrl() = URLBuilder().apply {
@@ -66,6 +69,11 @@ class SafehillClient private constructor(
         }
 
         private fun setupBouncyCastle() {
+            // Android registers its own BC provider. As it might be outdated and might not include
+            // all needed ciphers, we substitute it with a known BC bundled in the app.
+            if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) != null) {
+                Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME)
+            }
             Security.addProvider(BouncyCastleProvider())
         }
 
