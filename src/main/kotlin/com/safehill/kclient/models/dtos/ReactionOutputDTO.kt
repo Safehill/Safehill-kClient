@@ -1,14 +1,16 @@
 package com.safehill.kclient.models.dtos
 
-import com.safehill.kclient.models.interactions.ReactionType
+import com.safehill.kclient.models.serde.InstantSerializer
 import kotlinx.serialization.Serializable
+import java.time.Instant
 
 @Serializable
 data class ReactionOutputDTO(
-    override val interactionId: String,
-    override val senderUserIdentifier: String,
-    override val inReplyToAssetGlobalIdentifier: String?,
-    override val inReplyToInteractionId: String?,
-    override val reactionType: ReactionType,
-    override val addedAt: String, // ISO8601 formatted datetime
-) : UserReactionDTO
+    val interactionId: String,
+    val senderUserIdentifier: String,
+    val inReplyToAssetGlobalIdentifier: String?,
+    val inReplyToInteractionId: String?,
+    val reactionType: Int,
+    @Serializable(with = InstantSerializer::class) val addedAt: Instant,
+    val senderPublicIdentifier: String,
+)
