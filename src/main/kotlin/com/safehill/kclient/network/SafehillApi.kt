@@ -20,8 +20,6 @@ import com.safehill.kclient.models.dtos.ReactionInputDTO
 import com.safehill.kclient.models.dtos.ReactionOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
-import com.safehill.kclient.models.dtos.UserReactionDTO
-import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
