@@ -1,6 +1,6 @@
 package com.safehill.kclient.models.dtos
 
-import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -11,9 +11,10 @@ data class SendCodeToUserRequestDTO(
     val medium: Medium
 ) {
     enum class Medium {
-        @SerializedName("phone")
+        @SerialName("phone")
         Phone,
-        @SerializedName("sms")
+
+        @SerialName("sms")
         SMS
         ;
     }
