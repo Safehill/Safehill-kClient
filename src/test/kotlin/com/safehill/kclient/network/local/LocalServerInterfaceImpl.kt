@@ -20,6 +20,7 @@ import com.safehill.kclient.models.dtos.ReactionInputDTO
 import com.safehill.kclient.models.dtos.ReactionOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
+import com.safehill.kclient.models.dtos.authorization.UserAuthorizationStatusDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
@@ -247,4 +248,17 @@ class LocalServerInterfaceImpl : LocalServerInterface {
     override suspend fun listThreads(): List<ConversationThreadOutputDTO> {
         TODO("Not yet implemented")
     }
+
+    override suspend fun getAuthorizationStatus(): UserAuthorizationStatusDTO {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun authorizeUsers(userIdentifiers: List<UserIdentifier>) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun blockUsers(userIdentifiers: List<UserIdentifier>) {
+        TODO("Not yet implemented")
+    }
+
 }

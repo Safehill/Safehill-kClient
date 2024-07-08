@@ -39,8 +39,11 @@ import java.util.Date
 class ServerProxyImpl(
     override val localServer: LocalServerInterface,
     override val remoteServer: SafehillApi,
-    override var requestor: LocalUser,
-) : ServerProxy {
+    override val requestor: LocalUser,
+) : ServerProxy,
+    // Delegates most of the functions to RemoteServer.
+    // Override if different implementation is necessary.
+    SafehillApi by remoteServer {
 
 
     override suspend fun listThreads(): List<ConversationThreadOutputDTO> {
