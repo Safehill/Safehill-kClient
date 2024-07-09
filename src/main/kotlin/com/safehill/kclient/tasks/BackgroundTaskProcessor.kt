@@ -1,66 +1,138 @@
 package com.safehill.kclient.tasks
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicLong
+import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
-class BackgroundTaskProcessor<T : BackgroundTask>(
-    processorScope: CoroutineScope,
-    private val jobScope: CoroutineScope
-) {
 
-    internal val taskQueue = ConcurrentLinkedQueue<T>()
-    private val processingMutex = Mutex()
-    private var currentJob: Job? = null
-    private var repeatingLifecycle: Job? = null
+class BackgroundTaskProcessor<T : BackgroundTask> {
 
-    init {
-        processorScope.launch {
-            while (isActive) {
-                if (currentJob?.isActive != true && taskQueue.isNotEmpty()) {
-                    processTasks()
+    private val taskCounter = AtomicLong(0)
+
+    private val mutex = Mutex()
+
+    private val jobQueue = ConcurrentLinkedQueue<JobWithCounter>()
+
+
+    /**
+     * @param task The task to run.
+     * @param enqueueMode If the enqueue mode is:
+     * - [EnqueueMode.DropOnGoing] its gonna cancel all the tasks in the queue and start the new task.
+     * - [EnqueueMode.Enqueue] its gonna wait for the pending tasks to complete and then start the new task.
+     * - [EnqueueMode.DropLatest] if the task is already on queue, its gonna drop the new task else its gonna start the new task.
+     * @param repeatMode To configure the repetition of the task.
+     *
+     * @return suspends till the task is completed or cancelled.
+     * We can cancel the task with following ways:
+     * - Cancel the coroutine that called [run] method.
+     * - Another task is added with enqueue mode [EnqueueMode.DropOnGoing].
+     */
+    suspend fun run(
+        task: T,
+        enqueueMode: EnqueueMode = EnqueueMode.DropLatest,
+        repeatMode: RepeatMode = RepeatMode.Once
+    ) {
+        do {
+            try {
+                coroutineScope {
+                    val jobId: Long = mutex.withLock {
+                        enqueueMode.takeCorrespondingActions()
+                        addTaskToQueue(task)
+                    }
+                    waitForCompletion(jobId)
                 }
+            } catch (_: TaskAlreadyOnQueue) {
             }
+            delay(repeatMode.getWaitDuration())
+        } while (coroutineContext.isActive && repeatMode is RepeatMode.Repeating)
+    }
+
+    private fun CoroutineScope.addTaskToQueue(task: T): Long {
+        val jobId = taskCounter.incrementAndGet()
+        val job = launch(
+            start = CoroutineStart.LAZY
+        ) {
+            task.run()
+        }
+        jobQueue.add(job with jobId)
+        job.invokeOnCompletion {
+            jobQueue.removeIf { it.counter == jobId }
+        }
+        return jobId
+    }
+
+    private fun dropJobsInQueue() {
+        while (jobQueue.isNotEmpty()) {
+            jobQueue.poll()?.job?.cancel()
         }
     }
 
-    private fun processTasks() {
-        currentJob = jobScope.launch {
-            processingMutex.withLock {
-                val task = taskQueue.poll()
-                task?.run()
+    private fun EnqueueMode.takeCorrespondingActions() {
+        when (this) {
+            EnqueueMode.DropOnGoing -> dropJobsInQueue()
+            EnqueueMode.DropLatest -> if (jobQueue.isNotEmpty()) {
+                throw TaskAlreadyOnQueue(jobIds = jobQueue.map { it.counter })
             }
+
+            EnqueueMode.Enqueue -> {}
         }
     }
 
-    fun addTask(task: T) {
-        taskQueue.add(task)
+    private fun RepeatMode.getWaitDuration(): Duration {
+        return when (this) {
+            RepeatMode.Once -> 0.seconds
+            is RepeatMode.Repeating -> this.interval
+        }
     }
 
-    fun addTaskRepeatedly(task: T, repeatingIntervalDuration: Duration) {
-        repeatingLifecycle = jobScope.launch {
-            while (isActive) {
-                if (currentJob?.isActive != true && taskQueue.isEmpty()) {
-                    addTask(task)
+    private suspend fun waitForCompletion(jobId: Long) {
+        var latestJob: Job?
+        while (
+            run {
+                val jobWithCounter = jobQueue.peek()
+                if (jobWithCounter == null) {
+                    return
                 } else {
-                    // Skip this cycle, as a task of the same kind is already running
+                    latestJob = jobWithCounter.job
+                    jobWithCounter.counter <= jobId && coroutineContext.isActive
                 }
-                delay(repeatingIntervalDuration)
             }
+        ) {
+            latestJob?.join()
         }
     }
+}
 
-    fun stopRepeat() {
-        repeatingLifecycle?.cancel()
-    }
+private data class TaskAlreadyOnQueue(val jobIds: List<Long>) : Exception()
 
-    fun cancelCurrent() {
-        currentJob?.cancel()
-    }
+private data class JobWithCounter(
+    val job: Job,
+    val counter: Long,
+)
+
+private infix fun Job.with(counter: Long) = JobWithCounter(
+    counter = counter,
+    job = this
+)
+
+enum class EnqueueMode {
+    DropOnGoing,
+    Enqueue,
+    DropLatest;
+}
+
+sealed class RepeatMode {
+    data object Once : RepeatMode()
+    data class Repeating(val interval: Duration) : RepeatMode()
 }
