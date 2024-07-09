@@ -1,25 +1,31 @@
 package com.safehill.kcrypto
 
-import com.safehill.kclient.network.remote.RemoteServer
 import com.safehill.kclient.models.dtos.AuthChallengeResponseDTO
 import com.safehill.kclient.models.dtos.AuthResolvedChallengeDTO
 import com.safehill.kclient.models.users.LocalUser
-import com.safehill.kcrypto.models.SafehillKeyPair
+import com.safehill.kclient.network.remote.RemoteServer
 import com.safehill.kcrypto.models.LocalCryptoUser
+import com.safehill.kcrypto.models.SHUserContext
+import com.safehill.kcrypto.models.SafehillKeyPair
 import com.safehill.kcrypto.models.SafehillPrivateKey
 import com.safehill.kcrypto.models.SafehillPublicKey
-import com.safehill.kcrypto.models.ShareablePayload
 import com.safehill.kcrypto.models.SafehillSignature
+import com.safehill.kcrypto.models.ShareablePayload
 import com.safehill.kcrypto.models.SymmetricKey
 import com.safehill.kcrypto.models.SymmetricKeySize
-import com.safehill.kcrypto.models.SHUserContext
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import java.util.Arrays
 import java.util.Base64
-import kotlin.math.max
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class CipherTests {
 
@@ -27,84 +33,101 @@ class CipherTests {
 
     @Test
     fun testGenerateOTP() {
-        val secret = SafehillCypher.generateRandomIV()
-        val (code1, _) = SafehillCypher.generateOTPCode(secret = secret, digits = 6)
-        assertEquals(code1.length, 6)
+        runBlocking {
+            val secret = SafehillCypher.generateRandomIV()
+            val (code1, _) = SafehillOTP(digits = 6, validDuration = 30.seconds).generateCode(secret)
+            assertEquals(code1.length, 6)
 
-        val (code2, _) = SafehillCypher.generateOTPCode(secret = secret, digits = 6)
-        assertEquals(code1.length, 6)
-        assertEquals(code1, code2)
+            val (code2, _) = SafehillOTP(digits = 6, validDuration = 30.seconds).generateCode(secret)
+            assertEquals(code1.length, 6)
+            assertEquals(code1, code2)
 
-        val (code3, _) = SafehillCypher.generateOTPCode(
-            secret = secret,
-            digits = 6,
-            timeStepInSeconds = 1
-        )
-        val (code4, valid4) = SafehillCypher.generateOTPCode(
-            secret = secret,
-            digits = 6,
-            timeStepInSeconds = 1
-        )
-        assertEquals(code3, code4)
+            val safehillOTP = SafehillOTP(digits = 6, validDuration = 1.seconds)
+            val (code3, _) = safehillOTP.generateCode(secret)
+            val isValid = safehillOTP.isValid(secret = secret, code3)
+            assert(isValid)
 
-        Thread.sleep(valid4 + 1)
 
-        val (code5, _) = SafehillCypher.generateOTPCode(
-            secret = secret,
-            digits = 6,
-            timeStepInSeconds = 1
-        )
-        assertNotEquals(code4, code5)
+            val (code5, _) = SafehillOTP(digits = 6, validDuration = 1.seconds).generateCode(secret)
+            delay(0.5.seconds)
+            assert(SafehillOTP(digits = 6, validDuration = 1.seconds).isValid(secret, code5))
+            delay(0.6.seconds)
+            assertFalse(SafehillOTP(digits = 6, validDuration = 1.seconds).isValid(secret, code5))
 
-        val (code6, _) = SafehillCypher.generateOTPCode(
-            secret = secret,
-            digits = 6,
-            timeStepInSeconds = 2
-        )
-        assertNotEquals(code5, code6)
 
-        val (code7, _) = SafehillCypher.generateOTPCode(
-            secret = secret,
-            digits = 6,
-            timeStepInSeconds = 2
-        )
-        assertEquals(code6, code7)
+            val (code8, valid8) = SafehillOTP(digits = 6, validDuration = 2.seconds).generateCode(secret)
+            delay((valid8 - 100.milliseconds).coerceAtLeast(0.milliseconds))
+            assert(SafehillOTP(digits = 6, validDuration = 2.seconds).isValid(secret, code8))
 
-        Thread.sleep(1100)
 
-        val (code8, valid8) = SafehillCypher.generateOTPCode(
-            secret = secret,
-            digits = 6,
-            timeStepInSeconds = 2
-        )
-        Thread.sleep(max(0, valid8 - 100))
-        val (code9, valid9) = SafehillCypher.generateOTPCode(
-            secret = secret,
-            digits = 6,
-            timeStepInSeconds = 2
-        )
-        assertEquals(code8, code9)
-        Thread.sleep(valid9 + 1)
-        val (code10, _) = SafehillCypher.generateOTPCode(
-            secret = secret,
-            digits = 6,
-            timeStepInSeconds = 2
-        )
-        assertNotEquals(code9, code10)
 
-        val newSecret = SafehillCypher.generateRandomIV()
-        val (code11, valid11) = SafehillCypher.generateOTPCode(
-            secret = newSecret,
-            digits = 6,
-            timeStepInSeconds = 2
-        )
-        Thread.sleep(max(0, valid11 - 100))
-        val (code12, _) = SafehillCypher.generateOTPCode(
-            secret = newSecret,
-            digits = 6,
-            timeStepInSeconds = 2
-        )
-        assertEquals(code11, code12)
+            val (code10, _) = SafehillOTP(digits = 6, validDuration = 2.seconds).generateCode(secret)
+
+            val newSecret = SafehillCypher.generateRandomIV()
+            val isValid1 = SafehillOTP(digits = 6, validDuration = 2.seconds).isValid(
+                secret = newSecret, code = code10
+            )
+            assertFalse(isValid1)
+
+            val (code11, _) = SafehillOTP(digits = 6, validDuration = 2.seconds).generateCode(newSecret)
+
+            delay(0.99.seconds)
+
+            assert(SafehillOTP(digits = 6, validDuration = 2.seconds).isValid(newSecret, code11))
+        }
+
+    }
+
+    @Test
+    fun `test otp generated is valid for minimum of half the time step`() {
+        runBlocking {
+            val secret = SafehillCypher.generateRandomIV()
+            val safehillOTP = SafehillOTP(digits = 6, validDuration = 10.seconds)
+            val codeInfo = safehillOTP.generateCode(secret)
+
+            coroutineScope {
+                launch {
+                    listOf(
+                        1.seconds,
+                        2.seconds,
+                        2.5.seconds,
+                        3.seconds,
+                        4.seconds,
+                        4.5.seconds,
+                        5.seconds
+                    ).forEach {
+                        launch {
+                            delay(it)
+                            assert(safehillOTP.isValid(secret, codeInfo.otp)) {
+                                "Not valid after $it"
+                            }
+                        }
+                    }
+                }
+                launch {
+                    val maxDuration = codeInfo.validity
+                    println("OTP is valid for max of $maxDuration")
+                    val slices = 10
+                    val interval = maxDuration / slices
+                    (0 until slices).map {
+                        launch {
+                            delay(interval * it)
+                            assert(safehillOTP.isValid(secret, codeInfo.otp)) {
+                                "Not valid after $it"
+                            }
+                        }
+                    }
+                }
+                launch {
+                    delay(codeInfo.validity)
+                    assertFalse(
+                        safehillOTP.isValid(secret, codeInfo.otp),
+                        "Valid after ${codeInfo.validity}"
+                    )
+                }
+            }
+        }
+
     }
 
     @Test
@@ -278,7 +301,8 @@ class CipherTests {
 
         val senderSignatureBase64 =
             "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEk5nINqQDigFdTIEI5BJ1o4E72RDs4S7qi1/9dYRGcLQhENITPpM9jYM7KMpeg1/xgTFWZL+pk9rhfNorHOat5A=="
-        val senderSignature = SafehillPublicKey.from(Base64.getDecoder().decode(senderSignatureBase64))
+        val senderSignature =
+            SafehillPublicKey.from(Base64.getDecoder().decode(senderSignatureBase64))
 
         val receiverPrivateKeyBase64 =
             "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgZco8S8aWD0NBYHcRvuu/xhdY7b1YcnxkkjwOuXdKlOqhRANCAATbl2f801RNl2FIY2F/p2G0nydd2Wy6Kzo7i1Er8fGUnE97Nh+RvUYz+J7MxS4mek29n4OF4Aj14veEmojDTucI"
@@ -408,7 +432,13 @@ class CipherTests {
         val signedDigest = Base64.getDecoder().decode(solvedChallenge.signedDigest)
 
         // SERVER verifies the solved challenge
-        /**/ assert(SafehillSignature.verify(challenge, signedChallenge, clientUser.publicSignature))
+        /**/ assert(
+            SafehillSignature.verify(
+                challenge,
+                signedChallenge,
+                clientUser.publicSignature
+            )
+        )
         /**/ assert(SafehillSignature.verify(digest, signedDigest, clientUser.publicSignature))
     }
 }
