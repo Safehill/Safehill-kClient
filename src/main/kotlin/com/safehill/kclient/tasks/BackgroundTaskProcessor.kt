@@ -24,6 +24,20 @@ class BackgroundTaskProcessor<T : BackgroundTask> {
 
     private val jobQueue = ConcurrentLinkedQueue<JobWithCounter>()
 
+
+    /**
+     * @param task The task to run.
+     * @param enqueueMode If the enqueue mode is:
+     * - [EnqueueMode.DropOnGoing] its gonna cancel all the tasks in the queue and start the new task.
+     * - [EnqueueMode.Enqueue] its gonna wait for the pending tasks to complete and then start the new task.
+     * - [EnqueueMode.DropLatest] if the task is already on queue, its gonna drop the new task else its gonna start the new task.
+     * @param repeatMode To configure the repetition of the task.
+     *
+     * @return suspends till the task is completed or cancelled.
+     * We can cancel the task with following ways:
+     * - Cancel the coroutine that called [run] method.
+     * - Another task is added with enqueue mode [EnqueueMode.DropOnGoing].
+     */
     suspend fun run(
         task: T,
         enqueueMode: EnqueueMode = EnqueueMode.DropLatest,
