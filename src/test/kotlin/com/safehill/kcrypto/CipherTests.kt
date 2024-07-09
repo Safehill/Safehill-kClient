@@ -13,122 +13,120 @@ import com.safehill.kcrypto.models.SafehillSignature
 import com.safehill.kcrypto.models.ShareablePayload
 import com.safehill.kcrypto.models.SymmetricKey
 import com.safehill.kcrypto.models.SymmetricKeySize
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
+import java.time.Instant
 import java.util.Arrays
 import java.util.Base64
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 
 class CipherTests {
 
     private val STATIC_PROTOCOL_SALT: ByteArray = Base64.getDecoder().decode("/5RWVwIP//+i///Z")
 
     @Test
-    fun testGenerateOTP() {
-        runBlocking {
-            val secret = SafehillCypher.generateRandomIV()
-            val (code1, _) = SafehillOTP(digits = 6, validDuration = 30.seconds).generateCode(secret)
-            assertEquals(code1.length, 6)
-
-            val (code2, _) = SafehillOTP(digits = 6, validDuration = 30.seconds).generateCode(secret)
-            assertEquals(code1.length, 6)
-            assertEquals(code1, code2)
-
-            val safehillOTP = SafehillOTP(digits = 6, validDuration = 1.seconds)
-            val (code3, _) = safehillOTP.generateCode(secret)
-            val isValid = safehillOTP.isValid(secret = secret, code3)
-            assert(isValid)
-
-
-            val (code5, _) = SafehillOTP(digits = 6, validDuration = 1.seconds).generateCode(secret)
-            delay(0.5.seconds)
-            assert(SafehillOTP(digits = 6, validDuration = 1.seconds).isValid(secret, code5))
-            delay(0.6.seconds)
-            assertFalse(SafehillOTP(digits = 6, validDuration = 1.seconds).isValid(secret, code5))
-
-
-            val (code8, valid8) = SafehillOTP(digits = 6, validDuration = 2.seconds).generateCode(secret)
-            delay((valid8 - 100.milliseconds).coerceAtLeast(0.milliseconds))
-            assert(SafehillOTP(digits = 6, validDuration = 2.seconds).isValid(secret, code8))
-
-
-
-            val (code10, _) = SafehillOTP(digits = 6, validDuration = 2.seconds).generateCode(secret)
-
-            val newSecret = SafehillCypher.generateRandomIV()
-            val isValid1 = SafehillOTP(digits = 6, validDuration = 2.seconds).isValid(
-                secret = newSecret, code = code10
-            )
-            assertFalse(isValid1)
-
-            val (code11, _) = SafehillOTP(digits = 6, validDuration = 2.seconds).generateCode(newSecret)
-
-            delay(0.99.seconds)
-
-            assert(SafehillOTP(digits = 6, validDuration = 2.seconds).isValid(newSecret, code11))
-        }
-
+    fun `test generated otp is of correct length`() {
+        val secret = SafehillCypher.generateRandomIV()
+        val (code1, _) = SafehillOTP(digits = 6, validDuration = 30.seconds).generateCode(
+            secret = secret,
+            instant = Instant.now()
+        )
+        assertEquals(code1.length, 6)
     }
 
     @Test
-    fun `test otp generated is valid for minimum of half the time step`() {
+    fun `test generated code is the same if generated again instantly`() {
+        val secret = SafehillCypher.generateRandomIV()
+        val (code1, _) = SafehillOTP(digits = 6, validDuration = 30.seconds).generateCode(
+            secret = secret,
+            instant = Instant.now()
+        )
+        val (code2, _) = SafehillOTP(digits = 6, validDuration = 30.seconds).generateCode(
+            secret = secret,
+            instant = Instant.now()
+        )
+        assertEquals(code1, code2)
+    }
+
+    @Test
+    fun `test generated code is the same if generated for the previous slot`() {
         runBlocking {
             val secret = SafehillCypher.generateRandomIV()
-            val safehillOTP = SafehillOTP(digits = 6, validDuration = 10.seconds)
-            val codeInfo = safehillOTP.generateCode(secret)
-
-            coroutineScope {
-                launch {
-                    listOf(
-                        1.seconds,
-                        2.seconds,
-                        2.5.seconds,
-                        3.seconds,
-                        4.seconds,
-                        4.5.seconds,
-                        5.seconds
-                    ).forEach {
-                        launch {
-                            delay(it)
-                            assert(safehillOTP.isValid(secret, codeInfo.otp)) {
-                                "Not valid after $it"
-                            }
-                        }
-                    }
-                }
-                launch {
-                    val maxDuration = codeInfo.validity
-                    println("OTP is valid for max of $maxDuration")
-                    val slices = 10
-                    val interval = maxDuration / slices
-                    (0 until slices).map {
-                        launch {
-                            delay(interval * it)
-                            assert(safehillOTP.isValid(secret, codeInfo.otp)) {
-                                "Not valid after $it"
-                            }
-                        }
-                    }
-                }
-                launch {
-                    delay(codeInfo.validity)
-                    assertFalse(
-                        safehillOTP.isValid(secret, codeInfo.otp),
-                        "Valid after ${codeInfo.validity}"
-                    )
-                }
-            }
+            val (code1, _) = SafehillOTP(digits = 6, validDuration = 1.seconds).generateCode(
+                secret = secret,
+                instant = Instant.now()
+            )
+            delay(1.seconds)
+            val (code2, _) = SafehillOTP(digits = 6, validDuration = 1.seconds).generateCode(
+                secret = secret,
+                instant = Instant.now()
+            )
+            val (code3, _) = SafehillOTP(digits = 6, validDuration = 1.seconds).generateCode(
+                secret = secret,
+                instant = Instant.now() - 1.seconds.toJavaDuration()
+            )
+            assertNotEquals(code1, code2)
+            assertEquals(code1, code3)
         }
-
     }
+
+    @Test
+    fun `test generated code is different after valid time has elapsed`() {
+        val secret = SafehillCypher.generateRandomIV()
+        val safehillOTP = SafehillOTP(digits = 6, validDuration = 2.seconds)
+        val instant = Instant.now()
+        val (code1, validity) = safehillOTP.generateCode(
+            secret = secret,
+            instant = instant
+        )
+        val secondInstant = Instant.now()
+        val (code2, _) = safehillOTP.generateCode(
+            secret = secret,
+            instant = secondInstant + validity.toJavaDuration() + 1.milliseconds.toJavaDuration()
+        )
+        assertNotEquals(code1, code2)
+    }
+    @Test
+    fun `test code is same when we move to second slot but verify in the first slot`(){
+        runBlocking {
+            val secret = SafehillCypher.generateRandomIV()
+            val safehillOTP = SafehillOTP(digits = 6, validDuration = 2.seconds)
+            val (code1, ) = safehillOTP.generateCode(secret = secret, instant = Instant.now())
+            delay(2.seconds)
+            val (code2, _) = safehillOTP.generateCode(secret = secret, instant = Instant.now() - 2.seconds.toJavaDuration())
+            assertEquals(code1, code2)
+        }
+    }
+
+    @Test
+    fun `test generated code is different after valid time`() {
+        runBlocking {
+            val secret = SafehillCypher.generateRandomIV()
+            val safehillOTP = SafehillOTP(digits = 6, validDuration = 1.seconds)
+            val (code1, validTime) = safehillOTP.generateCode(
+                secret = secret,
+                instant = Instant.now()
+            )
+            delay(validTime)
+            val (code2, _) = safehillOTP.generateCode(
+                secret = secret,
+                instant = Instant.now()
+            )
+            val (code3, _) = safehillOTP.generateCode(
+                secret = secret,
+                instant = Instant.now()
+            )
+            assertNotEquals(code1, code2)
+            assertEquals(code2, code3)
+        }
+    }
+
 
     @Test
     fun testEncryptDecryptSharedSecretStaticIV() {
