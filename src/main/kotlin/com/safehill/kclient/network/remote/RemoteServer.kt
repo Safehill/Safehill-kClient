@@ -72,8 +72,14 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.security.MessageDigest
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.util.Base64
 import java.util.Date
+import java.util.Locale
 
 
 // For Fuel how to see https://www.baeldung.com/kotlin/fuel
@@ -394,10 +400,12 @@ class RemoteServer(
             this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
 
         val assetCreatedAt = asset.creationDate ?: run { Instant.MIN }
+        val dateTime = OffsetDateTime.ofInstant(assetCreatedAt, ZoneOffset.UTC)
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX")
         val requestBody = com.safehill.kclient.models.dtos.AssetInputDTO(
             asset.globalIdentifier,
             asset.localIdentifier,
-            assetCreatedAt,
+            dateTime.format(formatter),
             groupId,
             asset.encryptedVersions.map {
                 com.safehill.kclient.models.dtos.AssetVersionInputDTO(
@@ -550,7 +558,11 @@ class RemoteServer(
             coroutineScope.async {
                 val presignedURL = kv.key
                 val encryptedVersion = kv.value
-                S3Proxy.upload(encryptedVersion.encryptedData, presignedURL)
+                try {
+                    S3Proxy.upload(encryptedVersion.encryptedData, presignedURL)
+                } catch (exception: Exception) {
+                    print(exception)
+                }
                 remoteServer.markAsset(
                     asset.globalIdentifier,
                     encryptedVersion.quality,

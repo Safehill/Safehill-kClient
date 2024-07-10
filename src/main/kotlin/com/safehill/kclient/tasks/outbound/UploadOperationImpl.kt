@@ -1,84 +1,129 @@
 package com.safehill.kclient.tasks.outbound
 
 import com.safehill.kclient.controllers.LocalAssetsStoreController
+import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
-import com.safehill.kclient.models.assets.EncryptedAssetImpl
-import com.safehill.kclient.models.assets.EncryptedAssetVersionImpl
+import com.safehill.kclient.models.assets.EncryptedAsset
+import com.safehill.kclient.models.assets.GroupId
+import com.safehill.kclient.models.assets.LocalAsset
+import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.users.LocalUser
+import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.ServerProxy
-import com.safehill.kclient.tasks.BackgroundTask
-import com.safehill.kclient.utils.ImageResizerInterface
-import com.safehill.kcrypto.SafehillCypher
 import com.safehill.kcrypto.models.SymmetricKey
-import com.safehill.kcrypto.models.bytes
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
+import java.util.UUID
 
-public class UploadOperationImpl(
+class UploadOperationImpl(
     val serverProxy: ServerProxy,
-    val localAssetsStoreController: LocalAssetsStoreController,
     override val listeners: List<UploadOperationListener>,
-    val resizer: ImageResizerInterface,
-) : UploadOperation, BackgroundTask {
+    val encrypter: AssetEncrypterInterface,
+) : UploadOperation {
 
     // TODO: Persist these on disk
-    val outboundQueueItems: MutableList<OutboundQueueItem> = mutableListOf()
+    private val outboundQueueItems: Channel<OutboundQueueItem> = Channel(Channel.UNLIMITED)
+    private val job = Job()
+    private val scope = CoroutineScope(Dispatchers.Default + job)
 
     override val user: LocalUser
         get() = serverProxy.requestor
 
-    override suspend fun upload(outboundQueueItem: OutboundQueueItem) {
-        val globalIdentifier = outboundQueueItem.globalIdentifier ?: return
+    override suspend fun enqueueUpload(
+        localAsset: LocalAsset,
+        assetQualities: Array<AssetQuality>,
+        groupId: GroupId,
+        recipients: List<ServerUser>
+    ) {
+        scope.launch {
+            val globalIdentifier = UUID.randomUUID().toString()
+            assetQualities.forEach {
+                outboundQueueItems.send(
+                    OutboundQueueItem(
+                        OutboundQueueItem.OperationType.Upload,
+                        it,
+                        localAsset,
+                        globalIdentifier,
+                        groupId,
+                        recipients
+                    )
+                )
+            }
+        }
+    }
+
+    override fun enqueueShare(
+        localAsset: LocalAsset,
+        assetQualities: Array<AssetQuality>,
+        globalIdentifier: AssetGlobalIdentifier,
+        groupId: GroupId,
+        recipients: List<ServerUser>
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    suspend fun upload(outboundQueueItem: OutboundQueueItem) {
+        try {
+            val globalIdentifier = outboundQueueItem.globalIdentifier ?: return
+
+            // *******encrypting*******
+            notifyListenersStartedEncrypting(outboundQueueItem)
+
+
+            val encryptedAsset = encrypter.encryptedAsset(outboundQueueItem, user)
+
+            notifyListenersFinishedEncrypting(outboundQueueItem)
+            // #######encrypting#######
+
+            // *******uploading********
+            notifyListenersStartedUploading(outboundQueueItem)
+
+            val serverAssets = createServerAssets(outboundQueueItem, encryptedAsset)
+
+            uploadEncryptedDataToS3(serverAssets, encryptedAsset, outboundQueueItem.assetQuality)
+
+            notifyListenersFinishedUploading(outboundQueueItem, globalIdentifier)
+            // #######uploading########
+
+            shareIfRecipientsExist(outboundQueueItem, globalIdentifier)
+
+        } catch (exception: Exception) {
+            handleUploadException(outboundQueueItem, exception)
+        }
+    }
+
+    private fun notifyListenersStartedEncrypting(outboundQueueItem: OutboundQueueItem) {
         listeners.forEach {
             it.startedEncrypting(
                 outboundQueueItem.localAsset.localIdentifier,
                 outboundQueueItem.groupId
             )
         }
+    }
 
-        val privateSecret = SymmetricKey() //TODO localAssetsStoreController.retrieveCommonEncryptionKey()
-
-        val quality = AssetQuality.LowResolution
-        val imageBytes = outboundQueueItem.localAsset.data
-        val resizedBytes = resizer.resizeImageIfLarger(imageBytes, quality.dimension, quality.dimension)
-
-        val encryptedData = SafehillCypher.encrypt(resizedBytes, privateSecret)
-
-        val encryptedAssetSecret = user.shareable(privateSecret.bytes, user, user.encryptionSalt)
-
-        val encryptedAssetVersion = EncryptedAssetVersionImpl(
-            quality,
-            encryptedData,
-            encryptedAssetSecret.ciphertext,
-            encryptedAssetSecret.ephemeralPublicKeyData,
-            encryptedAssetSecret.signature
-        )
-        val encryptedVersions = mapOf(AssetQuality.LowResolution to encryptedAssetVersion)
-
-        val encryptedAsset = EncryptedAssetImpl(outboundQueueItem.globalIdentifier, outboundQueueItem.localAsset.localIdentifier, outboundQueueItem.localAsset.createdAt, encryptedVersions)
-
+    private fun notifyListenersFinishedEncrypting(outboundQueueItem: OutboundQueueItem) {
         listeners.forEach {
             it.finishedEncrypting(
                 outboundQueueItem.localAsset.localIdentifier,
                 outboundQueueItem.groupId
             )
         }
+    }
 
+    private fun notifyListenersStartedUploading(outboundQueueItem: OutboundQueueItem) {
         listeners.forEach {
             it.startedUploading(
                 outboundQueueItem.localAsset.localIdentifier,
                 outboundQueueItem.groupId
             )
         }
+    }
 
-        // 2. Create server asset with the details
-        //      2.1 If already exists and any recipients call this.share(), otherwise end early
-        val serverAssets = serverProxy.create(listOf(encryptedAsset), outboundQueueItem.groupId, listOf(AssetQuality.LowResolution))
-
-        // 3. Upload encrypted Data to S3
-
-        for (index in serverAssets.indices) {
-            serverProxy.upload(serverAssets[index], encryptedAsset, listOf(AssetQuality.LowResolution))
-        }
-
+    private fun notifyListenersFinishedUploading(outboundQueueItem: OutboundQueueItem, globalIdentifier: String) {
         listeners.forEach {
             it.finishedUploading(
                 outboundQueueItem.localAsset.localIdentifier,
@@ -86,10 +131,38 @@ public class UploadOperationImpl(
                 outboundQueueItem.groupId
             )
         }
+    }
 
+    private suspend fun createServerAssets(
+        outboundQueueItem: OutboundQueueItem,
+        encryptedAsset: EncryptedAsset,
+    ): List<AssetOutputDTO> {
+        return serverProxy.create(
+            listOf(encryptedAsset),
+            outboundQueueItem.groupId,
+            listOf(outboundQueueItem.assetQuality)
+        )
+    }
+
+    private suspend fun uploadEncryptedDataToS3(
+        serverAssets: List<AssetOutputDTO>,
+        encryptedAsset: EncryptedAsset,
+        quality: AssetQuality
+    ) {
+        for (index in serverAssets.indices) {
+            serverProxy.upload(
+                serverAssets[index],
+                encryptedAsset,
+                listOf(quality)
+            )
+        }
+    }
+
+    private suspend fun shareIfRecipientsExist(outboundQueueItem: OutboundQueueItem, globalIdentifier: String) {
         if (outboundQueueItem.recipients.isNotEmpty()) {
             val shareQueueItem = OutboundQueueItem(
                 OutboundQueueItem.OperationType.Share,
+                outboundQueueItem.assetQuality,
                 outboundQueueItem.localAsset,
                 globalIdentifier,
                 outboundQueueItem.groupId,
@@ -99,7 +172,13 @@ public class UploadOperationImpl(
         }
     }
 
-    override suspend fun share(outboundQueueItem: OutboundQueueItem) {
+    private fun handleUploadException(outboundQueueItem: OutboundQueueItem, exception: Exception) {
+        println(exception.localizedMessage)
+        // TODO: Implement exception handling logic, such as retrying the upload
+        // Move the item to the end of the queue and reduce the number of remaining retries
+    }
+
+    suspend fun share(outboundQueueItem: OutboundQueueItem) {
         listeners.forEach {
             it.startedSharing(
                 outboundQueueItem.localAsset.localIdentifier,
@@ -123,9 +202,12 @@ public class UploadOperationImpl(
         }
     }
 
+    override fun stop() {
+        scope.cancel()
+    }
+
     override suspend fun run() {
-        while (outboundQueueItems.isNotEmpty()) {
-            val queueItem = outboundQueueItems.removeFirst()
+        for(queueItem in outboundQueueItems) {
             when (queueItem.operationType) {
                 OutboundQueueItem.OperationType.Upload -> {
                     this.upload(queueItem)

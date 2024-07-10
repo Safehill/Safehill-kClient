@@ -1,13 +1,17 @@
 package com.safehill.kclient.controllers
 
 import com.safehill.kclient.errors.BackgroundOperationError
+import com.safehill.kclient.models.assets.Asset
 import com.safehill.kclient.models.assets.AssetDescriptor
+import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.DecryptedAsset
 import com.safehill.kclient.models.assets.EncryptedAsset
+import com.safehill.kclient.models.assets.LocalAsset
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.network.GlobalIdentifier
 import com.safehill.kclient.network.ServerProxy
+import com.safehill.kcrypto.models.SymmetricKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -93,4 +97,13 @@ class LocalAssetsStoreController(
             }
         }
     }
+
+    suspend fun encryptionKey(globalIdentifier: AssetGlobalIdentifier): SymmetricKey? {
+        return serverProxy.localServer.getEncryptionKey(globalIdentifier)
+    }
+
+    suspend fun saveEncryptionKey(globalIdentifier: AssetGlobalIdentifier, symmetricKey: SymmetricKey) {
+        serverProxy.localServer.saveEncryptionKey(globalIdentifier, symmetricKey)
+    }
+
 }

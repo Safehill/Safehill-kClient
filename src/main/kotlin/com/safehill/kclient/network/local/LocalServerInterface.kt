@@ -1,12 +1,14 @@
 package com.safehill.kclient.network.local
 
 import com.safehill.kclient.models.assets.AssetDescriptor
+import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.dtos.ConversationThreadAssetsDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.network.GlobalIdentifier
 import com.safehill.kclient.network.SafehillApi
+import com.safehill.kcrypto.models.SymmetricKey
 
 interface LocalServerInterface : SafehillApi {
     suspend fun createOrUpdateUser(
@@ -35,5 +37,8 @@ interface LocalServerInterface : SafehillApi {
         threadId: String,
         conversationThreadAssetsDTO: ConversationThreadAssetsDTO
     )
+
+    suspend fun getEncryptionKey(globalIdentifier: AssetGlobalIdentifier): SymmetricKey?
+    suspend fun saveEncryptionKey(globalIdentifier: AssetGlobalIdentifier, symmetricKey: SymmetricKey)
 
 }
