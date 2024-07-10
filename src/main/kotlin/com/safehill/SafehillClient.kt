@@ -13,6 +13,8 @@ import com.safehill.kclient.network.remote.RemoteServer
 import com.safehill.kclient.network.remote.RemoteServerEnvironment
 import io.ktor.http.URLBuilder
 import io.ktor.http.URLProtocol
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+import java.security.Security
 
 class SafehillClient private constructor(
     val serverProxy: ServerProxy,
@@ -38,8 +40,11 @@ class SafehillClient private constructor(
     ) {
         private fun buildWsURL() = URLBuilder().apply {
             this.host = remoteServerEnvironment.hostName
-            this.protocol = URLProtocol.WS
-            this.port = 8080
+            this.protocol = when (remoteServerEnvironment) {
+                is RemoteServerEnvironment.Development -> URLProtocol.WS
+                RemoteServerEnvironment.Production -> URLProtocol.WSS
+            }
+            this.port = remoteServerEnvironment.port
         }.build()
 
         private fun buildRestApiUrl() = URLBuilder().apply {
@@ -63,7 +68,17 @@ class SafehillClient private constructor(
             FuelManager.instance.addResponseInterceptor(LogResponseInterceptor)
         }
 
+        private fun setupBouncyCastle() {
+            // Android registers its own BC provider. As it might be outdated and might not include
+            // all needed ciphers, we substitute it with a known BC bundled in the app.
+            if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) != null) {
+                Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME)
+            }
+            Security.addProvider(BouncyCastleProvider())
+        }
+
         fun build(): SafehillClient {
+            setupBouncyCastle()
             setUpFuelConfiguration()
             return SafehillClient(
                 serverProxy = ServerProxyImpl(

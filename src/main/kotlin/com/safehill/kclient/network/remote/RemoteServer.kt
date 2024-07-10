@@ -1,15 +1,9 @@
 package com.safehill.kclient.network.remote
 
-import com.github.kittinunf.fuel.core.FuelError
-import com.github.kittinunf.fuel.core.FuelManager
-import com.github.kittinunf.fuel.core.HttpException
-import com.github.kittinunf.fuel.core.ResponseResultOf
 import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.responseObject
-import com.github.kittinunf.result.Result
 import com.google.gson.Gson
-import com.safehill.kclient.models.GenericFailureResponse
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetDescriptorUploadState
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
@@ -37,6 +31,7 @@ import com.safehill.kclient.models.dtos.InteractionsGroupDTO
 import com.safehill.kclient.models.dtos.InteractionsSummaryDTO
 import com.safehill.kclient.models.dtos.MessageInputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
+import com.safehill.kclient.models.dtos.ReactionInputDTO
 import com.safehill.kclient.models.dtos.ReactionOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.dtos.RemoteUserPhoneNumberMatchDto
@@ -47,7 +42,6 @@ import com.safehill.kclient.models.dtos.UserDeviceTokenDTO
 import com.safehill.kclient.models.dtos.UserIdentifiersDTO
 import com.safehill.kclient.models.dtos.UserInputDTO
 import com.safehill.kclient.models.dtos.UserPhoneNumbersDTO
-import com.safehill.kclient.models.dtos.UserReactionDTO
 import com.safehill.kclient.models.dtos.UserUpdateDTO
 import com.safehill.kclient.models.dtos.toAssetDescriptor
 import com.safehill.kclient.models.serde.toIso8601String
@@ -56,6 +50,11 @@ import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.SafehillApi
+import com.safehill.kclient.network.api.authorization.AuthorizationApi
+import com.safehill.kclient.network.api.authorization.AuthorizationApiImpl
+import com.safehill.kclient.network.api.getMappingOrThrow
+import com.safehill.kclient.network.api.getOrElseOnSafehillError
+import com.safehill.kclient.network.api.getOrThrow
 import com.safehill.kclient.network.exceptions.SafehillError
 import com.safehill.kcrypto.SafehillCypher
 import com.safehill.kcrypto.models.RemoteCryptoUser
@@ -66,7 +65,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -85,8 +83,9 @@ import java.util.Locale
 // For Fuel how to see https://www.baeldung.com/kotlin/fuel
 
 class RemoteServer(
-    override var requestor: LocalUser
-) : SafehillApi {
+    override val requestor: LocalUser
+) : SafehillApi,
+    AuthorizationApi by AuthorizationApiImpl(requestor) {
 
     @OptIn(ExperimentalSerializationApi::class)
     private val ignorantJson = Json {
@@ -103,8 +102,8 @@ class RemoteServer(
             name = name
         )
         return "/users/create".httpPost()
-            .body(Gson().toJson(requestBody))
-            .responseObject(RemoteUser.Deserializer())
+            .body(Json.encodeToString(requestBody))
+            .responseObject<RemoteUser>(ignorantJson)
             .getOrThrow()
     }
 
@@ -126,7 +125,7 @@ class RemoteServer(
 
         "/users/code/send".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Gson().toJson(requestBody))
+            .body(Json.encodeToString(requestBody))
             .response()
             .getOrThrow()
 
@@ -151,8 +150,8 @@ class RemoteServer(
         )
         return "/users/update".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Gson().toJson(requestBody))
-            .responseObject(RemoteUser.Deserializer())
+            .body(Json.encodeToString(requestBody))
+            .responseObject<RemoteUser>()
             .getOrThrow()
     }
 
@@ -461,7 +460,7 @@ class RemoteServer(
                     explicitNulls = false
                 }
             )
-            .getOrElseOnSafehillException {
+            .getOrElseOnSafehillError {
                 if (it is SafehillError.ClientError.NotFound) {
                     null
                 } else {
@@ -625,13 +624,13 @@ class RemoteServer(
     }
 
     override suspend fun addReactions(
-        reactions: List<UserReactionDTO>,
+        reactions: List<ReactionInputDTO>,
         toGroupId: GroupId
     ): List<ReactionOutputDTO> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun removeReaction(reaction: UserReactionDTO, fromGroupId: GroupId) {
+    override suspend fun removeReaction(reaction: ReactionOutputDTO, fromGroupId: GroupId) {
         TODO("Not yet implemented")
     }
 
@@ -685,67 +684,8 @@ class RemoteServer(
                     explicitNulls = false
                 }
             )
-            .getOrThrow().run(::listOf)
+            .getOrThrow()
+            .run(::listOf)
     }
 
-
-    private fun <T, R> ResponseResultOf<T>.getMappingOrThrow(transform: (T) -> R): R {
-        val value = getOrThrow()
-        return transform(value)
-    }
-
-    private fun <T> ResponseResultOf<T>.getOrElseOnSafehillException(transform: (SafehillError) -> T): T {
-        return try {
-            this.getOrThrow()
-        } catch (e: Exception) {
-            if (e is SafehillError) {
-                transform(e)
-            } else {
-                throw e
-            }
-        }
-    }
-
-    private fun <T> ResponseResultOf<T>.getOrThrow(): T {
-        return when (val result = this.third) {
-            is Result.Success -> result.value
-            is Result.Failure -> {
-                val fuelError = result.error
-                val exception = fuelError.exception
-                throw if (exception is HttpException) {
-                    fuelError.getSafehillError()
-                } else {
-                    exception
-                }
-            }
-        }
-    }
-
-    private fun FuelError.getSafehillError(): SafehillError {
-        return when (this.response.statusCode) {
-            401 -> SafehillError.ClientError.Unauthorized
-            402 -> SafehillError.ClientError.PaymentRequired
-            404 -> SafehillError.ClientError.NotFound
-            405 -> SafehillError.ClientError.MethodNotAllowed
-            409 -> SafehillError.ClientError.Conflict
-            501 -> SafehillError.ServerError.NotImplemented
-            503 -> SafehillError.ServerError.BadGateway
-            else -> {
-                val responseMessage = this.response.responseMessage
-                val message = try {
-                    val failure = Json.decodeFromString<GenericFailureResponse>(responseMessage)
-                    failure.reason
-                } catch (e: SerializationException) {
-                    null
-                } catch (e: IllegalArgumentException) {
-                    null
-                }
-                if (this.response.statusCode in 400..500) {
-                    SafehillError.ClientError.BadRequest(message ?: "Bad or malformed request")
-                } else {
-                    SafehillError.ServerError.Generic(message ?: "A server error occurred")
-                }
-            }
-        }
-    }
 }

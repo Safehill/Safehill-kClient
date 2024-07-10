@@ -1,21 +1,22 @@
 package com.safehill.kclient.models.users
 
-import com.github.kittinunf.fuel.core.ResponseDeserializable
-import com.safehill.kclient.models.serde.RemoteUserSerializer
+import com.safehill.kclient.models.serde.Base64DataSerializer
 import com.safehill.kcrypto.models.SafehillPublicKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import java.security.PublicKey
 
-@Serializable(with = RemoteUserSerializer::class)
+@Serializable
 data class RemoteUser(
     override val identifier: UserIdentifier,
     override val name: String,
-    @SerialName("public_key")
+    @SerialName("publicKey")
+    @Serializable(with = Base64DataSerializer::class)
     override val publicKeyData: ByteArray,
-    @SerialName("public_signature")
-    override val publicSignatureData: ByteArray
+    @SerialName("publicSignature")
+    @Serializable(with = Base64DataSerializer::class)
+    override val publicSignatureData: ByteArray,
+    val phoneNumber: String? = null
 ) : ServerUser {
     override val publicKey: PublicKey
         get() = SafehillPublicKey.from(publicKeyData)
@@ -30,17 +31,22 @@ data class RemoteUser(
         other as RemoteUser
 
         if (identifier != other.identifier) return false
+        if (name != other.name) return false
+        if (!publicKeyData.contentEquals(other.publicKeyData)) return false
+        if (!publicSignatureData.contentEquals(other.publicSignatureData)) return false
+        if (phoneNumber != other.phoneNumber) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        return identifier.hashCode()
+        var result = identifier.hashCode()
+        result = 31 * result + name.hashCode()
+        result = 31 * result + publicKeyData.contentHashCode()
+        result = 31 * result + publicSignatureData.contentHashCode()
+        result = 31 * result + (phoneNumber?.hashCode() ?: 0)
+        return result
     }
 
-    class Deserializer : ResponseDeserializable<RemoteUser> {
-        override fun deserialize(content: String): RemoteUser {
-            return Json.decodeFromString(content)
-        }
-    }
+
 }

@@ -63,6 +63,9 @@ class WebSocketApi internal constructor(
                 this.bearerAuth(
                     currentUser.authToken ?: error("Trying to connect to socket without authToken")
                 )
+                this.url {
+                    this.protocol = socketUrl.protocol
+                }
                 parameter("deviceId", deviceId)
             }
         ) {

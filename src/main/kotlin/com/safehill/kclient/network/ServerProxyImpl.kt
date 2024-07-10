@@ -17,10 +17,10 @@ import com.safehill.kclient.models.dtos.InteractionsGroupDTO
 import com.safehill.kclient.models.dtos.InteractionsSummaryDTO
 import com.safehill.kclient.models.dtos.MessageInputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
+import com.safehill.kclient.models.dtos.ReactionInputDTO
 import com.safehill.kclient.models.dtos.ReactionOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
-import com.safehill.kclient.models.dtos.UserReactionDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
@@ -39,8 +39,11 @@ import java.util.Date
 class ServerProxyImpl(
     override val localServer: LocalServerInterface,
     override val remoteServer: SafehillApi,
-    override var requestor: LocalUser,
-) : ServerProxy {
+    override val requestor: LocalUser,
+) : ServerProxy,
+    // Delegates most of the functions to RemoteServer.
+    // Override if different implementation is necessary.
+    SafehillApi by remoteServer {
 
 
     override suspend fun listThreads(): List<ConversationThreadOutputDTO> {
@@ -221,13 +224,13 @@ class ServerProxyImpl(
     }
 
     override suspend fun addReactions(
-        reactions: List<UserReactionDTO>,
+        reactions: List<ReactionInputDTO>,
         toGroupId: GroupId
     ): List<ReactionOutputDTO> {
         return remoteServer.addReactions(reactions, toGroupId)
     }
 
-    override suspend fun removeReaction(reaction: UserReactionDTO, fromGroupId: GroupId) {
+    override suspend fun removeReaction(reaction: ReactionOutputDTO, fromGroupId: GroupId) {
         remoteServer.removeReaction(reaction, fromGroupId)
     }
 

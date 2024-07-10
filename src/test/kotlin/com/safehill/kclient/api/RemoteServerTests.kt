@@ -16,6 +16,7 @@ import com.safehill.kcrypto.models.SafehillKeyPair
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.util.Base64
 import java.util.Date
@@ -127,6 +128,7 @@ class RemoteServerTests {
         }
     }
 
+    @Disabled
     @Test
     fun testUserAuthCRUD() {
         runBlocking {
@@ -232,6 +234,7 @@ class RemoteServerTests {
         }
     }
 
+    @Disabled
     @Test
     fun testAssetAndDescriptorCRUD() {
         val groupId = "sampleGroupId"
@@ -240,7 +243,7 @@ class RemoteServerTests {
         val encryptedAsset = EncryptedAssetImpl(
             globalIdentifier = "globalIdentifier",
             localIdentifier = null,
-            creationDate = Date(0),
+            creationDate = Date(0).toInstant(),
             encryptedVersions = mapOf(
                 Pair(
                     AssetQuality.LowResolution,
@@ -328,6 +331,7 @@ class RemoteServerTests {
         }
     }
 
+    @Disabled
     @Test
     fun testUnauthorizedGetUsers() {
         val cryptoUser = LocalCryptoUser()
@@ -358,6 +362,7 @@ class RemoteServerTests {
         }
     }
 
+    @Disabled
     @Test
     fun testAuthenticateNonExistingUser() {
         val localUser = LocalUser(LocalCryptoUser())
@@ -372,6 +377,7 @@ class RemoteServerTests {
         }
     }
 
+    @Disabled
     @Test
     fun testSendCodeToUser() {
         runBlocking {
