@@ -93,13 +93,16 @@ class CipherTests {
         assertNotEquals(code1, code2)
     }
     @Test
-    fun `test code is same when we move to second slot but verify in the first slot`(){
+    fun `test code is same when we move to second slot but verify in the first slot`() {
         runBlocking {
             val secret = SafehillCypher.generateRandomIV()
             val safehillOTP = SafehillOTP(digits = 6, validDuration = 2.seconds)
-            val (code1, ) = safehillOTP.generateCode(secret = secret, instant = Instant.now())
+            val (code1) = safehillOTP.generateCode(secret = secret, instant = Instant.now())
             delay(2.seconds)
-            val (code2, _) = safehillOTP.generateCode(secret = secret, instant = Instant.now() - 2.seconds.toJavaDuration())
+            val (code2, _) = safehillOTP.generateCode(
+                secret = secret,
+                instant = Instant.now() - 2.seconds.toJavaDuration()
+            )
             assertEquals(code1, code2)
         }
     }
@@ -430,13 +433,13 @@ class CipherTests {
         val signedDigest = Base64.getDecoder().decode(solvedChallenge.signedDigest)
 
         // SERVER verifies the solved challenge
-        /**/ assert(
+        assert(
             SafehillSignature.verify(
                 challenge,
                 signedChallenge,
                 clientUser.publicSignature
             )
         )
-        /**/ assert(SafehillSignature.verify(digest, signedDigest, clientUser.publicSignature))
+        assert(SafehillSignature.verify(digest, signedDigest, clientUser.publicSignature))
     }
 }
