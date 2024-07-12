@@ -1,10 +1,5 @@
 package com.safehill.kclient.models.users
 
-import com.safehill.kclient.errors.BackgroundOperationError
-import com.safehill.kclient.errors.LocalUserError
-import com.safehill.kclient.models.assets.AssetQuality
-import com.safehill.kclient.models.assets.DecryptedAsset
-import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.dtos.AuthResponseDTO
 import com.safehill.kclient.models.dtos.BearerToken
 import com.safehill.kcrypto.models.CryptoUser
@@ -15,8 +10,7 @@ import java.security.PublicKey
 import java.util.Base64
 
 class LocalUser(
-    var shUser: LocalCryptoUser,
-    private val maybeEncryptionProtocolSalt: ByteArray? = null
+    var shUser: LocalCryptoUser
 ) : ServerUser {
 
     override val identifier: UserIdentifier
@@ -38,52 +32,6 @@ class LocalUser(
 
     var authToken: BearerToken? = null
     var encryptionSalt: ByteArray = byteArrayOf()
-
-    fun decrypt(
-        asset: EncryptedAsset,
-        quality: AssetQuality,
-        receivedFromUser: ServerUser
-    ): DecryptedAsset {
-        val version = asset.encryptedVersions[quality]
-            ?: throw BackgroundOperationError.FatalError("No such version ${quality.name} for asset=${asset.globalIdentifier}")
-
-        val sharedSecret = ShareablePayload(
-            ephemeralPublicKeyData = version.publicKeyData,
-            ciphertext = version.encryptedSecret,
-            signature = version.publicSignatureData,
-        )
-
-        val decryptedData = decrypt(
-            data = version.encryptedData,
-            encryptedSecret = sharedSecret,
-            receivedFrom = receivedFromUser
-        )
-
-        return DecryptedAsset(
-            globalIdentifier = asset.globalIdentifier,
-            localIdentifier = asset.localIdentifier,
-            decryptedVersions = mutableMapOf(quality to decryptedData),
-            creationDate = asset.creationDate
-        )
-
-    }
-
-    fun decrypt(
-        data: ByteArray,
-        encryptedSecret: ShareablePayload,
-        receivedFrom: ServerUser
-    ): ByteArray {
-        val salt = maybeEncryptionProtocolSalt ?: throw LocalUserError.MissingProtocolSalt
-
-        return SHUserContext(shUser)
-            .decrypt(
-                data,
-                encryptedSecret,
-                salt,
-                receivedFrom
-            )
-
-    }
 
     private fun updateUserDetails(given: ServerUser?) {
         given?.let {
