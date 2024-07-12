@@ -10,7 +10,7 @@ import com.safehill.kcrypto.models.ShareablePayload
 
 abstract class AbstractDownloadOperation : DownloadOperation, BackgroundTask {
 
-    suspend fun getUsersInDescriptors(descriptors: List<AssetDescriptor>): Map<UserIdentifier, ServerUser> {
+    private suspend fun getUsersInDescriptors(descriptors: List<AssetDescriptor>): Map<UserIdentifier, ServerUser> {
         val userIds = descriptors
             .map { d -> d.sharingInfo.sharedByUserIdentifier }
             .distinct()
@@ -41,7 +41,10 @@ abstract class AbstractDownloadOperation : DownloadOperation, BackgroundTask {
         val allUsersDict = this.getUsersInDescriptors(descriptors)
         val quality = AssetQuality.LowResolution
         val assetGIds = descriptors.map { it.globalIdentifier }.distinct()
-        val assetsDict = this.getEncryptedAssets(assetGIds, versions = listOf(quality))
+
+        val assetsDict = this.getEncryptedAssets(
+            withGlobalIdentifiers = assetGIds, versions = listOf(quality)
+        )
 
         descriptors.forEach { descriptor ->
             allUsersDict[descriptor.sharingInfo.sharedByUserIdentifier]?.let { senderUser ->

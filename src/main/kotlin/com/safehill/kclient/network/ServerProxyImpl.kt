@@ -5,7 +5,6 @@ import com.safehill.kclient.models.assets.AssetDescriptorUploadState
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAsset
-import com.safehill.kclient.models.assets.EncryptedAssetImpl
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.assets.ShareableEncryptedAsset
 import com.safehill.kclient.models.dtos.AssetOutputDTO
@@ -426,7 +425,7 @@ class ServerProxyImpl(
                 }
             }
 
-            return@mapValues EncryptedAssetImpl(
+            return@mapValues EncryptedAsset(
                 globalIdentifier = encryptedAsset.globalIdentifier,
                 localIdentifier = encryptedAsset.localIdentifier,
                 creationDate = encryptedAsset.creationDate,

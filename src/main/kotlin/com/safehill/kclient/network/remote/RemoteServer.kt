@@ -322,23 +322,18 @@ class RemoteServer(
         globalIdentifiers: List<AssetGlobalIdentifier>,
         versions: List<AssetQuality>?,
     ): Map<AssetGlobalIdentifier, EncryptedAsset> {
-        val bearerToken =
-            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
         val assetFilterCriteriaDTO = AssetSearchCriteriaDTO(
             globalIdentifiers = globalIdentifiers,
             versionNames = versions?.map { it.value }
         )
 
-        val assetOutputDTOs = "/assets/retrieve".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Json.encodeToString(assetFilterCriteriaDTO))
-            .responseObject(
-                loader = ListSerializer(AssetOutputDTO.serializer()),
-                json = ignorantJson
-            )
-            .getOrThrow()
-
+        val assetOutputDTOs = postForResponseObject<AssetSearchCriteriaDTO, List<AssetOutputDTO>>(
+            endPoint = "/assets/retrieve",
+            request = assetFilterCriteriaDTO,
+            authenticationRequired = true
+        )
         return S3Proxy.fetchAssets(assetOutputDTOs)
+
     }
 
     @Throws

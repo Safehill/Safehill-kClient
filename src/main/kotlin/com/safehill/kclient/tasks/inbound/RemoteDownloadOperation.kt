@@ -50,8 +50,8 @@ class RemoteDownloadOperation(
             .map { it.globalIdentifier }
         val remoteOnlyDescriptors = descriptors
             .filter {
-                !globalIdentifiersInLocalServer.contains(it.globalIdentifier)
-                        && !alreadyProcessed.contains(it.globalIdentifier)
+                it.globalIdentifier !in globalIdentifiersInLocalServer &&
+                        it.globalIdentifier !in alreadyProcessed
             }
         processAssetsInDescriptors(remoteOnlyDescriptors)
     }

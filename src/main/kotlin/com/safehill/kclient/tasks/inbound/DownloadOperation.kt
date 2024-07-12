@@ -5,11 +5,11 @@ import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.users.LocalUser
-import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.models.users.ServerUser
+import com.safehill.kclient.models.users.UserIdentifier
 
 
-public interface DownloadOperation {
+interface DownloadOperation {
 
     val listeners: List<DownloadOperationListener>
 
