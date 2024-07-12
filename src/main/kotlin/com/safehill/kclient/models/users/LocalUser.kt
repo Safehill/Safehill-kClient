@@ -4,14 +4,13 @@ import com.safehill.kclient.errors.BackgroundOperationError
 import com.safehill.kclient.errors.LocalUserError
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.DecryptedAsset
-import com.safehill.kclient.models.assets.DecryptedAssetImpl
 import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.dtos.AuthResponseDTO
 import com.safehill.kclient.models.dtos.BearerToken
 import com.safehill.kcrypto.models.CryptoUser
 import com.safehill.kcrypto.models.LocalCryptoUser
-import com.safehill.kcrypto.models.ShareablePayload
 import com.safehill.kcrypto.models.SHUserContext
+import com.safehill.kcrypto.models.ShareablePayload
 import java.security.PublicKey
 import java.util.Base64
 
@@ -60,7 +59,7 @@ class LocalUser(
             receivedFrom = receivedFromUser
         )
 
-        return DecryptedAssetImpl(
+        return DecryptedAsset(
             globalIdentifier = asset.globalIdentifier,
             localIdentifier = asset.localIdentifier,
             decryptedVersions = mutableMapOf(quality to decryptedData),

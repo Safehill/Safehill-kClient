@@ -28,7 +28,7 @@ import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.GlobalIdentifier
 import com.safehill.kclient.network.exceptions.SafehillError
 import com.safehill.kcrypto.models.LocalCryptoUser
-import java.util.Date
+import java.time.Instant
 
 class LocalServerInterfaceImpl : LocalServerInterface {
     override suspend fun createOrUpdateUser(
@@ -123,7 +123,7 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         throw SafehillError.ServerError.UnSupportedOperation
     }
 
-    override suspend fun getAssetDescriptors(after: Date?): List<AssetDescriptor> {
+    override suspend fun getAssetDescriptors(after: Instant?): List<AssetDescriptor> {
         TODO("Not yet implemented")
     }
 
@@ -141,7 +141,7 @@ class LocalServerInterfaceImpl : LocalServerInterface {
     override suspend fun getAssetDescriptors(
         assetGlobalIdentifiers: List<AssetGlobalIdentifier>?,
         groupIds: List<GroupId>?,
-        after: Date?
+        after: Instant?
     ): List<AssetDescriptor> {
         TODO("Not yet implemented")
     }

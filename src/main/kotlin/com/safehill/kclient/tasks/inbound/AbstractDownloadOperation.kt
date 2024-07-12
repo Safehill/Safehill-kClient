@@ -2,7 +2,7 @@ package com.safehill.kclient.tasks.inbound
 
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetQuality
-import com.safehill.kclient.models.assets.DecryptedAssetImpl
+import com.safehill.kclient.models.assets.DecryptedAsset
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.tasks.BackgroundTask
@@ -62,7 +62,7 @@ abstract class AbstractDownloadOperation : DownloadOperation, BackgroundTask {
                             protocolSalt = this.user.encryptionSalt,
                             receivedFrom = senderUser
                         )
-                        val decryptedAsset = DecryptedAssetImpl(
+                        val decryptedAsset = DecryptedAsset(
                             encryptedAsset.globalIdentifier,
                             encryptedAsset.localIdentifier,
                             encryptedAsset.creationDate,
