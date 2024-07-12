@@ -52,6 +52,7 @@ import com.safehill.kclient.network.api.authorization.AuthorizationApiImpl
 import com.safehill.kclient.network.api.getMappingOrThrow
 import com.safehill.kclient.network.api.getOrElseOnSafehillError
 import com.safehill.kclient.network.api.getOrThrow
+import com.safehill.kclient.network.api.postForResponseObject
 import com.safehill.kclient.network.exceptions.SafehillError
 import com.safehill.kcrypto.SafehillCypher
 import com.safehill.kcrypto.models.RemoteCryptoUser
@@ -279,60 +280,31 @@ class RemoteServer(
             .items
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     @Throws
     override suspend fun getAssetDescriptors(after: Instant?): List<AssetDescriptor> {
-        val bearerToken =
-            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
-        val descriptorFilterCriteriaDTO = AssetDescriptorFilterCriteriaDTO(
-            after = after?.toString(),
-            globalIdentifiers = null,
-            groupIds = null
+        return getAssetDescriptors(
+            assetGlobalIdentifiers = null,
+            groupIds = null,
+            after = after
         )
-
-        return "/assets/descriptors/retrieve".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Json.encodeToString(descriptorFilterCriteriaDTO))
-            .responseObject(
-                json = Json {
-                    ignoreUnknownKeys = true
-                    explicitNulls = false
-                }, loader = ListSerializer(
-                    AssetDescriptorDTO.serializer()
-                )
-            )
-            .getOrThrow()
-            .map(AssetDescriptorDTO::toAssetDescriptor)
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     @Throws
     override suspend fun getAssetDescriptors(
         assetGlobalIdentifiers: List<AssetGlobalIdentifier>?,
         groupIds: List<GroupId>?,
         after: Instant?
     ): List<AssetDescriptor> {
-        val bearerToken =
-            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
         val descriptorFilterCriteriaDTO = AssetDescriptorFilterCriteriaDTO(
             after = after?.toString(),
             globalIdentifiers = assetGlobalIdentifiers,
             groupIds = groupIds
         )
-
-        return "/assets/descriptors/retrieve".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Json.encodeToString(descriptorFilterCriteriaDTO))
-            .responseObject(
-                json = Json {
-                    ignoreUnknownKeys = true
-                    explicitNulls = false
-                }, loader = ListSerializer(
-                    AssetDescriptorDTO.serializer()
-                )
-            )
-            .getOrThrow()
-            .map(AssetDescriptorDTO::toAssetDescriptor)
+        return postForResponseObject<AssetDescriptorFilterCriteriaDTO, List<AssetDescriptorDTO>>(
+            endPoint = "/assets/descriptors/retrieve",
+            request = descriptorFilterCriteriaDTO,
+            authenticationRequired = true
+        ).map(AssetDescriptorDTO::toAssetDescriptor)
     }
 
     override suspend fun getAssets(threadId: String): ConversationThreadAssetsDTO {

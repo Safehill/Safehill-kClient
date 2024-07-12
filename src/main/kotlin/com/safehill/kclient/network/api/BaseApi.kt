@@ -13,9 +13,11 @@ import com.safehill.kclient.models.GenericFailureResponse
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.network.exceptions.SafehillError
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
 
 interface BaseApi {
     val requestor: LocalUser
@@ -34,6 +36,7 @@ inline fun <reified Request : Any> BaseApi.postForResponseString(
         .getOrThrow()
 }
 
+@OptIn(InternalSerializationApi::class)
 inline fun <reified Request : Any, reified Response : Any> BaseApi.postForResponseObject(
     endPoint: String,
     request: Request? = null,
@@ -48,8 +51,10 @@ inline fun <reified Request : Any, reified Response : Any> BaseApi.postForRespon
         endPoint = endPoint,
         request = request,
         authenticationRequired = authenticationRequired
-    ).responseObject<Response>(json = ignorantJson)
-        .getOrThrow()
+    ).responseObject(
+        loader = serializer<Response>(),
+        json = ignorantJson
+    ).getOrThrow()
 }
 
 inline fun <reified Req> BaseApi.createPostRequest(
