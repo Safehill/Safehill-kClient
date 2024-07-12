@@ -34,7 +34,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import java.util.Date
+import java.time.Instant
 
 class ServerProxyImpl(
     override val localServer: LocalServerInterface,
@@ -83,7 +83,7 @@ class ServerProxyImpl(
         return remoteServer.searchUsers(query, per, page)
     }
 
-    override suspend fun getAssetDescriptors(after: Date?): List<AssetDescriptor> {
+    override suspend fun getAssetDescriptors(after: Instant?): List<AssetDescriptor> {
         return remoteServer.getAssetDescriptors(after)
     }
 
@@ -104,7 +104,7 @@ class ServerProxyImpl(
     override suspend fun getAssetDescriptors(
         assetGlobalIdentifiers: List<AssetGlobalIdentifier>?,
         groupIds: List<GroupId>?,
-        after: Date?
+        after: Instant?
     ): List<AssetDescriptor> {
         return remoteServer.getAssetDescriptors(assetGlobalIdentifiers, groupIds, after)
     }

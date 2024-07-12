@@ -42,7 +42,6 @@ import com.safehill.kclient.models.dtos.UserInputDTO
 import com.safehill.kclient.models.dtos.UserPhoneNumbersDTO
 import com.safehill.kclient.models.dtos.UserUpdateDTO
 import com.safehill.kclient.models.dtos.toAssetDescriptor
-import com.safehill.kclient.models.serde.toIso8601String
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
@@ -64,7 +63,6 @@ import kotlinx.serialization.json.Json
 import java.security.MessageDigest
 import java.time.Instant
 import java.util.Base64
-import java.util.Date
 
 
 // For Fuel how to see https://www.baeldung.com/kotlin/fuel
@@ -283,11 +281,11 @@ class RemoteServer(
 
     @OptIn(ExperimentalSerializationApi::class)
     @Throws
-    override suspend fun getAssetDescriptors(after: Date?): List<AssetDescriptor> {
+    override suspend fun getAssetDescriptors(after: Instant?): List<AssetDescriptor> {
         val bearerToken =
             this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
         val descriptorFilterCriteriaDTO = AssetDescriptorFilterCriteriaDTO(
-            after = after?.toIso8601String(),
+            after = after?.toString(),
             globalIdentifiers = null,
             groupIds = null
         )
@@ -312,12 +310,12 @@ class RemoteServer(
     override suspend fun getAssetDescriptors(
         assetGlobalIdentifiers: List<AssetGlobalIdentifier>?,
         groupIds: List<GroupId>?,
-        after: Date?
+        after: Instant?
     ): List<AssetDescriptor> {
         val bearerToken =
             this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
         val descriptorFilterCriteriaDTO = AssetDescriptorFilterCriteriaDTO(
-            after = after?.toIso8601String(),
+            after = after?.toString(),
             globalIdentifiers = assetGlobalIdentifiers,
             groupIds = groupIds
         )
