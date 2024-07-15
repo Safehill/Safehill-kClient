@@ -9,7 +9,7 @@ import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.local.LocalServerInterface
 
-public class LocalDownloadOperation(
+class LocalDownloadOperation(
     override val user: LocalUser,
     val localServer: LocalServerInterface,
     override var listeners: List<DownloadOperationListener>
