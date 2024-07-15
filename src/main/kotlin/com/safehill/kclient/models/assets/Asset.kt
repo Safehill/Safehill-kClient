@@ -8,7 +8,10 @@ sealed class Asset {
     data class FromAndroidPhotosLibraryBackedUp(val backedUpAndroidAsset: BackedUpAndroidAsset) :
         Asset()
 
-    data class Downloading(val assetDescriptor: AssetDescriptor) : Asset()
+    data class Downloading(
+        val globalIdentifier: AssetGlobalIdentifier
+    ) : Asset()
+
     data class Downloaded(val decryptedAsset: DecryptedAsset) : Asset()
 
     val debugType: String
@@ -23,32 +26,8 @@ sealed class Asset {
         get() = when (this) {
             is FromAndroidPhotosLibrary -> androidAsset.localIdentifier
             is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.androidAsset.localIdentifier
-            is Downloading -> assetDescriptor.localIdentifier ?: assetDescriptor.globalIdentifier
+            is Downloading -> globalIdentifier
             is Downloaded -> decryptedAsset.localIdentifier ?: decryptedAsset.globalIdentifier
-        }
-
-    val localIdentifier: String?
-        get() = when (this) {
-            is FromAndroidPhotosLibrary -> androidAsset.localIdentifier
-            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.androidAsset.localIdentifier
-            is Downloading -> assetDescriptor.localIdentifier
-            is Downloaded -> decryptedAsset.localIdentifier
-        }
-
-    val globalIdentifier: String?
-        get() = when (this) {
-            is FromAndroidPhotosLibrary -> null
-            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.globalIdentifier
-            is Downloading -> assetDescriptor.globalIdentifier
-            is Downloaded -> decryptedAsset.globalIdentifier
-        }
-
-    val creationDate: Instant?
-        get() = when (this) {
-            is FromAndroidPhotosLibrary -> androidAsset.creationDate
-            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.androidAsset.creationDate
-            is Downloading -> assetDescriptor.creationDate
-            is Downloaded -> decryptedAsset.creationDate
         }
 
     val isFromLocalLibrary: Boolean

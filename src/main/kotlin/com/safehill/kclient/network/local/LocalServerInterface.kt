@@ -1,14 +1,11 @@
 package com.safehill.kclient.network.local
 
-import com.safehill.kclient.models.assets.AssetDescriptor
-import com.safehill.kclient.models.dtos.ConversationThreadAssetsDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.users.RemoteUser
-import com.safehill.kclient.network.GlobalIdentifier
 import com.safehill.kclient.network.SafehillApi
 
-interface LocalServerInterface : SafehillApi {
+interface LocalServerInterface : SafehillApi, LocalAssetApi {
     suspend fun createOrUpdateUser(
         identifier: String,
         name: String,
@@ -25,15 +22,5 @@ interface LocalServerInterface : SafehillApi {
     suspend fun upsertUsers(remoteUsers: List<RemoteUser>)
 
     suspend fun deleteThreads(threadIds: List<String>)
-
-    suspend fun getAssetDescriptors(
-        globalIdentifiers: List<GlobalIdentifier>?,
-        filteringGroups: List<String>?
-    ): List<AssetDescriptor>
-
-    suspend fun addThreadAssets(
-        threadId: String,
-        conversationThreadAssetsDTO: ConversationThreadAssetsDTO
-    )
 
 }

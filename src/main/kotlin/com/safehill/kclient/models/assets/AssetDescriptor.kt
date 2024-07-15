@@ -26,11 +26,13 @@ interface AssetDescriptor : RemoteAssetIdentifiable {
         interface GroupInfo {
             /// The name of the asset group (optional)
             val name: String?
+
             /// ISO8601 formatted datetime, representing the time the asset group was created
             val createdAt: Date?
         }
 
         val sharedByUserIdentifier: UserIdentifier
+
         /// Maps user public identifiers to asset group identifiers
         val sharedWithUserIdentifiersInGroup: Map<UserIdentifier, GroupId>
         val groupInfoById: Map<GroupId, GroupInfo>
@@ -45,7 +47,7 @@ interface AssetDescriptor : RemoteAssetIdentifiable {
 
     override val globalIdentifier: AssetGlobalIdentifier
     override val localIdentifier: AssetLocalIdentifier?
-    val creationDate: Instant?
+    val creationDate: Instant
     var uploadState: UploadState
     var sharingInfo: SharingInfo
 
