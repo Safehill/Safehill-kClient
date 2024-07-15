@@ -46,7 +46,7 @@ interface AssetDescriptor : RemoteAssetIdentifiable {
     }
 
     override val globalIdentifier: AssetGlobalIdentifier
-    override val localIdentifier: AssetLocalIdentifier?
+    override val localIdentifier: AssetLocalIdentifier
     val creationDate: Instant
     var uploadState: UploadState
     var sharingInfo: SharingInfo
