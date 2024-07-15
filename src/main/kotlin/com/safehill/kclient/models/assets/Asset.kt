@@ -25,9 +25,9 @@ sealed class Asset {
     val identifier: String
         get() = when (this) {
             is FromAndroidPhotosLibrary -> androidAsset.localIdentifier
-            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.androidAsset.localIdentifier
+            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.globalIdentifier
             is Downloading -> globalIdentifier
-            is Downloaded -> decryptedAsset.localIdentifier ?: decryptedAsset.globalIdentifier
+            is Downloaded -> decryptedAsset.globalIdentifier
         }
 
     val isFromLocalLibrary: Boolean
