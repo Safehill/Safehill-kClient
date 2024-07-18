@@ -12,7 +12,9 @@ class OutboundQueueItem(
     val localAsset: LocalAsset,
     val globalIdentifier: AssetGlobalIdentifier?,
     val groupId: GroupId,
-    val recipients: List<ServerUser>
+    val recipients: List<ServerUser>,
+    val uri: String?,
+    var force: Boolean = false
 ) {
 
     enum class OperationType {

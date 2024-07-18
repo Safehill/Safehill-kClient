@@ -1,6 +1,5 @@
 package com.safehill.kclient.tasks.outbound
 
-import com.safehill.kclient.controllers.LocalAssetsStoreController
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAsset
@@ -10,7 +9,7 @@ import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.ServerProxy
-import com.safehill.kcrypto.models.SymmetricKey
+import com.safehill.kclient.network.exceptions.SafehillError
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -22,10 +21,10 @@ import java.util.UUID
 class UploadOperationImpl(
     val serverProxy: ServerProxy,
     override val listeners: List<UploadOperationListener>,
-    val encrypter: AssetEncrypterInterface,
+    private val encrypter: AssetEncrypterInterface,
+    private val outboundQueueItemManager: OutboundQueueItemManagerInterface
 ) : UploadOperation {
 
-    // TODO: Persist these on disk
     private val outboundQueueItems: Channel<OutboundQueueItem> = Channel(Channel.UNLIMITED)
     private val job = Job()
     private val scope = CoroutineScope(Dispatchers.Default + job)
@@ -33,25 +32,35 @@ class UploadOperationImpl(
     override val user: LocalUser
         get() = serverProxy.requestor
 
+    init {
+        scope.launch {
+            outboundQueueItemManager.loadOutboundQueueItems().forEach {
+                outboundQueueItems.send(it)
+            }
+        }
+    }
+
     override suspend fun enqueueUpload(
         localAsset: LocalAsset,
         assetQualities: Array<AssetQuality>,
         groupId: GroupId,
-        recipients: List<ServerUser>
+        recipients: List<ServerUser>,
+        uri: String?
     ) {
         scope.launch {
             val globalIdentifier = UUID.randomUUID().toString()
             assetQualities.forEach {
-                outboundQueueItems.send(
-                    OutboundQueueItem(
-                        OutboundQueueItem.OperationType.Upload,
-                        it,
-                        localAsset,
-                        globalIdentifier,
-                        groupId,
-                        recipients
-                    )
+                val item = OutboundQueueItem(
+                    OutboundQueueItem.OperationType.Upload,
+                    it,
+                    localAsset,
+                    globalIdentifier,
+                    groupId,
+                    recipients,
+                    uri
                 )
+                outboundQueueItems.send(item)
+                outboundQueueItemManager.addOutboundQueueItem(item)
             }
         }
     }
@@ -72,7 +81,6 @@ class UploadOperationImpl(
 
             // *******encrypting*******
             notifyListenersStartedEncrypting(outboundQueueItem)
-
 
             val encryptedAsset = encrypter.encryptedAsset(outboundQueueItem, user)
 
@@ -166,16 +174,32 @@ class UploadOperationImpl(
                 outboundQueueItem.localAsset,
                 globalIdentifier,
                 outboundQueueItem.groupId,
-                outboundQueueItem.recipients
+                outboundQueueItem.recipients,
+                outboundQueueItem.uri
             )
             this.share(shareQueueItem)
         }
     }
 
-    private fun handleUploadException(outboundQueueItem: OutboundQueueItem, exception: Exception) {
+    private suspend fun handleUploadException(outboundQueueItem: OutboundQueueItem, exception: Exception) {
         println(exception.localizedMessage)
-        // TODO: Implement exception handling logic, such as retrying the upload
+        when (exception) {
+            is SafehillError.ClientError.Conflict -> {
+                if (!outboundQueueItem.force) {
+                    outboundQueueItem.force = true
+                } else return
+            }
+            is SafehillError.ClientError.BadRequest,
+            SafehillError.ClientError.Unauthorized,
+            SafehillError.ClientError.PaymentRequired -> {
+                return
+            }
+        }
         // Move the item to the end of the queue and reduce the number of remaining retries
+        scope.launch {
+            outboundQueueItems.send(outboundQueueItem)
+            outboundQueueItemManager.addOutboundQueueItem(outboundQueueItem)
+        }
     }
 
     suspend fun share(outboundQueueItem: OutboundQueueItem) {
@@ -216,6 +240,7 @@ class UploadOperationImpl(
                     this.share(queueItem)
                 }
             }
+            outboundQueueItemManager.removeOutboundQueueItem(queueItem)
         }
     }
 
