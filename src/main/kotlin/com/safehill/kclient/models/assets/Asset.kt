@@ -4,7 +4,13 @@ import java.net.URI
 import java.time.Instant
 
 sealed class Asset {
-    data class FromAndroidPhotosLibrary(val androidAsset: AndroidAsset) : Asset()
+
+    data class FromAndroidPhotosLibrary(
+        val androidAsset: AndroidAsset
+    ) : Asset() {
+        val localIdentifier = androidAsset.localIdentifier
+    }
+
     data class FromAndroidPhotosLibraryBackedUp(val backedUpAndroidAsset: BackedUpAndroidAsset) :
         Asset()
 

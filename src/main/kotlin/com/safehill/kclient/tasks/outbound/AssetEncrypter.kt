@@ -3,8 +3,7 @@ package com.safehill.kclient.tasks.outbound
 import com.safehill.kclient.controllers.LocalAssetsStoreController
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.EncryptedAsset
-import com.safehill.kclient.models.assets.EncryptedAssetImpl
-import com.safehill.kclient.models.assets.EncryptedAssetVersionImpl
+import com.safehill.kclient.models.assets.EncryptedAssetVersion
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.utils.ImageResizerInterface
 import com.safehill.kcrypto.SafehillCypher
@@ -14,13 +13,14 @@ import com.safehill.kcrypto.models.bytes
 class AssetEncrypter(
     private val resizer: ImageResizerInterface,
     private val localAssetsStoreController: LocalAssetsStoreController
-): AssetEncrypterInterface {
+) : AssetEncrypterInterface {
     override suspend fun encryptedAsset(
         outboundQueueItem: OutboundQueueItem,
         user: LocalUser
     ): EncryptedAsset {
         requireNotNull(outboundQueueItem.globalIdentifier)
-        val privateSecret = retrieveCommonEncryptionKey(outboundQueueItem.globalIdentifier) // Retrieve the common encryption key
+        val privateSecret =
+            retrieveCommonEncryptionKey(outboundQueueItem.globalIdentifier) // Retrieve the common encryption key
 
         val quality = outboundQueueItem.assetQuality
         val imageBytes = outboundQueueItem.localAsset.data
@@ -31,7 +31,7 @@ class AssetEncrypter(
 
         val encryptedAssetSecret = user.shareable(privateSecret.bytes, user, user.encryptionSalt)
 
-        val encryptedAssetVersion = EncryptedAssetVersionImpl(
+        val encryptedAssetVersion = EncryptedAssetVersion(
             quality,
             encryptedData,
             encryptedAssetSecret.ciphertext,
@@ -40,7 +40,7 @@ class AssetEncrypter(
         )
         val encryptedVersions = mapOf(quality to encryptedAssetVersion)
 
-        return EncryptedAssetImpl(
+        return EncryptedAsset(
             outboundQueueItem.globalIdentifier,
             outboundQueueItem.localAsset.localIdentifier,
             outboundQueueItem.localAsset.createdAt,
