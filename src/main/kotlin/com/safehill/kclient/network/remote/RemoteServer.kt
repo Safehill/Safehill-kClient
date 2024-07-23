@@ -1,5 +1,6 @@
 package com.safehill.kclient.network.remote
 
+import com.github.kittinunf.fuel.core.HttpException
 import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.responseObject
@@ -9,8 +10,10 @@ import com.safehill.kclient.models.assets.AssetDescriptorUploadState
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAsset
+import com.safehill.kclient.models.assets.EncryptedAssetVersion
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.assets.ShareableEncryptedAsset
+import com.safehill.kclient.models.dtos.AssetDeleteCriteriaDTO
 import com.safehill.kclient.models.dtos.AssetDescriptorDTO
 import com.safehill.kclient.models.dtos.AssetDescriptorFilterCriteriaDTO
 import com.safehill.kclient.models.dtos.AssetOutputDTO
@@ -57,13 +60,25 @@ import com.safehill.kclient.network.exceptions.SafehillError
 import com.safehill.kcrypto.SafehillCypher
 import com.safehill.kcrypto.models.RemoteCryptoUser
 import com.safehill.kcrypto.models.ShareablePayload
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.security.MessageDigest
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.util.Base64
+import java.util.Date
+import java.util.Locale
 
 
 // For Fuel how to see https://www.baeldung.com/kotlin/fuel
@@ -351,10 +366,12 @@ class RemoteServer(
             this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
 
         val assetCreatedAt = asset.creationDate ?: run { Instant.MIN }
+        val dateTime = OffsetDateTime.ofInstant(assetCreatedAt, ZoneOffset.UTC)
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX")
         val requestBody = com.safehill.kclient.models.dtos.AssetInputDTO(
             asset.globalIdentifier,
             asset.localIdentifier,
-            assetCreatedAt,
+            dateTime.format(formatter),
             groupId,
             asset.encryptedVersions.map {
                 com.safehill.kclient.models.dtos.AssetVersionInputDTO(
@@ -475,7 +492,52 @@ class RemoteServer(
         asset: EncryptedAsset,
         filterVersions: List<AssetQuality>,
     ) {
-        TODO("Not yet implemented")
+        val encryptedVersionByPresignedURL = emptyMap<String, EncryptedAssetVersion>().toMutableMap()
+
+        for (encryptedVersion in asset.encryptedVersions.values) {
+            if (!filterVersions.contains(encryptedVersion.quality)) {
+                continue
+            }
+
+            try {
+                val serverAssetVersion = serverAsset.versions.first {
+                    version -> version.versionName == encryptedVersion.quality.name
+                }
+                serverAssetVersion.presignedURL?.let {
+                    encryptedVersionByPresignedURL[it] = encryptedVersion
+                    S3Proxy.upload(encryptedVersion.encryptedData, it)
+                    this.markAsset(
+                        asset.globalIdentifier,
+                        encryptedVersion.quality,
+                        AssetDescriptorUploadState.Completed
+                    )
+                }
+            } catch (_: NoSuchElementException) {
+                println("no server asset provided for version ${encryptedVersion.quality.value}")
+                continue
+            }
+        }
+
+        val remoteServer = this
+        val coroutineScope = CoroutineScope(Job() + Dispatchers.IO)
+        val deferredResults = encryptedVersionByPresignedURL.map { kv ->
+            coroutineScope.async {
+                val presignedURL = kv.key
+                val encryptedVersion = kv.value
+                try {
+                    S3Proxy.upload(encryptedVersion.encryptedData, presignedURL)
+                } catch (exception: Exception) {
+                    print(exception)
+                }
+                remoteServer.markAsset(
+                    asset.globalIdentifier,
+                    encryptedVersion.quality,
+                    AssetDescriptorUploadState.Completed
+                )
+            }
+        }
+        deferredResults
+            .awaitAll()
     }
 
     override suspend fun markAsset(
@@ -483,7 +545,16 @@ class RemoteServer(
         quality: AssetQuality,
         asState: AssetDescriptorUploadState,
     ) {
-        TODO("Not yet implemented")
+        val bearerToken =
+            this.requestor.authToken ?: throw HttpException(
+                401,
+                "unauthorized"
+            )
+
+        "assets/$assetGlobalIdentifier/versions/${quality.value}/uploaded".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .response()
+            .getOrThrow()
     }
 
     @Throws
@@ -495,7 +566,7 @@ class RemoteServer(
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(
                 Gson().toJson(
-                    com.safehill.kclient.models.dtos.AssetDeleteCriteriaDTO(
+                    AssetDeleteCriteriaDTO(
                         globalIdentifiers
                     )
                 )

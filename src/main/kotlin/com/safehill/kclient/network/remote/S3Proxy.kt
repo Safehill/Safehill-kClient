@@ -1,6 +1,8 @@
 package com.safehill.kclient.network.remote
 
 import com.github.kittinunf.fuel.httpGet
+import com.github.kittinunf.fuel.httpPut
+import com.github.kittinunf.result.Result
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAsset
@@ -8,6 +10,10 @@ import com.safehill.kclient.models.assets.EncryptedAssetVersion
 import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.dtos.AssetVersionOutputDTO
 import com.safehill.kclient.network.api.getOrThrow
+import com.safehill.kclient.network.remote.S3Proxy.Companion.getOrThrow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -15,6 +21,27 @@ import kotlinx.coroutines.coroutineScope
 class S3Proxy {
 
     companion object {
+
+        suspend fun uploadData(dataByPresignedURL: Map<String, ByteArray>) {
+            val coroutineScope = CoroutineScope(Job() + Dispatchers.IO)
+            val deferredResults = dataByPresignedURL.map { kv ->
+                coroutineScope.async {
+                    upload(kv.value, kv.key)
+                }
+            }
+            deferredResults
+                .awaitAll()
+        }
+
+        suspend fun upload(
+            data: ByteArray,
+            url: String
+        ) {
+            url.httpPut()
+                .response()
+                .getOrThrow()
+        }
+
         suspend fun fetchAssets(serverAssets: List<AssetOutputDTO>): Map<AssetGlobalIdentifier, EncryptedAsset> {
             val deferredResults = coroutineScope {
                 serverAssets.map { serverAsset ->
