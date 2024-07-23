@@ -1,16 +1,13 @@
 plugins {
     kotlin("jvm") version "1.6.20"
     kotlin("plugin.serialization") version "1.9.0"
+    id("com.android.library") version "7.3.0" apply false
+    id("org.jetbrains.kotlin.android") version "1.6.20" apply false
     application
 }
 
 group = "com.safehill"
 version = "0.1"
-
-repositories {
-    mavenCentral()
-    google()
-}
 
 dependencies {
     implementation("at.favre.lib:hkdf:2.0.0")
