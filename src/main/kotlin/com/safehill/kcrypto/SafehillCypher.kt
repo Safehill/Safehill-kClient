@@ -2,20 +2,15 @@ package com.safehill.kcrypto
 
 import at.favre.lib.hkdf.HKDF
 import com.safehill.kcrypto.models.SafehillPublicKey
-import com.safehill.kcrypto.models.ShareablePayload
 import com.safehill.kcrypto.models.SafehillSignature
-import com.safehill.kcrypto.models.SymmetricKey
+import com.safehill.kcrypto.models.ShareablePayload
 import com.safehill.kcrypto.models.SignatureVerificationError
-import dev.turingcomplete.kotlinonetimepassword.HmacAlgorithm
-import dev.turingcomplete.kotlinonetimepassword.TimeBasedOneTimePasswordConfig
-import dev.turingcomplete.kotlinonetimepassword.TimeBasedOneTimePasswordGenerator
+import com.safehill.kcrypto.models.SymmetricKey
 import java.security.KeyPair
 import java.security.PrivateKey
 import java.security.PublicKey
 import java.security.SecureRandom
 import java.util.Base64
-import java.util.Date
-import java.util.concurrent.TimeUnit
 import javax.crypto.Cipher
 import javax.crypto.KeyAgreement
 import javax.crypto.spec.GCMParameterSpec
@@ -38,37 +33,8 @@ class SafehillCypher {
             return iv
         }
 
-        /**
-         * OTP code generation
-         * @param secret the cryptographically-secure secret
-         * @param digits how long (the number of digits) is the OTP
-         * @param timeStepInSeconds the duration of each step
-         * @return a Pair holding the code and the number of milliseconds the current TOTP is still valid
-         */
-        fun generateOTPCode(
-            secret: ByteArray,
-            digits: Int = 6,
-            timeStepInSeconds: Long = 30
-        ): Pair<String, Long> {
-            val config = TimeBasedOneTimePasswordConfig(
-                codeDigits = digits,
-                hmacAlgorithm = HmacAlgorithm.SHA1,
-                timeStep = timeStepInSeconds,
-                timeStepUnit = TimeUnit.SECONDS
-            )
-            val timeBasedOneTimePasswordGenerator =
-                TimeBasedOneTimePasswordGenerator(secret, config)
 
-            val code = timeBasedOneTimePasswordGenerator.generate(Date().toInstant().toEpochMilli())
 
-            val counter = timeBasedOneTimePasswordGenerator.counter()
-            // the start of next time slot minus 1ms
-            val endEpochMillis = timeBasedOneTimePasswordGenerator.timeslotStart(counter + 1) - 1
-            // number of milliseconds the current TOTP is still valid
-            val millisValid = endEpochMillis - Date().toInstant().toEpochMilli()
-
-            return code to millisValid
-        }
 
         fun encrypt(message: ByteArray, key: SymmetricKey, iv: ByteArray? = null): ByteArray {
             return this.encrypt(message, key.secretKeySpec.encoded, iv)
@@ -198,7 +164,8 @@ class SafehillCypher {
             }
 
             // Retrieve the shared secret from the key agreement
-            val ephemeralKey: PublicKey = SafehillPublicKey.from(sealedMessage.ephemeralPublicKeyData)
+            val ephemeralKey: PublicKey =
+                SafehillPublicKey.from(sealedMessage.ephemeralPublicKeyData)
 
             val sharedSecret = generatedSharedSecret(
                 otherUserPublicKey = ephemeralKey,
