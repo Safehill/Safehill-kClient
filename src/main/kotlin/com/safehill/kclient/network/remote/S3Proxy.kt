@@ -43,40 +43,31 @@ class S3Proxy {
         suspend fun fetchAssets(serverAssets: List<AssetOutputDTO>): Map<AssetGlobalIdentifier, EncryptedAsset> {
             val deferredResults = coroutineScope {
                 serverAssets.map { serverAsset ->
-                    async { fetchAsset(serverAsset) }
+                    async {
+                        fetchAsset(serverAsset)
+                    }
                 }
             }
 
             return deferredResults
                 .awaitAll()
-                .filterNotNull()
                 .associateBy { it.globalIdentifier }
         }
 
         private suspend fun fetchAsset(
             asset: AssetOutputDTO
-        ): EncryptedAsset? {
+        ): EncryptedAsset {
             val deferredResults = coroutineScope {
                 asset.versions.map { serverAssetVersion ->
                     async {
-                        try {
-                            fetchAssetVersion(serverAssetVersion)
-                        } catch (e: Exception) {
-                            println(e)
-                            // TODO: Propagate errors instead of just swallowing them
-                            null
-                        }
+                        fetchAssetVersion(serverAssetVersion)
                     }
                 }
             }
 
             val encryptedVersions = deferredResults
                 .awaitAll()
-                .filterNotNull()
 
-            if (encryptedVersions.isEmpty()) {
-                return null
-            }
 
             return EncryptedAsset(
                 asset.globalIdentifier,
@@ -86,22 +77,19 @@ class S3Proxy {
             )
         }
 
-        private fun fetchAssetVersion(assetVersion: AssetVersionOutputDTO): EncryptedAssetVersion? {
-            assetVersion.presignedURL?.let { url ->
-                return EncryptedAssetVersion(
-                    quality = AssetQuality.entries.first { it.value == assetVersion.versionName },
-                    encryptedData = fetchData(url),
-                    encryptedSecret = assetVersion.encryptedSecret,
-                    publicKeyData = assetVersion.publicKeyData,
-                    publicSignatureData = assetVersion.publicSignatureData
-                )
-            } ?: run {
-                return null
-            }
+        private fun fetchAssetVersion(assetVersion: AssetVersionOutputDTO): EncryptedAssetVersion {
+            return EncryptedAssetVersion(
+                quality = AssetQuality.entries.first { it.value == assetVersion.versionName },
+                encryptedData = fetchData(assetVersion.presignedURL),
+                encryptedSecret = assetVersion.encryptedSecret,
+                publicKeyData = assetVersion.publicKeyData,
+                publicSignatureData = assetVersion.publicSignatureData
+            )
+
         }
 
-        private fun fetchData(presignedURL: String): ByteArray {
-            return presignedURL.httpGet().response().getOrThrow()
+        private fun fetchData(preSignedURL: String): ByteArray {
+            return preSignedURL.httpGet().response().getOrThrow()
         }
 
     }

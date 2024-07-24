@@ -1,17 +1,22 @@
 package com.safehill.kclient.tasks.inbound
 
-import com.safehill.kclient.models.assets.*
-import com.safehill.kclient.models.users.UserIdentifier
-import com.safehill.kclient.models.users.ServerUser
+import com.safehill.kclient.models.assets.DecryptedAsset
+import com.safehill.kclient.network.GlobalIdentifier
 
 
-public interface DownloadOperationListener {
-    fun received(
-        assetDescriptors: List<AssetDescriptor>,
-        referencingUsers: Map<UserIdentifier, ServerUser>
-    )
+interface DownloadOperationListener {
 
     fun fetched(
         decryptedAsset: DecryptedAsset
     )
+
+    fun didFailDownloadOfAsset(
+        globalIdentifier: GlobalIdentifier,
+        error: Throwable
+    )
+
+    fun didFailRepeatedlyDownloadOfAsset(
+        globalIdentifier: GlobalIdentifier,
+    )
+
 }

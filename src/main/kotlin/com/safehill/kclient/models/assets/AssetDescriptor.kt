@@ -19,6 +19,11 @@ interface AssetDescriptor : RemoteAssetIdentifiable {
                 Failed -> "failed"
             }
         }
+
+        fun isDownloadable() = when (this) {
+            Partial, Completed -> true
+            NotStarted, Failed -> false
+        }
     }
 
     interface SharingInfo {
