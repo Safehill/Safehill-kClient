@@ -14,7 +14,9 @@ android {
         consumerProguardFiles("consumer-rules.pro")
         externalNativeBuild {
             cmake {
-                cppFlags("-std=c++17")
+                arguments("-DANDROID_STL=c++_shared",)
+                abiFilters("armeabi-v7a", "arm64-v8a")
+                targets("UpscalingEngine", "MNN", "MNN_Vulkan", "MNN_CL")
             }
         }
     }
@@ -45,6 +47,7 @@ android {
 
 dependencies {
 
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
     implementation("com.android.support:appcompat-v7:28.0.0")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("com.android.support.test:runner:1.0.2")

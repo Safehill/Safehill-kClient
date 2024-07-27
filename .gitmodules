@@ -1,0 +1,9 @@
+[submodule "image-engine/src/main/cpp/eigen"]
+	path = image-engine/src/main/cpp/eigen
+	url = https://gitlab.com/libeigen/eigen
+[submodule "image-engine/src/main/cpp/opencv"]
+	path = image-engine/src/main/cpp/opencv
+	url = https://github.com/opencv/opencv
+[submodule "image-engine/src/main/cpp/MNN"]
+	path = image-engine/src/main/cpp/MNN
+	url = https://github.com/alibaba/MNN/
