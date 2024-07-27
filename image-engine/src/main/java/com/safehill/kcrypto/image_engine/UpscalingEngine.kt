@@ -8,8 +8,12 @@ import java.nio.ByteBuffer
 
 /**
  * For now we don't have to worry about concurrency
+ *
+ * @param modelFile the pretrained model to use in .mnn format
+ * @param scale expected upscaling factor of the model
+ * @param tileSize tile size to use for processing, specify 0 or negative to disable tiling
  */
-class UpscalingEngine(val modelFile: File, val scale: Int) {
+class UpscalingEngine(val modelFile: File, val scale: Int, val tileSize: Int) {
 
     private var enginePtr: Long = 0
 
@@ -21,6 +25,7 @@ class UpscalingEngine(val modelFile: File, val scale: Int) {
         errorValue: ByteBuffer,
         modelAbsolutePath: String,
         scale: Int,
+        tileSize: Int,
         placeholderColour: Int,
     ): Long
 
@@ -51,6 +56,7 @@ class UpscalingEngine(val modelFile: File, val scale: Int) {
                 errorValue = errorValue,
                 modelAbsolutePath = modelFile.absolutePath,
                 scale = scale,
+                tileSize = tileSize,
                 placeholderColour = placeholderColour
             )
             val errorCode = errorValue.get().toInt()

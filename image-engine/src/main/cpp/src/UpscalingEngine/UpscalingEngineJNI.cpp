@@ -110,13 +110,14 @@ Java_com_safehill_kcrypto_image_1engine_UpscalingEngine_createUpscalingEngineFil
                                                                         jobject error_value_buffer,
                                                                         jstring model_absolute_path,
                                                                         jint scale,
+                                                                        jint tile_size,
                                                                         jint placeholder_colour) {
 
     const char* filePathStr = env->GetStringUTFChars(model_absolute_path, nullptr);
     const auto error_value = reinterpret_cast<int8_t*>(JNIUtils::getDirectBuffer(env, error_value_buffer).data);
     jlong ptr;
     try {
-        auto upscalingEngine = new UpscalingEngine(filePathStr, scale, placeholder_colour);
+        auto upscalingEngine = new UpscalingEngine(filePathStr, scale, tile_size, placeholder_colour);
         error_value[0] = 0;
         ptr = (jlong) upscalingEngine;
     } catch (ImageTileInterpreterException& e) {

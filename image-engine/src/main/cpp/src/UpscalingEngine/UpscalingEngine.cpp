@@ -120,11 +120,12 @@ void UpscalingEngine::upscaleImage(
     size_t processed_pixels = 0;
     set_progress_percentage(jni_env, progress_tracker, 0);
 
-    const image_dimensions tile_dimensions = {
-        // Adapt tile size if image size is smaller than default tile size
-        .width = std::min<int>(REALESRGAN_INPUT_TILE_SIZE, input_image_matrix.cols),
-        .height = std::min<int>(REALESRGAN_INPUT_TILE_SIZE, input_image_matrix.rows)
-    };
+    // Consider provided tile size only if more than 0
+    const image_dimensions tile_dimensions = (tileSize > 0) ? image_dimensions{
+            // Adapt tile size if image size is smaller than default tile size
+            std::min<int>(tileSize, input_image_matrix.cols),
+            std::min<int>(tileSize, input_image_matrix.rows)
+    } : image_dimensions { input_image_matrix.cols, input_image_matrix.rows };
     const int height = input_image_matrix.rows;
     const int width = input_image_matrix.cols;
 
@@ -208,7 +209,8 @@ void UpscalingEngine::upscaleImage(
 
 UpscalingEngine::UpscalingEngine(const char *model_path,
                                  const int scale,
-                                 const int32_t placeholderColour) : interpreter(model_path), scale(scale), placeholderColour(
+                                 const uint32_t tile_size,
+                                 const int32_t placeholderColour) : interpreter(model_path), scale(scale), tileSize(tile_size), placeholderColour(
         placeholderColour) {
 }
 

@@ -15,7 +15,7 @@ android {
         externalNativeBuild {
             cmake {
                 arguments("-DANDROID_STL=c++_shared",)
-                abiFilters("armeabi-v7a", "arm64-v8a")
+                abiFilters("armeabi-v7a", "arm64-v8a", "x86_64")
                 targets("UpscalingEngine", "MNN", "MNN_Vulkan", "MNN_CL")
             }
         }

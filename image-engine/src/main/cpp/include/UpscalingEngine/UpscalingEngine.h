@@ -12,16 +12,21 @@
 #include "ImageUtils/Types.h"
 #include "image_tile_interpreter.h"
 
-#define REALESRGAN_INPUT_TILE_SIZE 84
 #define REALESRGAN_INPUT_TILE_PADDING 10
 
 class UpscalingEngine {
 
 public:
-    UpscalingEngine(const char* model_path, const int scale, const int32_t placeholderColour);
+    UpscalingEngine(const char* model_path,
+                    const int scale,
+                    const uint32_t tile_size,
+                    const int32_t placeholderColour);
     ~UpscalingEngine();
 
     const int scale;
+
+    const int tileSize;
+
     /**
      * Colour that will replace a transparent pixel since Real-ESRGAN doesn't support upscaling
      */
