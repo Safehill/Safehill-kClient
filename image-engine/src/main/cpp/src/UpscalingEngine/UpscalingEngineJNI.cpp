@@ -7,7 +7,6 @@
 #include "JNIUtils/JNIUtils.h"
 #include "UpscalingEngine/UpscalingEngine.h"
 #ifdef __ANDROID__
-#include "BitmapUtils/BitmapUtils.h"
 #include "BitmapUtils/AndroidBitmapWrapper.h"
 #else
 #include "ImageUtils/ImageUtils.h"

@@ -19,7 +19,7 @@ class UpscalingEngine {
 public:
     UpscalingEngine(const char* model_path,
                     const int scale,
-                    const uint32_t tile_size,
+                    const int tile_size,
                     const int32_t placeholderColour);
     ~UpscalingEngine();
 

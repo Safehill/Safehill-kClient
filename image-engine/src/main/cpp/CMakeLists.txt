@@ -25,7 +25,7 @@ set(CMAKE_CXX_STANDARD 20)
 if(ANDROID)
     find_library(jnigraphics-lib jnigraphics)
 
-    add_library(BitmapUtils SHARED src/BitmapUtils/BitmapUtils.cpp src/BitmapUtils/AndroidBitmapWrapper.cpp)
+    add_library(BitmapUtils SHARED src/BitmapUtils/AndroidBitmapWrapper.cpp)
     target_include_directories(BitmapUtils PUBLIC ${EIGEN_INCLUDE} ${OPENCV_INCLUDES})
     target_link_libraries(BitmapUtils ${jnigraphics-lib} opencv_core)
 

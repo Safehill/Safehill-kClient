@@ -24,11 +24,11 @@ ImageTileInterpreter::~ImageTileInterpreter() {
 }
 
 void ImageTileInterpreter::updateTileSize(const image_dimensions* tile_size) {
-    // We store matrix as row major so ignore MNN default tensor orientation
+    // Reconfigure interpreter on tile size change
     if (
             interpreter_input == nullptr ||
-            interpreter_input->width() != tile_size->height ||
-            interpreter_input->height() != tile_size->width) {
+            interpreter_input->height() != tile_size->height ||
+            interpreter_input->width() != tile_size->width) {
 
         releaseSession();
 
@@ -42,8 +42,8 @@ void ImageTileInterpreter::updateTileSize(const image_dimensions* tile_size) {
                 interpreter_input,
                 1,
                 REALESRGAN_IMAGE_CHANNELS,
-                tile_size->width,
-                tile_size->height);
+                tile_size->height,
+                tile_size->width);
         interpreter->resizeSession(session, 0);
         interpreter_output = interpreter->getSessionOutput(session, nullptr);
 
