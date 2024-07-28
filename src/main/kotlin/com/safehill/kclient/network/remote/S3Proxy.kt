@@ -15,6 +15,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 
 class S3Proxy {
 
@@ -41,17 +42,19 @@ class S3Proxy {
         }
 
         suspend fun fetchAssets(serverAssets: List<AssetOutputDTO>): Map<AssetGlobalIdentifier, EncryptedAsset> {
-            val deferredResults = coroutineScope {
-                serverAssets.map { serverAsset ->
-                    async {
-                        fetchAsset(serverAsset)
+            return withContext(Dispatchers.IO) {
+                val deferredResults = coroutineScope {
+                    serverAssets.map { serverAsset ->
+                        async {
+                            fetchAsset(serverAsset)
+                        }
                     }
                 }
-            }
 
-            return deferredResults
-                .awaitAll()
-                .associateBy { it.globalIdentifier }
+                deferredResults
+                    .awaitAll()
+                    .associateBy { it.globalIdentifier }
+            }
         }
 
         private suspend fun fetchAsset(
