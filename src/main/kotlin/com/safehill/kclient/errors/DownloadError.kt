@@ -15,4 +15,8 @@ sealed class DownloadError : Exception() {
     data class AssetNotFound(
         val assetDescriptor: AssetDescriptor
     ) : DownloadError()
+
+    data class AssetDescriptorNotFound(
+        val globalIdentifier: AssetGlobalIdentifier
+    ) : DownloadError()
 }

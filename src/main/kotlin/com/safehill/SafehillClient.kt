@@ -3,6 +3,7 @@ package com.safehill
 import com.github.kittinunf.fuel.core.FuelManager
 import com.github.kittinunf.fuel.core.interceptors.LogRequestInterceptor
 import com.github.kittinunf.fuel.core.interceptors.LogResponseInterceptor
+import com.safehill.kclient.controllers.UserController
 import com.safehill.kclient.controllers.UserInteractionController
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.network.ServerProxy
@@ -26,6 +27,12 @@ class SafehillClient private constructor(
         UserInteractionController(
             serverProxy = serverProxy,
             currentUser = currentUser
+        )
+    }
+
+    val userController by lazy {
+        UserController(
+            serverProxy = serverProxy
         )
     }
 

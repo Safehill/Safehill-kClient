@@ -1,23 +1,20 @@
 package com.safehill.kclient.tasks.inbound
 
+import com.safehill.SafehillClient
 import com.safehill.kclient.controllers.AssetsDownloadManager
-import com.safehill.kclient.controllers.UserController
 import com.safehill.kclient.errors.DownloadError
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.DecryptedAsset
-import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.tasks.BackgroundTask
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 abstract class AbstractDownloadOperation(
-    serverProxy: ServerProxy,
-    userController: UserController
+    safehillClient: SafehillClient
 ) : DownloadOperation, BackgroundTask {
 
     private val assetsDownloadManager: AssetsDownloadManager = AssetsDownloadManager(
-        serverProxy = serverProxy,
-        userController = userController
+        safehillClient
     )
 
     abstract suspend fun getDescriptors(): List<AssetDescriptor>
