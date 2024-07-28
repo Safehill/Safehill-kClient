@@ -15,6 +15,7 @@ import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.UserIdentifier
+import com.safehill.kclient.network.exceptions.SafehillError
 import com.safehill.kclient.network.local.LocalServerInterface
 import com.safehill.kclient.util.runCatchingPreservingCancellationException
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -222,13 +223,64 @@ class ServerProxyImpl(
         return localServer.getUsers(serverUsers.map { it.identifier })
     }
 
-
     override suspend fun getAssetDescriptors(
         assetGlobalIdentifiers: List<AssetGlobalIdentifier>?,
         groupIds: List<GroupId>?,
         after: Instant?
     ): List<AssetDescriptor> {
-        TODO("Not yet implemented")
+        // All asset descriptors are being fetched.
+        // Directly retrieve all descriptors from remote server.
+        return if (assetGlobalIdentifiers == null) {
+            remoteServer.getAssetDescriptors(
+                assetGlobalIdentifiers = null,
+                groupIds = groupIds,
+                after = after
+            )
+        } else {
+            val locallyAvailableDescriptors = localServer.getAssetDescriptors(
+                assetGlobalIdentifiers = assetGlobalIdentifiers,
+                groupIds = groupIds,
+                after = after
+            )
+            val remainingDescriptors =
+                assetGlobalIdentifiers - locallyAvailableDescriptors.map { it.globalIdentifier }
+                    .toSet()
+            if (remainingDescriptors.isEmpty()) {
+                locallyAvailableDescriptors
+            } else {
+                remoteServer.getAssetDescriptors(
+                    assetGlobalIdentifiers = remainingDescriptors,
+                    groupIds = groupIds,
+                    after = after
+                )
+            }
+        }
+    }
+
+    override suspend fun getAsset(
+        globalIdentifier: GlobalIdentifier,
+        quality: AssetQuality,
+        cacheAfterFetch: Boolean
+    ): EncryptedAsset {
+        return localServer.getAssets(
+            globalIdentifiers = listOf(globalIdentifier),
+            versions = listOf(quality)
+        )[globalIdentifier] ?: run {
+            val remoteAsset = remoteServer.getAssets(
+                globalIdentifiers = listOf(globalIdentifier),
+                versions = listOf(quality)
+            )[globalIdentifier] ?: throw SafehillError.ClientError.NotFound
+            if (cacheAfterFetch) {
+                val remoteDescriptor = getAssetDescriptors(
+                    assetGlobalIdentifiers = listOf(globalIdentifier),
+                    groupIds = null, after = null
+                ).first()
+                localServer.storeAssetsWithDescriptor(
+                    encryptedAssetsWithDescriptor = mapOf(remoteDescriptor to remoteAsset)
+                )
+            }
+            remoteAsset
+        }
     }
 
     //

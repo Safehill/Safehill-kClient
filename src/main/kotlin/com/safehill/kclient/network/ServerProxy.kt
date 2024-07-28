@@ -11,6 +11,11 @@ interface ServerProxy : SafehillApi {
     val localServer: LocalServerInterface
     val remoteServer: SafehillApi
 
+    suspend fun getAsset(
+        globalIdentifier: GlobalIdentifier,
+        quality: AssetQuality,
+        cacheAfterFetch: Boolean
+    ): EncryptedAsset
 
     @Throws(Exception::class)
     suspend fun getLocalAssets(
