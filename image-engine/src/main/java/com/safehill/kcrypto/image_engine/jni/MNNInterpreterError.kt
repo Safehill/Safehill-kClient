@@ -1,4 +1,4 @@
-package com.safehill.kcrypto.image_engine
+package com.safehill.kcrypto.image_engine.jni
 
 sealed interface MNNInterpreterError {
 

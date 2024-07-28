@@ -1,7 +1,6 @@
-package com.safehill.kcrypto.image_engine
+package com.safehill.kcrypto.image_engine.jni
 
 import android.graphics.Bitmap
-import com.safehill.kcrypto.image_engine.jni.JNIProgressTracker
 import kotlinx.coroutines.CoroutineScope
 import java.io.File
 import java.nio.ByteBuffer
@@ -62,7 +61,9 @@ class UpscalingEngine(val modelFile: File, val scale: Int, val tileSize: Int) {
             val errorCode = errorValue.get().toInt()
             // Failed to init engine, return error code
             if (errorCode != 0) {
-                return MNNInterpreterError.fromNativeErrorEnum(errorCode)
+                return MNNInterpreterError.Companion.fromNativeErrorEnum(
+                    errorCode
+                )
             }
         }
 
@@ -74,7 +75,9 @@ class UpscalingEngine(val modelFile: File, val scale: Int, val tileSize: Int) {
             outputBitmap = outputBitmap
         )
         // Upscaling failed, return error code
-        if (errorCode != 0) return MNNInterpreterError.fromNativeErrorEnum(errorCode)
+        if (errorCode != 0) return MNNInterpreterError.Companion.fromNativeErrorEnum(
+            errorCode
+        )
 
         return null
     }

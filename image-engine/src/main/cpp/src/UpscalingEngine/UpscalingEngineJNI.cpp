@@ -15,7 +15,7 @@
 
 #ifdef __ANDROID__
 extern "C" JNIEXPORT jint JNICALL
-Java_com_safehill_kcrypto_image_1engine_UpscalingEngine_runUpscaling(
+Java_com_safehill_kcrypto_image_1engine_jni_UpscalingEngine_runUpscaling(
         JNIEnv *env,
         jobject /* thiz */,
         jlong upscaling_engine_ptr,
@@ -45,7 +45,7 @@ Java_com_safehill_kcrypto_image_1engine_UpscalingEngine_runUpscaling(
 }
 #else
 extern "C" JNIEXPORT jint JNICALL
-Java_com_safehill_kcrypto_image_1engine_UpscalingEngine_runUpscaling(
+Java_com_safehill_kcrypto_image_1engine_jni_UpscalingEngine_runUpscaling(
         JNIEnv *env,
         jobject /* thiz */,
         jlong upscaling_engine_ptr,
@@ -94,7 +94,7 @@ Java_com_safehill_kcrypto_image_1engine_UpscalingEngine_runUpscaling(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_safehill_kcrypto_image_1engine_UpscalingEngine_destroyUpscalingEngine(
+Java_com_safehill_kcrypto_image_1engine_jni_UpscalingEngine_destroyUpscalingEngine(
         JNIEnv* /* env */,
         jobject /* thiz */,
         jlong upscaling_engine_ptr) {
@@ -104,7 +104,7 @@ Java_com_safehill_kcrypto_image_1engine_UpscalingEngine_destroyUpscalingEngine(
 }
 extern "C"
 JNIEXPORT jlong JNICALL
-Java_com_safehill_kcrypto_image_1engine_UpscalingEngine_createUpscalingEngineFile(JNIEnv *env,
+Java_com_safehill_kcrypto_image_1engine_jni_UpscalingEngine_createUpscalingEngineFile(JNIEnv *env,
                                                                         jobject/* thiz */,
                                                                         jobject error_value_buffer,
                                                                         jstring model_absolute_path,
