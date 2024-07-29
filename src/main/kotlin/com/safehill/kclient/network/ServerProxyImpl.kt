@@ -265,7 +265,9 @@ class ServerProxyImpl(
         return localServer.getAssets(
             globalIdentifiers = listOf(globalIdentifier),
             versions = listOf(quality)
-        )[globalIdentifier] ?: run {
+        )[globalIdentifier]?.takeIf {
+            it.encryptedVersions.containsKey(quality)
+        } ?: run {
             val remoteAsset = remoteServer.getAssets(
                 globalIdentifiers = listOf(globalIdentifier),
                 versions = listOf(quality)

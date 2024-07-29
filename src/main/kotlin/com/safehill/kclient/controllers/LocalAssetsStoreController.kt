@@ -23,7 +23,8 @@ class LocalAssetsStoreController(
     suspend fun getAsset(
         globalIdentifier: AssetGlobalIdentifier,
         quality: AssetQuality,
-        descriptor: AssetDescriptor? = null
+        descriptor: AssetDescriptor? = null,
+        cacheAfterFetch: Boolean
     ): Result<DecryptedAsset> {
         return runCatchingPreservingCancellationException {
             val assetDescriptor = descriptor ?: run {
@@ -39,7 +40,8 @@ class LocalAssetsStoreController(
             )
             val encryptedAsset = downloadAsset(
                 assetDescriptor = assetDescriptor,
-                quality = quality
+                quality = quality,
+                cacheAfterFetch = cacheAfterFetch
             )
             encryptedAsset.toDecryptedAsset(
                 senderUser = senderUser,
@@ -51,13 +53,14 @@ class LocalAssetsStoreController(
 
     private suspend fun downloadAsset(
         assetDescriptor: AssetDescriptor,
-        quality: AssetQuality
+        quality: AssetQuality,
+        cacheAfterFetch: Boolean
     ): EncryptedAsset {
         val identifier = assetDescriptor.globalIdentifier
         return serverProxy.getAsset(
             globalIdentifier = identifier,
             quality = quality,
-            cacheAfterFetch = false
+            cacheAfterFetch = cacheAfterFetch
         )
     }
 

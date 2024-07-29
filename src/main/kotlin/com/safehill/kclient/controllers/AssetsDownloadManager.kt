@@ -29,7 +29,8 @@ class AssetsDownloadManager(
             localAssetStoreController.getAsset(
                 globalIdentifier = descriptor.globalIdentifier,
                 quality = AssetQuality.LowResolution,
-                descriptor = descriptor
+                descriptor = descriptor,
+                cacheAfterFetch = true
             ).onSuccess {
                 downloadBlackList.removeFromBackList(identifier = descriptor.globalIdentifier)
             }.onFailure {
