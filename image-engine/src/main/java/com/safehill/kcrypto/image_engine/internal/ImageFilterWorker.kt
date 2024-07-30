@@ -99,8 +99,8 @@ internal class ImageFilterWorker(
     private companion object {
 
         val ImageFilterConfig.Type.mlModel get() = when (this) {
-            ImageFilterConfig.Type.Cuphead -> TODO()
-            ImageFilterConfig.Type.Mosaic -> TODO()
+            ImageFilterConfig.Type.Cuphead -> MLModel.Cuphead
+            ImageFilterConfig.Type.Mosaic -> MLModel.Mosaic
             ImageFilterConfig.Type.StarryNight -> MLModel.StarryNight
         }
 
