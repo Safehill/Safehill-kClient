@@ -11,7 +11,7 @@ enum class MLModel(val id: String) {
         "starry_night"
     );
 
-    val url: String get() = "$MODELS_DOWNLOAD_URL_PREFIX$id"
+    internal val url: String get() = "$MODELS_DOWNLOAD_URL_PREFIX$id.mnn"
 
     private companion object {
 
