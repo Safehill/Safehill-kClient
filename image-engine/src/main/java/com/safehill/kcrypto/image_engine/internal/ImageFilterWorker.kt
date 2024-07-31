@@ -1,9 +1,12 @@
 package com.safehill.kcrypto.image_engine.internal
 
+import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.os.Environment
+import android.provider.MediaStore
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -22,6 +25,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.util.UUID
 
 internal class ImageFilterWorker(
@@ -90,9 +94,18 @@ internal class ImageFilterWorker(
         )
         inferenceProgressJob.cancelAndJoin()
 
-        applicationContext.cacheDir.resolve("${UUID.randomUUID()}.png").apply {
-            createNewFile()
-        }.outputStream().use {
+        val targetUri = applicationContext.contentResolver.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            ContentValues().apply {
+                put(MediaStore.Images.ImageColumns.DISPLAY_NAME, "${UUID.randomUUID()}.png")
+                put(MediaStore.Images.ImageColumns.MIME_TYPE, "image/png")
+                put(
+                    MediaStore.Images.Media.RELATIVE_PATH,
+                    "${Environment.DIRECTORY_PICTURES}${File.separatorChar}Snoog"
+                )
+            }
+        )
+        applicationContext.contentResolver.openOutputStream(requireNotNull(targetUri))?.use {
             inputBitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
         }
 
