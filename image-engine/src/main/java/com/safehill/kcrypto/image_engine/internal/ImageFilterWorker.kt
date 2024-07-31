@@ -16,8 +16,11 @@ import com.safehill.kcrypto.image_engine.jni.JNIProgressTracker
 import com.safehill.kcrypto.image_engine.jni.UpscalingEngine
 import com.safehill.kcrypto.image_engine.model.DownloadModelState
 import com.safehill.kcrypto.image_engine.model.ImageFilterConfig
+import com.safehill.kcrypto.image_engine.model.ImageFilterProgress
 import com.safehill.kcrypto.image_engine.model.MLModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
 
@@ -38,6 +41,20 @@ internal class ImageFilterWorker(
 
         mlModelsRepository.getOrDownloadModel(config.type.mlModel).collect {
             result = it
+
+            if (it is DownloadModelState.Loading) {
+                val progress = if (it.totalBytes == 0L) {
+                    ImageFilterProgress.INDETERMINATE_PROGRESS_VALUE
+                } else {
+                    it.downloadBytes / it.totalBytes.toFloat()
+                }
+
+                setProgress(
+                    ImageFilterProgressUtils.toWorkData(
+                        ImageFilterProgress(progress, ImageFilterProgress.Step.DownloadResources)
+                    )
+                )
+            }
         }
 
         val modelFile = when (val it = result) {
@@ -47,8 +64,23 @@ internal class ImageFilterWorker(
         }
         val upscalingEngine = UpscalingEngine(modelFile, 1, 0)
         val jniProgressTracker = JNIProgressTracker()
+        val inferenceProgressJob = launch {
+            jniProgressTracker.progressFlow.collect {
+                val progress = if (it.value == JNIProgressTracker.INDETERMINATE_PROGRESS) {
+                    ImageFilterProgress.INDETERMINATE_PROGRESS_VALUE
+                } else {
+                    it.value / 100
+                }
 
-        // Resume inputBitmap to save memory since both input and output have the same resolution
+                setProgress(
+                    ImageFilterProgressUtils.toWorkData(
+                        ImageFilterProgress(progress, ImageFilterProgress.Step.ProcessImage)
+                    )
+                )
+            }
+        }
+
+        // Reuse inputBitmap to save memory since both input and output have the same resolution
         upscalingEngine.runUpscaling(
             progressTracker = jniProgressTracker,
             coroutineScope = this,
@@ -56,6 +88,7 @@ internal class ImageFilterWorker(
             outputBitmap = inputBitmap,
             placeholderColour = Color.WHITE
         )
+        inferenceProgressJob.cancelAndJoin()
 
         applicationContext.cacheDir.resolve("${UUID.randomUUID()}.png").apply {
             createNewFile()
