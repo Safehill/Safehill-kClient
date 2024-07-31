@@ -19,7 +19,7 @@ import com.safehill.kcrypto.image_engine.jni.JNIProgressTracker
 import com.safehill.kcrypto.image_engine.jni.UpscalingEngine
 import com.safehill.kcrypto.image_engine.model.DownloadModelState
 import com.safehill.kcrypto.image_engine.model.ImageFilterConfig
-import com.safehill.kcrypto.image_engine.model.ImageFilterProgress
+import com.safehill.kcrypto.image_engine.model.ImageFilterWorkState
 import com.safehill.kcrypto.image_engine.model.MLModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelAndJoin
@@ -48,14 +48,17 @@ internal class ImageFilterWorker(
 
             if (it is DownloadModelState.Loading) {
                 val progress = if (it.totalBytes == 0L) {
-                    ImageFilterProgress.INDETERMINATE_PROGRESS_VALUE
+                    ImageFilterWorkState.Running.INDETERMINATE_PROGRESS_VALUE
                 } else {
                     it.downloadBytes / it.totalBytes.toFloat()
                 }
 
                 setProgress(
-                    ImageFilterProgressUtils.toWorkData(
-                        ImageFilterProgress(progress, ImageFilterProgress.Step.DownloadResources)
+                    ImageFilterWorkStateUtils.toProgressData(
+                        ImageFilterWorkState.Running(
+                            progress,
+                            ImageFilterWorkState.Running.Step.DownloadResources
+                        )
                     )
                 )
             }
@@ -69,16 +72,28 @@ internal class ImageFilterWorker(
         val upscalingEngine = UpscalingEngine(modelFile, 1, 0)
         val jniProgressTracker = JNIProgressTracker()
         val inferenceProgressJob = launch {
+            setProgress(
+                ImageFilterWorkStateUtils.toProgressData(
+                    ImageFilterWorkState.Running(
+                        ImageFilterWorkState.Running.INDETERMINATE_PROGRESS_VALUE,
+                        ImageFilterWorkState.Running.Step.ProcessImage
+                    )
+                )
+            )
+
             jniProgressTracker.progressFlow.collect {
                 val progress = if (it.value == JNIProgressTracker.INDETERMINATE_PROGRESS) {
-                    ImageFilterProgress.INDETERMINATE_PROGRESS_VALUE
+                    ImageFilterWorkState.Running.INDETERMINATE_PROGRESS_VALUE
                 } else {
                     it.value / 100
                 }
 
                 setProgress(
-                    ImageFilterProgressUtils.toWorkData(
-                        ImageFilterProgress(progress, ImageFilterProgress.Step.ProcessImage)
+                    ImageFilterWorkStateUtils.toProgressData(
+                        ImageFilterWorkState.Running(
+                            progress,
+                            ImageFilterWorkState.Running.Step.ProcessImage
+                        )
                     )
                 )
             }
