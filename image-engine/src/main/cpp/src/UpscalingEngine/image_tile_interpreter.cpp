@@ -32,7 +32,7 @@ void ImageTileInterpreter::updateTileSize(const image_dimensions* tile_size) {
 
         releaseSession();
 
-        session = MNNHelper::createSessionWithBestBackend(interpreter);
+        session = MNNHelper::createSessionWithCPUBackend(interpreter);
         if (session == nullptr) {
             throw ImageTileInterpreterException(ImageTileInterpreterException::Error::CreateBackendFailed);
         }

@@ -92,8 +92,8 @@ class UpscalingEngine(val modelFile: File, val scale: Int, val tileSize: Int) {
     companion object {
         // Used to load the 'realesrgan' library on application startup.
         init {
-            System.loadLibrary("MNN_Vulkan")
-            System.loadLibrary("MNN_CL")
+            // System.loadLibrary("MNN_Vulkan")
+            // System.loadLibrary("MNN_CL")
             System.loadLibrary("UpscalingEngine")
         }
     }
