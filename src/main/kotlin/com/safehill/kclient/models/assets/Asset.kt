@@ -5,14 +5,16 @@ import java.time.Instant
 
 sealed class Asset {
 
-    data class FromAndroidPhotosLibrary(
-        val androidAsset: AndroidAsset
+    data class FromPhotosLibrary(
+        val libraryPhoto: LibraryPhoto
     ) : Asset() {
-        val localIdentifier = androidAsset.localIdentifier
+        val localIdentifier = libraryPhoto.localIdentifier
     }
 
-    data class FromAndroidPhotosLibraryBackedUp(val backedUpAndroidAsset: BackedUpAndroidAsset) :
-        Asset()
+    data class BackedUpLibraryPhoto(
+        val globalIdentifier: String,
+        val libraryPhoto: LibraryPhoto
+    ) : Asset()
 
     data class Downloading(
         val globalIdentifier: AssetGlobalIdentifier
@@ -22,23 +24,23 @@ sealed class Asset {
 
     val debugType: String
         get() = when (this) {
-            is FromAndroidPhotosLibrary -> "fromAndroidPhotosLibrary"
-            is FromAndroidPhotosLibraryBackedUp -> "fromAndroidPhotosLibraryBackedUp"
+            is FromPhotosLibrary -> "FromPhotosLibrary"
+            is BackedUpLibraryPhoto -> "BackedUpLibraryPhoto"
             is Downloading -> "downloading"
             is Downloaded -> "downloaded"
         }
 
     val identifier: String
         get() = when (this) {
-            is FromAndroidPhotosLibrary -> androidAsset.localIdentifier
-            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.globalIdentifier
+            is FromPhotosLibrary -> libraryPhoto.localIdentifier
+            is BackedUpLibraryPhoto -> globalIdentifier
             is Downloading -> globalIdentifier
             is Downloaded -> decryptedAsset.globalIdentifier
         }
 
     val isFromLocalLibrary: Boolean
         get() = when (this) {
-            is FromAndroidPhotosLibrary, is FromAndroidPhotosLibraryBackedUp -> true
+            is FromPhotosLibrary, is BackedUpLibraryPhoto -> true
             else -> false
         }
 
@@ -47,7 +49,7 @@ sealed class Asset {
 
     val isFromRemoteLibrary: Boolean
         get() = when (this) {
-            is Downloaded, is FromAndroidPhotosLibraryBackedUp, is Downloading -> true
+            is Downloaded, is BackedUpLibraryPhoto, is Downloading -> true
             else -> false
         }
 
@@ -62,36 +64,31 @@ sealed class Asset {
 
     val width: Int?
         get() = when (this) {
-            is FromAndroidPhotosLibrary -> androidAsset.pixelWidth
-            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.androidAsset.pixelWidth
+            is FromPhotosLibrary -> libraryPhoto.pixelWidth
+            is BackedUpLibraryPhoto -> libraryPhoto.pixelWidth
             else -> null
         }
 
     val height: Int?
         get() = when (this) {
-            is FromAndroidPhotosLibrary -> androidAsset.pixelHeight
-            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.androidAsset.pixelHeight
+            is FromPhotosLibrary -> libraryPhoto.pixelHeight
+            is BackedUpLibraryPhoto -> libraryPhoto.pixelHeight
             else -> null
         }
 
     val uri: URI?
         get() = when (this) {
-            is FromAndroidPhotosLibrary -> androidAsset.uri
-            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.androidAsset.uri
+            is FromPhotosLibrary -> libraryPhoto.uri
+            is BackedUpLibraryPhoto -> libraryPhoto.uri
             else -> null
         }
 }
 
-data class AndroidAsset(
+data class LibraryPhoto(
     val localIdentifier: String,
     val creationDate: Instant?,
     val pixelWidth: Int?,
     val pixelHeight: Int?,
     val uri: URI?,
     val displayName: String?
-)
-
-data class BackedUpAndroidAsset(
-    val globalIdentifier: String,
-    val androidAsset: AndroidAsset
 )
