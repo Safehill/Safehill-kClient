@@ -5,6 +5,8 @@ import com.safehill.kclient.controllers.AssetsDownloadManager
 import com.safehill.kclient.errors.DownloadError
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.DecryptedAsset
+import com.safehill.kclient.models.assets.LibraryPhoto
+import com.safehill.kclient.network.GlobalIdentifier
 import com.safehill.kclient.tasks.BackgroundTask
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -16,6 +18,8 @@ abstract class AbstractDownloadOperation(
     private val assetsDownloadManager: AssetsDownloadManager = AssetsDownloadManager(
         safehillClient
     )
+
+    abstract val libraryPhotoProvider: LibraryPhotoProvider
 
     abstract suspend fun getDescriptors(): List<AssetDescriptor>
 
@@ -32,9 +36,30 @@ abstract class AbstractDownloadOperation(
         }
     }
 
+    private suspend fun List<AssetDescriptor>.filterBackedUpAssetsAndInform(): List<AssetDescriptor> {
+        val libraryAssets = libraryPhotoProvider.getLocalPhotos()
+        val libraryAssetWithLocalIdentifier = libraryAssets.associateBy { it.localIdentifier }
+
+        val remoteAssets = this
+        val backedUpAssets = mutableMapOf<GlobalIdentifier, LibraryPhoto>()
+        val nonBackedUpAssets = mutableListOf<AssetDescriptor>()
+
+        remoteAssets.forEach { remoteAsset ->
+            val backedUpAsset = libraryAssetWithLocalIdentifier[remoteAsset.localIdentifier]
+            if (backedUpAsset != null) {
+                backedUpAssets[remoteAsset.globalIdentifier] = backedUpAsset
+            } else {
+                nonBackedUpAssets.add(remoteAsset)
+            }
+        }
+        listeners.forEach { it.didIdentify(backedUpAssets) }
+        return nonBackedUpAssets
+    }
+
     private suspend fun processAssetsInDescriptors(descriptors: List<AssetDescriptor>) {
         coroutineScope {
-            descriptors.forEach { descriptor ->
+            val downloadableDescriptors = descriptors.filterBackedUpAssetsAndInform()
+            downloadableDescriptors.forEach { descriptor ->
                 launch {
                     assetsDownloadManager.downloadAsset(
                         descriptor = descriptor
@@ -73,4 +98,8 @@ abstract class AbstractDownloadOperation(
             }
         }
     }
+}
+
+interface LibraryPhotoProvider {
+    suspend fun getLocalPhotos(): List<LibraryPhoto>
 }

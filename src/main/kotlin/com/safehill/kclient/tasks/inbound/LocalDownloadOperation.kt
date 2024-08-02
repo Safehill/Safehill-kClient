@@ -5,7 +5,8 @@ import com.safehill.kclient.models.assets.AssetDescriptor
 
 class LocalDownloadOperation(
     override var listeners: List<DownloadOperationListener>,
-    private val safehillClient: SafehillClient
+    private val safehillClient: SafehillClient,
+    override val libraryPhotoProvider: LibraryPhotoProvider
 ) : AbstractDownloadOperation(
     safehillClient = safehillClient
 ) {
