@@ -102,3 +102,8 @@ add_library(
         src/UpscalingEngine/UpscalingEngineJNI.cpp)
 target_include_directories(UpscalingEngine PUBLIC ${OPENCV_INCLUDES} ${EIGEN_INCLUDE} ${MNN_INCLUDE})
 target_link_libraries(UpscalingEngine ${PLATFORM_LIBRARIES} opencv_imgproc JNIUtils MNNHelper)
+
+# Upscaling Engine - demo
+add_executable(UpscalingEngine_demo src/UpscalingEngine/UpscalingEngine_demo.cpp)
+target_include_directories(UpscalingEngine_demo PRIVATE ${CXXOPTS_INCLUDE})
+target_link_libraries(UpscalingEngine_demo PRIVATE UpscalingEngine)
