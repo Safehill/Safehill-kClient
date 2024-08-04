@@ -90,7 +90,11 @@ Eigen::Tensor<float, 3, Eigen::RowMajor> trim_tensor_padding(
     return tensor->slice(offsets, extents);
 }
 
-std::pair<int, int> calculate_axis_padding(const int position, const int axis_size, const int tile_size, const int padding) {
+std::pair<int, int> UpscalingEngine::calculateInputTilePadding(
+        const int position,
+        const int axis_size,
+        const int tile_size,
+        const int padding) {
     if (axis_size == tile_size) {
         // No padding needed if there a single tile for given axis
         return std::pair<int, int> {0, 0};
@@ -114,6 +118,8 @@ void UpscalingEngine::upscaleImage(
         cv::Mat &output_image_matrix) {
 
     const auto start = std::chrono::high_resolution_clock::now();
+    const int height = input_image_matrix.rows;
+    const int width = input_image_matrix.cols;
 
     int y = 0;
     int last_row_height = 0;
@@ -123,33 +129,34 @@ void UpscalingEngine::upscaleImage(
     // Consider provided tile size only if more than 0
     const image_dimensions tile_dimensions = (tileSize > 0) ? image_dimensions{
             // Adapt tile size if image size is smaller than default tile size
-            std::min<int>(tileSize, input_image_matrix.cols),
-            std::min<int>(tileSize, input_image_matrix.rows)
-    } : image_dimensions { input_image_matrix.cols, input_image_matrix.rows };
-    const int height = input_image_matrix.rows;
-    const int width = input_image_matrix.cols;
+            std::min<int>(tileSize, width),
+            std::min<int>(tileSize, height)
+    } : image_dimensions { width, height };
 
     interpreter.updateTileSize(&tile_dimensions);
 
-    const Eigen::TensorMap<Eigen::Tensor<float, 3, Eigen::RowMajor>> input_tensor(
-            interpreter.input_buffer,
-            REALESRGAN_IMAGE_CHANNELS,
-            tile_dimensions.height,
-            tile_dimensions.width);
+    const Eigen::TensorMap<Eigen::Tensor<float, 3, Eigen::RowMajor>> inputTensorMap(
+            interpreter.input_tensor->host<float>(),
+            interpreter.input_tensor->channel(),
+            interpreter.input_tensor->height(),
+            interpreter.input_tensor->width());
 
-    const Eigen::TensorMap<Eigen::Tensor<float, 3, Eigen::RowMajor>> output_tensor(
-            interpreter.output_buffer,
-            REALESRGAN_IMAGE_CHANNELS,
-            tile_dimensions.height * scale,
-            tile_dimensions.width * scale);
+    const Eigen::TensorMap<Eigen::Tensor<float, 3, Eigen::RowMajor>> outputTensorMap(
+            interpreter.output_tensor->host<float>(),
+            interpreter.output_tensor->channel(),
+            interpreter.output_tensor->height(),
+            interpreter.output_tensor->width());
 
     while (is_coroutine_scope_active(jni_env, coroutine_scope)) {
         int x = 0;
-        std::pair<int, int> y_padding = calculate_axis_padding(y, height, tile_dimensions.height, REALESRGAN_INPUT_TILE_PADDING);
+        std::pair<int, int> y_padding = calculateInputTilePadding(y, height, tile_dimensions.height,
+                                                                  REALESRGAN_INPUT_TILE_PADDING);
 
         while (is_coroutine_scope_active(jni_env, coroutine_scope)) {
 
-            std::pair<int, int> x_padding = calculate_axis_padding(x, width, tile_dimensions.width, REALESRGAN_INPUT_TILE_PADDING);
+            std::pair<int, int> x_padding = calculateInputTilePadding(x, width,
+                                                                      tile_dimensions.width,
+                                                                      REALESRGAN_INPUT_TILE_PADDING);
 
             // Get input_tile of pixels to process keeping, apply left padding as offset that will be cropped later
             const cv::Mat input_tile = input_image_matrix(
@@ -160,27 +167,21 @@ void UpscalingEngine::upscaleImage(
                             tile_dimensions.height));
 
             // Feed input into tensor
-            pixelsMatrixToFloatArray(input_tile, input_tensor);
+            pixelsMatrixToFloatArray(input_tile, inputTensorMap);
 
             // Run inference on the model
             interpreter.inference();
 
-            const Eigen::Tensor<float, 3, Eigen::RowMajor> cropped_output_tensor = trim_tensor_padding(
-                    scale,
-                    x_padding,
-                    y_padding,
-                    &output_tensor);
-
-            cv::Mat output_dest_block = output_image_matrix(cv::Rect(
-                    x * scale,
-                    y * scale,
-                    cropped_output_tensor.dimension(2),
-                    cropped_output_tensor.dimension(1)));
-
-            output_tensor_to_pixels_matrix(output_dest_block, cropped_output_tensor);
+            const cv::Size copiedBlockSize = copyTensorToMatRegion(
+                    cv::Size(tile_dimensions.width * scale, tile_dimensions.height * scale),
+                    cv::Point2i(x * scale, y * scale),
+                    {x_padding.first * scale, x_padding.second * scale},
+                    {y_padding.first * scale, y_padding.second * scale},
+                    output_image_matrix,
+                    outputTensorMap);
 
             // Update progress
-            processed_pixels += output_dest_block.total();
+            processed_pixels += copiedBlockSize.area();
             const float progress = 100 * ((float)processed_pixels / output_image_matrix.total());
             // Calculate execution time per 1%
             const double percentage_execution_millis = std::chrono::duration<double, std::milli>(
@@ -192,9 +193,9 @@ void UpscalingEngine::upscaleImage(
                     static_cast<int64_t>(round((100 - progress) * percentage_execution_millis)));
 
             // Recalculate padding and position of next input_tile in row
-            x += output_dest_block.cols / scale;
+            x += copiedBlockSize.width / scale;
             if (x == width) {
-                last_row_height = output_dest_block.rows / scale;
+                last_row_height = copiedBlockSize.height / scale;
                 break;
             }
         }
@@ -212,6 +213,60 @@ UpscalingEngine::UpscalingEngine(const char *model_path,
                                  const int tile_size,
                                  const int32_t placeholderColour) : interpreter(model_path), scale(scale), tileSize(tile_size), placeholderColour(
         placeholderColour) {
+}
+
+cv::Size UpscalingEngine::copyTensorToMatRegion(cv::Size size,
+                                                cv::Point2i position,
+                                                std::pair<int, int> xPadding,
+                                                std::pair<int, int> yPadding,
+                                                cv::Mat &imageMat,
+                                                const Eigen::TensorMap<Eigen::Tensor<float, 3, Eigen::RowMajor>> &tensor) {
+    const cv::Size destBlockSize(
+            size.width - xPadding.first - xPadding.second,
+            size.height - yPadding.first - yPadding.second);
+    cv::Mat destBlockMat = imageMat(cv::Rect(position, destBlockSize));
+    const cv::Size croppedTileSize(
+            tensor.dimension(2) - xPadding.first - xPadding.second,
+            tensor.dimension(1) - yPadding.first - yPadding.second);
+
+    if (destBlockSize == croppedTileSize) {
+        // Trim padding from tensor and copy to destination block
+        for (int y = 0; y < croppedTileSize.height; y++) {
+            for (int x = 0; x < croppedTileSize.width; x++) {
+                destBlockMat.at<cv::Vec4b>(y, x) =
+                        getColourAt(cv::Point2i(x + xPadding.first, y + yPadding.first), tensor);
+            }
+        }
+    } else {
+        // Handle cases where output tensor size is slightly different than expected destination
+        // block, by using a intermediate cv::Mat matching the tensor size and then interpolate to
+        // the correct destination block size
+        cv::Mat croppedTensorMat(croppedTileSize, destBlockMat.type());
+
+        // Trim padding from tensor and copy to destination block
+        for (int y = 0; y < croppedTileSize.height; y++) {
+            for (int x = 0; x < croppedTileSize.width; x++) {
+                destBlockMat.at<cv::Vec4b>(y, x) =
+                        getColourAt(cv::Point2i(x + xPadding.first, y + yPadding.first), tensor);
+            }
+        }
+        cv::resize(croppedTensorMat, destBlockMat, destBlockSize, 0, 0, cv::INTER_NEAREST);
+    }
+
+    return destBlockSize;
+}
+
+cv::Vec4b UpscalingEngine::getColourAt(cv::Point2i position,
+                                       const Eigen::TensorMap<Eigen::Tensor<float, 3, Eigen::RowMajor>> &tensor) {
+
+    return cv::Vec4b(
+            // Red
+            std::clamp<float>(tensor(0, position.y, position.x) * 255, 0, 255),
+            // Green
+            std::clamp<float>(tensor(1, position.y, position.x) * 255, 0, 255),
+            // Blue
+            std::clamp<float>(tensor(2, position.y, position.x) * 255, 0, 255),
+            UCHAR_MAX);
 }
 
 UpscalingEngine::~UpscalingEngine() = default;

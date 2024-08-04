@@ -49,9 +49,6 @@ void ImageTileInterpreter::updateTileSize(const image_dimensions* tile_size) {
 
         input_tensor = new MNN::Tensor(interpreter_input, MNN::Tensor::CAFFE);
         output_tensor = new MNN::Tensor(interpreter_output, MNN::Tensor::CAFFE);
-
-        input_buffer = input_tensor->host<float>();
-        output_buffer = output_tensor->host<float>();
     }
 }
 

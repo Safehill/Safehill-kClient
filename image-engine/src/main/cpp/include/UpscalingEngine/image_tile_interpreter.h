@@ -41,8 +41,8 @@ public:
     ImageTileInterpreter(const char* model_path);
     ~ImageTileInterpreter();
 
-    float* input_buffer = nullptr;
-    float* output_buffer = nullptr;
+    MNN::Tensor* input_tensor = nullptr;
+    MNN::Tensor* output_tensor = nullptr;
 
     void inference() const;
 
@@ -53,8 +53,6 @@ private:
     MNN::Session* session = nullptr;
     MNN::Tensor* interpreter_input = nullptr;
     MNN::Tensor* interpreter_output = nullptr;
-    MNN::Tensor* input_tensor = nullptr;
-    MNN::Tensor* output_tensor = nullptr;
 
     void releaseSession();
 };

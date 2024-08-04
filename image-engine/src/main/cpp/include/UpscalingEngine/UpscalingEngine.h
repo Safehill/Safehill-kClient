@@ -44,6 +44,20 @@ private:
 
     void pixelsMatrixToFloatArray(const cv::Mat& tile,
                                       const Eigen::TensorMap<Eigen::Tensor<float, 3, Eigen::RowMajor>>& tensor) const;
+
+    static std::pair<int, int> calculateInputTilePadding(int position, int axis_size, int tile_size, int padding);
+
+    static cv::Size copyTensorToMatRegion(
+            cv::Size size,
+            cv::Point2i position,
+            std::pair<int, int> xPadding,
+            std::pair<int, int> yPadding,
+            cv::Mat &imageMat,
+            const Eigen::TensorMap<Eigen::Tensor<float, 3, Eigen::RowMajor>>& tensor);
+
+    static cv::Vec4b getColourAt(
+            cv::Point2i position,
+            const Eigen::TensorMap<Eigen::Tensor<float, 3, Eigen::RowMajor>>& tensor);
 };
 
 
