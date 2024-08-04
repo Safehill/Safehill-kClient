@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.os.Environment
+import android.os.SystemClock
 import android.provider.MediaStore
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
@@ -99,6 +100,7 @@ internal class ImageFilterWorker(
             }
         }
 
+        val startTime = SystemClock.elapsedRealtime()
         // Reuse inputBitmap to save memory since both input and output have the same resolution
         upscalingEngine.runUpscaling(
             progressTracker = jniProgressTracker,
@@ -107,6 +109,8 @@ internal class ImageFilterWorker(
             outputBitmap = inputBitmap,
             placeholderColour = Color.WHITE
         )
+        println("Inference time = ${SystemClock.elapsedRealtime() - startTime}ms")
+
         inferenceProgressJob.cancelAndJoin()
 
         val targetUri = applicationContext.contentResolver.insert(
