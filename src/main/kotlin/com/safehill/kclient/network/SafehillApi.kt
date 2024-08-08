@@ -130,7 +130,7 @@ interface SafehillApi : AuthorizationApi {
     ///   - the encrypted assets from the server
     suspend fun getAssets(
         globalIdentifiers: List<AssetGlobalIdentifier>,
-        versions: List<AssetQuality>?
+        versions: List<AssetQuality>
     ): Map<AssetGlobalIdentifier, EncryptedAsset>
 
     // MARK: Assets Write

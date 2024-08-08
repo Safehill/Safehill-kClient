@@ -71,14 +71,10 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.security.MessageDigest
 import java.time.Instant
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
-import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Base64
-import java.util.Date
-import java.util.Locale
 
 
 // For Fuel how to see https://www.baeldung.com/kotlin/fuel
@@ -335,11 +331,11 @@ class RemoteServer(
     @Throws
     override suspend fun getAssets(
         globalIdentifiers: List<AssetGlobalIdentifier>,
-        versions: List<AssetQuality>?,
+        versions: List<AssetQuality>,
     ): Map<AssetGlobalIdentifier, EncryptedAsset> {
         val assetFilterCriteriaDTO = AssetSearchCriteriaDTO(
             globalIdentifiers = globalIdentifiers,
-            versionNames = versions?.map { it.value }
+            versionNames = versions.map { it.value }
         )
 
         val assetOutputDTOs = postForResponseObject<AssetSearchCriteriaDTO, List<AssetOutputDTO>>(
@@ -492,7 +488,8 @@ class RemoteServer(
         asset: EncryptedAsset,
         filterVersions: List<AssetQuality>,
     ) {
-        val encryptedVersionByPresignedURL = emptyMap<String, EncryptedAssetVersion>().toMutableMap()
+        val encryptedVersionByPresignedURL =
+            emptyMap<String, EncryptedAssetVersion>().toMutableMap()
 
         for (encryptedVersion in asset.encryptedVersions.values) {
             if (!filterVersions.contains(encryptedVersion.quality)) {
@@ -500,8 +497,8 @@ class RemoteServer(
             }
 
             try {
-                val serverAssetVersion = serverAsset.versions.first {
-                    version -> version.versionName == encryptedVersion.quality.name
+                val serverAssetVersion = serverAsset.versions.first { version ->
+                    version.versionName == encryptedVersion.quality.name
                 }
                 serverAssetVersion.presignedURL?.let {
                     encryptedVersionByPresignedURL[it] = encryptedVersion
