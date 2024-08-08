@@ -2,6 +2,7 @@ package com.safehill.kclient.errors
 
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
+import com.safehill.kclient.models.assets.AssetQuality
 
 sealed class DownloadError : Exception() {
     data class IsBlacklisted(
@@ -18,5 +19,10 @@ sealed class DownloadError : Exception() {
 
     data class AssetDescriptorNotFound(
         val globalIdentifier: AssetGlobalIdentifier
+    ) : DownloadError()
+
+    data class AssetQualityNotFound(
+        val identifier: AssetGlobalIdentifier,
+        val quality: AssetQuality
     ) : DownloadError()
 }
