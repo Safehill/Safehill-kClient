@@ -71,7 +71,7 @@ class WebSocketApi internal constructor(
                         deserializer = WebSocketMessageDeserializer,
                         string = frame.readText()
                     )
-                    SafehillClient.logger.log("Socket message $socketData")
+                    SafehillClient.logger.verbose("Socket message $socketData")
                     _socketMessage.emit(socketData)
                 }
             }
@@ -125,6 +125,6 @@ class WebSocketApi internal constructor(
 val Logger.Companion.SAFEHILL_CLIENT_LOGGER
     get() = object : Logger {
         override fun log(message: String) {
-            SafehillClient.logger.log(message)
+            SafehillClient.logger.verbose(message)
         }
     }
