@@ -371,7 +371,7 @@ class RemoteServer(
             groupId,
             asset.encryptedVersions.map {
                 com.safehill.kclient.models.dtos.AssetVersionInputDTO(
-                    it.key.toString(),
+                    it.key.value,
                     Base64.getEncoder().encodeToString(it.value.publicKeyData),
                     Base64.getEncoder().encodeToString(it.value.publicSignatureData),
                     Base64.getEncoder().encodeToString(it.value.encryptedSecret),
@@ -497,8 +497,8 @@ class RemoteServer(
             }
 
             try {
-                val serverAssetVersion = serverAsset.versions.first { version ->
-                    version.versionName == encryptedVersion.quality.name
+                val serverAssetVersion = serverAsset.versions.first {
+                    version -> version.versionName == encryptedVersion.quality.value
                 }
                 serverAssetVersion.presignedURL?.let {
                     encryptedVersionByPresignedURL[it] = encryptedVersion
