@@ -55,6 +55,9 @@ if (WIN32)
     option(MNN_WIN_RUNTIME_MT "" ON)
 endif()
 # option(MNN_OPENCL "" ON)
+if (ANDROID_ABI STREQUAL "arm64-v8a")
+    option(MNN_ARM82 "" ON)
+endif ()
 
 # Include MNN in build
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/MNN)

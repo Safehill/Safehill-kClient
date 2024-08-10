@@ -49,7 +49,7 @@ MNN::Session* MNNHelper::createSessionWithCPUBackend(MNN::Interpreter *interpret
     MNN::BackendConfig backendConfig;
     backendConfig.memory = MNN::BackendConfig::Memory_High;
     backendConfig.power = MNN::BackendConfig::Power_High;
-    backendConfig.precision = MNN::BackendConfig::Precision_High;
+    backendConfig.precision = MNN::BackendConfig::Precision_Low;
     config.backendConfig = &backendConfig;
     config.numThread = std::thread::hardware_concurrency();
     config.type = MNN_FORWARD_CPU;
