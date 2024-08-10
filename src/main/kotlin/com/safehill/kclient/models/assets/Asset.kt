@@ -82,6 +82,22 @@ sealed class Asset {
             is BackedUpLibraryPhoto -> libraryPhoto.uri
             else -> null
         }
+
+    val creationDate: Instant?
+        get() = when (this) {
+            is FromPhotosLibrary -> libraryPhoto.creationDate
+            is BackedUpLibraryPhoto -> libraryPhoto.creationDate
+            is Downloaded -> decryptedAsset.creationDate
+            else -> null
+        }
+
+    val type: String
+        get() = when (this) {
+            is FromPhotosLibrary -> "from the Photos library"
+            else -> "In your lockbox"
+        }
+
+
 }
 
 data class LibraryPhoto(
