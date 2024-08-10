@@ -20,7 +20,7 @@ import java.util.UUID
 
 class UploadOperationImpl(
     val serverProxy: ServerProxy,
-    override val listeners: List<UploadOperationListener>,
+    override val listeners: MutableList<UploadOperationListener>,
     private val encrypter: AssetEncrypterInterface,
     private val outboundQueueItemManager: OutboundQueueItemManagerInterface
 ) : UploadOperation {
@@ -108,7 +108,8 @@ class UploadOperationImpl(
         listeners.forEach {
             it.startedEncrypting(
                 outboundQueueItem.localAsset.localIdentifier,
-                outboundQueueItem.groupId
+                outboundQueueItem.groupId,
+                outboundQueueItem.assetQuality
             )
         }
     }
@@ -117,7 +118,8 @@ class UploadOperationImpl(
         listeners.forEach {
             it.finishedEncrypting(
                 outboundQueueItem.localAsset.localIdentifier,
-                outboundQueueItem.groupId
+                outboundQueueItem.groupId,
+                outboundQueueItem.assetQuality
             )
         }
     }
@@ -126,7 +128,8 @@ class UploadOperationImpl(
         listeners.forEach {
             it.startedUploading(
                 outboundQueueItem.localAsset.localIdentifier,
-                outboundQueueItem.groupId
+                outboundQueueItem.groupId,
+                outboundQueueItem.assetQuality
             )
         }
     }
@@ -136,7 +139,8 @@ class UploadOperationImpl(
             it.finishedUploading(
                 outboundQueueItem.localAsset.localIdentifier,
                 globalIdentifier,
-                outboundQueueItem.groupId
+                outboundQueueItem.groupId,
+                outboundQueueItem.assetQuality
             )
         }
     }

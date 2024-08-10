@@ -10,7 +10,7 @@ import com.safehill.kclient.tasks.BackgroundTask
 
 interface UploadOperation: BackgroundTask {
 
-    val listeners: List<UploadOperationListener>
+    val listeners: MutableList<UploadOperationListener>
 
     val user: LocalUser
 

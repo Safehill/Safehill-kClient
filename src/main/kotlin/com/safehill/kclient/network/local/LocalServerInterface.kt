@@ -25,11 +25,4 @@ interface LocalServerInterface : SafehillApi, LocalAssetApi {
 
     suspend fun deleteThreads(threadIds: List<String>)
 
-    suspend fun getEncryptionKey(globalIdentifier: AssetGlobalIdentifier): SymmetricKey?
-
-    suspend fun saveEncryptionKey(
-        globalIdentifier: AssetGlobalIdentifier,
-        symmetricKey: SymmetricKey
-    )
-
 }
