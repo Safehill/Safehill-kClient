@@ -21,6 +21,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.serialization.json.Json
 import kotlin.coroutines.cancellation.CancellationException
@@ -65,14 +66,23 @@ class WebSocketApi internal constructor(
                 parameter("deviceId", deviceId)
             }
         ) {
-            this.incoming.consumeEach { frame ->
-                if (frame is Frame.Text) {
-                    val socketData = Json.decodeFromString(
-                        deserializer = WebSocketMessageDeserializer,
-                        string = frame.readText()
-                    )
-                    SafehillClient.logger.verbose("Socket message $socketData")
-                    _socketMessage.emit(socketData)
+            val socketSession = this
+            launch {
+                socketSession.incoming.consumeEach { frame ->
+                    if (frame is Frame.Text) {
+                        val socketData = Json.decodeFromString(
+                            deserializer = WebSocketMessageDeserializer,
+                            string = frame.readText()
+                        )
+                        SafehillClient.logger.verbose("Socket message $socketData")
+                        _socketMessage.emit(socketData)
+                    }
+                }
+            }
+            launch {
+                while (isActive) {
+                    socketSession.outgoing.send(Frame.Ping("ping".toByteArray()))
+                    delay(5.seconds)
                 }
             }
         }
