@@ -1,5 +1,6 @@
 package com.safehill.kclient.network
 
+import com.safehill.SafehillClient
 import com.safehill.kclient.models.dtos.websockets.WebSocketMessage
 import com.safehill.kclient.models.serde.WebSocketMessageDeserializer
 import com.safehill.kclient.models.users.LocalUser
@@ -40,12 +41,7 @@ class WebSocketApi internal constructor(
 
     private val httpClient = HttpClient(CIO) {
         install(Logging) {
-            this.logger = object : Logger {
-                override fun log(message: String) {
-                    //todo discuss way of properly logging from library
-                    println("Socket message $message")
-                }
-            }
+            this.logger = Logger.SAFEHILL_CLIENT_LOGGER
         }
         install(WebSockets)
     }
@@ -75,7 +71,7 @@ class WebSocketApi internal constructor(
                         deserializer = WebSocketMessageDeserializer,
                         string = frame.readText()
                     )
-                    println("Socket message $socketData")
+                    SafehillClient.logger.verbose("Socket message $socketData")
                     _socketMessage.emit(socketData)
                 }
             }
@@ -125,3 +121,10 @@ class WebSocketApi internal constructor(
         private const val MAX_RETRY_DELAY: Int = 8
     }
 }
+
+val Logger.Companion.SAFEHILL_CLIENT_LOGGER
+    get() = object : Logger {
+        override fun log(message: String) {
+            SafehillClient.logger.verbose(message)
+        }
+    }
