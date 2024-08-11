@@ -41,7 +41,7 @@ internal class ImageFilterWorker(
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         markAsForeground()
 
-        val inputBitmap = readInputBitmap()
+        val inputBitmap = readInputBitmap() ?: return@withContext Result.failure()
         lateinit var result: DownloadModelState
 
         mlModelsRepository.getOrDownloadModel(config.type.mlModel).collect {
@@ -67,7 +67,7 @@ internal class ImageFilterWorker(
 
         val modelFile = when (val it = result) {
             DownloadModelState.Error -> return@withContext Result.failure()
-            is DownloadModelState.Loading -> throw IllegalStateException("")
+            is DownloadModelState.Loading -> throw IllegalStateException("Download model ended with $it")
             is DownloadModelState.Success -> it.file
         }
         val upscalingEngine = UpscalingEngine(modelFile, 1, 0)
@@ -157,7 +157,7 @@ internal class ImageFilterWorker(
         setForeground(ForegroundInfo(0, notification))
     }
 
-    private fun readInputBitmap() = applicationContext.contentResolver
+    private fun readInputBitmap(): Bitmap? = applicationContext.contentResolver
         .openInputStream(config.inputImage)
         .use(BitmapFactory::decodeStream)
 

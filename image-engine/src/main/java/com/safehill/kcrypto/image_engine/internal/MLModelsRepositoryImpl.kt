@@ -9,9 +9,14 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.onDownload
 import io.ktor.client.request.prepareGet
 import io.ktor.client.statement.bodyAsChannel
-import io.ktor.utils.io.cancel
+import io.ktor.client.statement.discardRemaining
+import io.ktor.http.isSuccess
 import io.ktor.utils.io.jvm.javaio.copyTo
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flow
@@ -20,21 +25,36 @@ import java.io.File
 
 internal class MLModelsRepositoryImpl(context: Context): MLModelsRepository {
 
+    private val httpClient by lazy { HttpClient(CIO) }
     private val modelsStorageDir = context.cacheDir.resolve("image-models")
 
-    private fun downloadModel(model: MLModel): Flow<DownloadModelState.Loading> = channelFlow {
-        HttpClient(CIO).prepareGet(model.url) {
+    private fun downloadModel(model: MLModel): Flow<DownloadModelState> = channelFlow {
+        httpClient.prepareGet(model.url) {
             onDownload { bytesSentTotal, contentLength ->
                 trySend(DownloadModelState.Loading(bytesSentTotal, contentLength))
             }
         }.execute { response ->
-            val channel = response.bodyAsChannel()
+            if (!response.status.isSuccess()) {
+                response.cancel()
+                trySend(DownloadModelState.Error)
+                return@execute
+            }
+
+            val modelFile = model.file
 
             try {
-                model.file.outputStream().use { channel.copyTo(it) }
+                val channel = response.bodyAsChannel()
+
+                modelFile.createNewFile()
+                modelFile.outputStream().use { channel.copyTo(it) }
+                trySend(DownloadModelState.Success(modelFile))
             } catch (e: Exception) {
-                channel.cancel()
-                throw e
+                if (e is CancellationException) {
+                    throw e
+                }
+                trySend(DownloadModelState.Error)
+            } finally {
+                modelFile.delete()
             }
         }
     }
@@ -48,16 +68,8 @@ internal class MLModelsRepositoryImpl(context: Context): MLModelsRepository {
             return@flow
         }
 
-        try {
-            modelsStorageDir.createDir()
-            modelFile.createNewFile()
-
-            downloadModel(model).collect(::emit)
-
-            emit(DownloadModelState.Success(modelFile))
-        } catch (e: Exception) {
-            emit(DownloadModelState.Error)
-        }
+        modelsStorageDir.createDir()
+        downloadModel(model).collect(::emit)
     }.flowOn(Dispatchers.IO)
 
     private val MLModel.file get() = modelsStorageDir.resolve("$id.mnn")
