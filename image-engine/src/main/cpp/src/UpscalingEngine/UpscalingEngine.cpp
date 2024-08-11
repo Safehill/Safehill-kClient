@@ -243,10 +243,10 @@ cv::Size UpscalingEngine::copyTensorToMatRegion(cv::Size size,
         // the correct destination block size
         cv::Mat croppedTensorMat(croppedTileSize, destBlockMat.type());
 
-        // Trim padding from tensor and copy to destination block
+        // Trim padding from tensor and copy to intermediate cv::Mat
         for (int y = 0; y < croppedTileSize.height; y++) {
             for (int x = 0; x < croppedTileSize.width; x++) {
-                destBlockMat.at<cv::Vec4b>(y, x) =
+                croppedTensorMat.at<cv::Vec4b>(y, x) =
                         getColourAt(cv::Point2i(x + xPadding.first, y + yPadding.first), tensor);
             }
         }
