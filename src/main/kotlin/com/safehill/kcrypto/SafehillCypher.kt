@@ -1,11 +1,11 @@
-package com.safehill.kcrypto
+package com.safehill.kclient
 
 import at.favre.lib.hkdf.HKDF
-import com.safehill.kcrypto.models.SafehillPublicKey
-import com.safehill.kcrypto.models.SafehillSignature
-import com.safehill.kcrypto.models.ShareablePayload
-import com.safehill.kcrypto.models.SignatureVerificationError
-import com.safehill.kcrypto.models.SymmetricKey
+import com.safehill.kclient.models.SafehillPublicKey
+import com.safehill.kclient.models.SafehillSignature
+import com.safehill.kclient.models.ShareablePayload
+import com.safehill.kclient.models.SignatureVerificationError
+import com.safehill.kclient.models.SymmetricKey
 import java.security.KeyPair
 import java.security.PrivateKey
 import java.security.PublicKey

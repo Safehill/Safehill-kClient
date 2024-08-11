@@ -1,15 +1,15 @@
-package com.safehill.kcrypto.swifttests
+package com.safehill.kclient.swifttests
 
-import com.safehill.kcrypto.SafehillCypher
-import com.safehill.kcrypto.base64.base64EncodedString
-import com.safehill.kcrypto.models.EncryptedData
-import com.safehill.kcrypto.models.SafehillKeyPair
-import com.safehill.kcrypto.models.LocalCryptoUser
-import com.safehill.kcrypto.models.RemoteCryptoUser
-import com.safehill.kcrypto.models.SymmetricKey
-import com.safehill.kcrypto.models.SHUserContext
-import com.safehill.kcrypto.models.SignatureVerificationError
-import com.safehill.kcrypto.models.bytes
+import com.safehill.kclient.SafehillCypher
+import com.safehill.kclient.base64.base64EncodedString
+import com.safehill.kclient.models.EncryptedData
+import com.safehill.kclient.models.SafehillKeyPair
+import com.safehill.kclient.models.LocalCryptoUser
+import com.safehill.kclient.models.RemoteCryptoUser
+import com.safehill.kclient.models.SymmetricKey
+import com.safehill.kclient.models.SHUserContext
+import com.safehill.kclient.models.SignatureVerificationError
+import com.safehill.kclient.models.bytes
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

@@ -1,6 +1,6 @@
-package com.safehill.kcrypto.models
+package com.safehill.kclient.models
 
-import com.safehill.kcrypto.SafehillCypher
+import com.safehill.kclient.SafehillCypher
 
 class EncryptedData(
     data: ByteArray,

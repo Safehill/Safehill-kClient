@@ -8,7 +8,7 @@ import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.DecryptedAsset
 import com.safehill.kclient.network.local.EncryptionHelper
-import com.safehill.kcrypto.models.SymmetricKey
+import com.safehill.kclient.models.SymmetricKey
 
 class AssetsDownloadManager(
     safehillClient: SafehillClient

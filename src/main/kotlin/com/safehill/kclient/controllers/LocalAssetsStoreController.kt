@@ -12,7 +12,7 @@ import com.safehill.kclient.models.assets.toDecryptedAsset
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.local.EncryptionHelper
 import com.safehill.kclient.util.runCatchingPreservingCancellationException
-import com.safehill.kcrypto.models.SymmetricKey
+import com.safehill.kclient.models.SymmetricKey
 
 class LocalAssetsStoreController(
     safehillClient: SafehillClient,

@@ -57,9 +57,9 @@ import com.safehill.kclient.network.api.getOrElseOnSafehillError
 import com.safehill.kclient.network.api.getOrThrow
 import com.safehill.kclient.network.api.postForResponseObject
 import com.safehill.kclient.network.exceptions.SafehillError
-import com.safehill.kcrypto.SafehillCypher
-import com.safehill.kcrypto.models.RemoteCryptoUser
-import com.safehill.kcrypto.models.ShareablePayload
+import com.safehill.kclient.SafehillCypher
+import com.safehill.kclient.models.RemoteCryptoUser
+import com.safehill.kclient.models.ShareablePayload
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

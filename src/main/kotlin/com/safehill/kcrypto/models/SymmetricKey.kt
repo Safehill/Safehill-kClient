@@ -1,8 +1,8 @@
-package com.safehill.kcrypto.models
+package com.safehill.kclient.models
 
-import com.safehill.kcrypto.models.SymmetricKeySize.BITS_128
-import com.safehill.kcrypto.models.SymmetricKeySize.BITS_192
-import com.safehill.kcrypto.models.SymmetricKeySize.BITS_256
+import com.safehill.kclient.models.SymmetricKeySize.BITS_128
+import com.safehill.kclient.models.SymmetricKeySize.BITS_192
+import com.safehill.kclient.models.SymmetricKeySize.BITS_256
 import java.security.SecureRandom
 import javax.crypto.spec.SecretKeySpec
 

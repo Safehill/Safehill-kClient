@@ -1,4 +1,4 @@
-package com.safehill.kcrypto.base64
+package com.safehill.kclient.base64
 
 import java.util.Base64
 

@@ -27,7 +27,7 @@ import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.GlobalIdentifier
 import com.safehill.kclient.network.exceptions.SafehillError
-import com.safehill.kcrypto.models.LocalCryptoUser
+import com.safehill.kclient.models.LocalCryptoUser
 import java.time.Instant
 
 class LocalServerInterfaceImpl : LocalServerInterface {
