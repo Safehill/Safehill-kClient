@@ -39,6 +39,11 @@ internal class ImageFilterWorker(
     private val notificationManager = NotificationManagerCompat.from(appContext)
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
+        // Avoid re-launching work after crash
+        if (runAttemptCount > 0) {
+            return@withContext Result.failure()
+        }
+
         markAsForeground()
 
         val inputBitmap = readInputBitmap() ?: return@withContext Result.failure()
