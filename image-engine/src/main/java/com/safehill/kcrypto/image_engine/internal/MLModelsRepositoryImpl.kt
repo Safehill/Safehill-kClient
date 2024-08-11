@@ -50,11 +50,12 @@ internal class MLModelsRepositoryImpl(context: Context): MLModelsRepository {
                 trySend(DownloadModelState.Success(modelFile))
             } catch (e: Exception) {
                 if (e is CancellationException) {
+                    modelFile.delete()
                     throw e
+                } else {
+                    trySend(DownloadModelState.Error)
+                    modelFile.delete()
                 }
-                trySend(DownloadModelState.Error)
-            } finally {
-                modelFile.delete()
             }
         }
     }
