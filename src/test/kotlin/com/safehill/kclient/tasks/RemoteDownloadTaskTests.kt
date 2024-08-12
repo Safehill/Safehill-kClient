@@ -14,7 +14,7 @@ import com.safehill.kclient.network.local.LocalServerInterfaceImpl
 import com.safehill.kclient.network.remote.RemoteServer
 import com.safehill.kclient.tasks.inbound.DownloadOperationListener
 import com.safehill.kclient.tasks.inbound.RemoteDownloadOperation
-import com.safehill.kcrypto.models.LocalCryptoUser
+import com.safehill.kclient.models.LocalCryptoUser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

@@ -9,9 +9,9 @@ import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.util.safeApiCall
-import com.safehill.kcrypto.base64.base64EncodedString
-import com.safehill.kcrypto.models.EncryptedData
-import com.safehill.kcrypto.models.SymmetricKey
+import com.safehill.kclient.base64.base64EncodedString
+import com.safehill.kclient.models.EncryptedData
+import com.safehill.kclient.models.SymmetricKey
 import java.util.Base64
 
 /**

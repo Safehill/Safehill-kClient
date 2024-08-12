@@ -1,4 +1,4 @@
-package com.safehill.kcrypto
+package com.safehill.kclient
 
 import dev.turingcomplete.kotlinonetimepassword.HmacAlgorithm
 import dev.turingcomplete.kotlinonetimepassword.TimeBasedOneTimePasswordConfig

@@ -5,7 +5,7 @@ import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.network.SafehillApi
-import com.safehill.kcrypto.models.SymmetricKey
+import com.safehill.kclient.models.SymmetricKey
 
 interface LocalServerInterface : SafehillApi, LocalAssetApi {
     suspend fun createOrUpdateUser(
@@ -24,12 +24,5 @@ interface LocalServerInterface : SafehillApi, LocalAssetApi {
     suspend fun upsertUsers(remoteUsers: List<RemoteUser>)
 
     suspend fun deleteThreads(threadIds: List<String>)
-
-    suspend fun getEncryptionKey(globalIdentifier: AssetGlobalIdentifier): SymmetricKey?
-
-    suspend fun saveEncryptionKey(
-        globalIdentifier: AssetGlobalIdentifier,
-        symmetricKey: SymmetricKey
-    )
 
 }

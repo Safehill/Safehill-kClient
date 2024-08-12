@@ -1,11 +1,11 @@
 package com.safehill.kclient.models.dtos
 
+import com.safehill.kclient.SafehillCypher
+import com.safehill.kclient.base64.decodeBase64
+import com.safehill.kclient.models.SafehillPublicKey
+import com.safehill.kclient.models.SymmetricKey
 import com.safehill.kclient.models.serde.InstantSerializer
 import com.safehill.kclient.models.users.LocalUser
-import com.safehill.kcrypto.SafehillCypher
-import com.safehill.kcrypto.base64.decodeBase64
-import com.safehill.kcrypto.models.SafehillPublicKey
-import com.safehill.kcrypto.models.SymmetricKey
 import kotlinx.serialization.Serializable
 import java.time.Instant
 

@@ -2,7 +2,7 @@ package com.safehill.kclient.models.assets
 
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
-import com.safehill.kcrypto.models.ShareablePayload
+import com.safehill.kclient.models.ShareablePayload
 import java.time.Instant
 
 data class EncryptedAsset(

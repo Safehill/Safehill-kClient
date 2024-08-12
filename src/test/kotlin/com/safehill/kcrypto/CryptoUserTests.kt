@@ -1,6 +1,6 @@
-package com.safehill.kcrypto
+package com.safehill.kclient
 
-import com.safehill.kcrypto.models.SafehillHash
+import com.safehill.kclient.models.SafehillHash
 import org.junit.jupiter.api.Test
 import java.util.*
 import kotlin.test.assertEquals

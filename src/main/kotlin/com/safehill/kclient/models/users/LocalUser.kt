@@ -2,10 +2,10 @@ package com.safehill.kclient.models.users
 
 import com.safehill.kclient.models.dtos.AuthResponseDTO
 import com.safehill.kclient.models.dtos.BearerToken
-import com.safehill.kcrypto.models.CryptoUser
-import com.safehill.kcrypto.models.LocalCryptoUser
-import com.safehill.kcrypto.models.SHUserContext
-import com.safehill.kcrypto.models.ShareablePayload
+import com.safehill.kclient.models.CryptoUser
+import com.safehill.kclient.models.LocalCryptoUser
+import com.safehill.kclient.models.SHUserContext
+import com.safehill.kclient.models.ShareablePayload
 import java.security.PublicKey
 import java.util.Base64
 

@@ -37,6 +37,7 @@ class S3Proxy {
             url: String
         ) {
             url.httpPut()
+                .body(data)
                 .response()
                 .getOrThrow()
         }

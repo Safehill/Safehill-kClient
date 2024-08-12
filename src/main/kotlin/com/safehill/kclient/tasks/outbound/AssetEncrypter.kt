@@ -6,9 +6,9 @@ import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.assets.EncryptedAssetVersion
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.utils.ImageResizerInterface
-import com.safehill.kcrypto.SafehillCypher
-import com.safehill.kcrypto.models.SymmetricKey
-import com.safehill.kcrypto.models.bytes
+import com.safehill.kclient.SafehillCypher
+import com.safehill.kclient.models.SymmetricKey
+import com.safehill.kclient.models.bytes
 
 class AssetEncrypter(
     private val resizer: ImageResizerInterface,

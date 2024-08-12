@@ -10,11 +10,13 @@ import com.safehill.kclient.models.assets.DecryptedAsset
 import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.assets.toDecryptedAsset
 import com.safehill.kclient.models.users.ServerUser
+import com.safehill.kclient.network.local.EncryptionHelper
 import com.safehill.kclient.util.runCatchingPreservingCancellationException
-import com.safehill.kcrypto.models.SymmetricKey
+import com.safehill.kclient.models.SymmetricKey
 
 class LocalAssetsStoreController(
-    safehillClient: SafehillClient
+    safehillClient: SafehillClient,
+    private var encryptionHelper: EncryptionHelper
 ) {
     private val serverProxy = safehillClient.serverProxy
     private val currentUser = safehillClient.currentUser
@@ -80,14 +82,14 @@ class LocalAssetsStoreController(
 
 
     suspend fun encryptionKey(globalIdentifier: AssetGlobalIdentifier): SymmetricKey? {
-        return serverProxy.localServer.getEncryptionKey(globalIdentifier)
+        return encryptionHelper.getEncryptionKey(globalIdentifier)
     }
 
     suspend fun saveEncryptionKey(
         globalIdentifier: AssetGlobalIdentifier,
         symmetricKey: SymmetricKey
     ) {
-        serverProxy.localServer.saveEncryptionKey(globalIdentifier, symmetricKey)
+        encryptionHelper.saveEncryptionKey(globalIdentifier, symmetricKey)
     }
 
 }
