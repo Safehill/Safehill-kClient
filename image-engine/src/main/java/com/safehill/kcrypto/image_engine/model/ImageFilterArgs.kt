@@ -2,7 +2,7 @@ package com.safehill.kcrypto.image_engine.model
 
 import android.net.Uri
 
-data class ImageFilterConfig(
+data class ImageFilterArgs(
     val inputImage: Uri,
     val type: Type
 ) {

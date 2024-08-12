@@ -19,7 +19,7 @@ import com.safehill.kcrypto.image_engine.R
 import com.safehill.kcrypto.image_engine.jni.JNIProgressTracker
 import com.safehill.kcrypto.image_engine.jni.UpscalingEngine
 import com.safehill.kcrypto.image_engine.model.DownloadModelState
-import com.safehill.kcrypto.image_engine.model.ImageFilterConfig
+import com.safehill.kcrypto.image_engine.model.ImageFilterArgs
 import com.safehill.kcrypto.image_engine.model.ImageFilterWorkState
 import com.safehill.kcrypto.image_engine.model.MLModel
 import kotlinx.coroutines.Dispatchers
@@ -168,10 +168,10 @@ internal class ImageFilterWorker(
 
     private companion object {
 
-        val ImageFilterConfig.Type.mlModel get() = when (this) {
-            ImageFilterConfig.Type.Cuphead -> MLModel.Cuphead
-            ImageFilterConfig.Type.Mosaic -> MLModel.Mosaic
-            ImageFilterConfig.Type.StarryNight -> MLModel.StarryNight
+        val ImageFilterArgs.Type.mlModel get() = when (this) {
+            ImageFilterArgs.Type.Cuphead -> MLModel.Cuphead
+            ImageFilterArgs.Type.Mosaic -> MLModel.Mosaic
+            ImageFilterArgs.Type.StarryNight -> MLModel.StarryNight
         }
 
         const val IMAGE_PROCESSING_NOTIFICATION_CHANNEL_ID = "image_processing"
