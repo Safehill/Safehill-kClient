@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.net.Uri
 import android.os.Environment
 import android.os.SystemClock
 import android.provider.MediaStore
@@ -47,6 +48,37 @@ internal class ImageFilterWorker(
         markAsForeground()
 
         val inputBitmap = readInputBitmap() ?: return@withContext Result.failure()
+        val modelFile = when (val it = downloadMLModel()) {
+            DownloadModelState.Error -> return@withContext Result.failure()
+            is DownloadModelState.Loading -> throw IllegalStateException("Download model ended with $it")
+            is DownloadModelState.Success -> it.file
+        }
+        val upscalingEngine = UpscalingEngine(modelFile, 1, 0)
+
+        try {
+            val jniProgressTracker = JNIProgressTracker()
+            val inferenceProgressJob = launch { emitProgressFromTracker(jniProgressTracker) }
+            val startTime = SystemClock.elapsedRealtime()
+
+            // Reuse inputBitmap to save memory since both input and output have the same resolution
+            upscalingEngine.runUpscaling(
+                progressTracker = jniProgressTracker,
+                coroutineScope = this,
+                inputBitmap = inputBitmap,
+                outputBitmap = inputBitmap,
+                placeholderColour = Color.WHITE
+            )
+            println("Inference time = ${SystemClock.elapsedRealtime() - startTime}ms")
+
+            inferenceProgressJob.cancelAndJoin()
+
+            saveOutputBitmap(inputBitmap)?.let { Result.success() } ?: Result.failure()
+        } finally {
+            upscalingEngine.freeResources()
+        }
+    }
+
+    private suspend fun downloadMLModel(): DownloadModelState {
         lateinit var result: DownloadModelState
 
         mlModelsRepository.getOrDownloadModel(config.type.mlModel).collect {
@@ -70,54 +102,39 @@ internal class ImageFilterWorker(
             }
         }
 
-        val modelFile = when (val it = result) {
-            DownloadModelState.Error -> return@withContext Result.failure()
-            is DownloadModelState.Loading -> throw IllegalStateException("Download model ended with $it")
-            is DownloadModelState.Success -> it.file
-        }
-        val upscalingEngine = UpscalingEngine(modelFile, 1, 0)
-        val jniProgressTracker = JNIProgressTracker()
-        val inferenceProgressJob = launch {
+        return result
+    }
+
+    private suspend fun emitProgressFromTracker(jniProgressTracker: JNIProgressTracker) {
+        setProgress(
+            ImageFilterWorkStateUtils.toProgressData(
+                ImageFilterWorkState.Running(
+                    ImageFilterWorkState.Running.INDETERMINATE_PROGRESS_VALUE,
+                    ImageFilterWorkState.Running.Step.ProcessImage
+                )
+            )
+        )
+
+        jniProgressTracker.progressFlow.collect {
+            val progress = if (it.value == JNIProgressTracker.INDETERMINATE_PROGRESS) {
+                ImageFilterWorkState.Running.INDETERMINATE_PROGRESS_VALUE
+            } else {
+                it.value / 100
+            }
+
             setProgress(
                 ImageFilterWorkStateUtils.toProgressData(
                     ImageFilterWorkState.Running(
-                        ImageFilterWorkState.Running.INDETERMINATE_PROGRESS_VALUE,
+                        progress,
                         ImageFilterWorkState.Running.Step.ProcessImage
                     )
                 )
             )
-
-            jniProgressTracker.progressFlow.collect {
-                val progress = if (it.value == JNIProgressTracker.INDETERMINATE_PROGRESS) {
-                    ImageFilterWorkState.Running.INDETERMINATE_PROGRESS_VALUE
-                } else {
-                    it.value / 100
-                }
-
-                setProgress(
-                    ImageFilterWorkStateUtils.toProgressData(
-                        ImageFilterWorkState.Running(
-                            progress,
-                            ImageFilterWorkState.Running.Step.ProcessImage
-                        )
-                    )
-                )
-            }
         }
+    }
 
-        val startTime = SystemClock.elapsedRealtime()
-        // Reuse inputBitmap to save memory since both input and output have the same resolution
-        upscalingEngine.runUpscaling(
-            progressTracker = jniProgressTracker,
-            coroutineScope = this,
-            inputBitmap = inputBitmap,
-            outputBitmap = inputBitmap,
-            placeholderColour = Color.WHITE
-        )
-        println("Inference time = ${SystemClock.elapsedRealtime() - startTime}ms")
-
-        inferenceProgressJob.cancelAndJoin()
-
+    // TODO: implement write output bitmap on pre-Q devices (since they don't have scoped storage)
+    private fun saveOutputBitmap(bitmap: Bitmap): Uri? {
         val targetUri = applicationContext.contentResolver.insert(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             ContentValues().apply {
@@ -128,12 +145,13 @@ internal class ImageFilterWorker(
                     "${Environment.DIRECTORY_PICTURES}${File.separatorChar}Snoog"
                 )
             }
-        )
-        applicationContext.contentResolver.openOutputStream(requireNotNull(targetUri))?.use {
-            inputBitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
-        }
+        ) ?: return null
 
-        Result.success()
+        val writeSuccess = applicationContext.contentResolver.openOutputStream(targetUri)?.use {
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+        } ?: false
+
+        return targetUri.takeIf { writeSuccess }
     }
 
     private fun registerNotificationChannel() {
