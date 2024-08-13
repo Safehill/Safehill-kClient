@@ -230,9 +230,7 @@ class UploadOperationImpl(
         }
     }
 
-    override fun stop() {
-        scope.cancel()
-    }
+    override fun stop() {}
 
     override suspend fun run() {
         for(queueItem in outboundQueueItems) {

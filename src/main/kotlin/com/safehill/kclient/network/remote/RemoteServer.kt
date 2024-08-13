@@ -65,6 +65,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
@@ -516,21 +517,22 @@ class RemoteServer(
         }
 
         val remoteServer = this
-        val coroutineScope = CoroutineScope(Job() + Dispatchers.IO)
         val deferredResults = encryptedVersionByPresignedURL.map { kv ->
-            coroutineScope.async {
-                val presignedURL = kv.key
-                val encryptedVersion = kv.value
-                try {
-                    S3Proxy.upload(encryptedVersion.encryptedData, presignedURL)
-                } catch (exception: Exception) {
-                    print(exception)
+            coroutineScope {
+                async {
+                    val presignedURL = kv.key
+                    val encryptedVersion = kv.value
+                    try {
+                        S3Proxy.upload(encryptedVersion.encryptedData, presignedURL)
+                    } catch (exception: Exception) {
+                        print(exception)
+                    }
+                    remoteServer.markAsset(
+                        asset.globalIdentifier,
+                        encryptedVersion.quality,
+                        AssetDescriptorUploadState.Completed
+                    )
                 }
-                remoteServer.markAsset(
-                    asset.globalIdentifier,
-                    encryptedVersion.quality,
-                    AssetDescriptorUploadState.Completed
-                )
             }
         }
         deferredResults
