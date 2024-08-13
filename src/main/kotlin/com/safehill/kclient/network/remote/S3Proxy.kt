@@ -22,10 +22,11 @@ class S3Proxy {
     companion object {
 
         suspend fun uploadData(dataByPresignedURL: Map<String, ByteArray>) {
-            val coroutineScope = CoroutineScope(Job() + Dispatchers.IO)
             val deferredResults = dataByPresignedURL.map { kv ->
-                coroutineScope.async {
-                    upload(kv.value, kv.key)
+                coroutineScope {
+                    async {
+                        upload(kv.value, kv.key)
+                    }
                 }
             }
             deferredResults
