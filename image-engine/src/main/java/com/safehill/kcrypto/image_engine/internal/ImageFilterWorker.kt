@@ -68,11 +68,15 @@ internal class ImageFilterWorker(
                 outputBitmap = inputBitmap,
                 placeholderColour = Color.WHITE
             )
-            println("Inference time = ${SystemClock.elapsedRealtime() - startTime}ms")
+            val executionTime = SystemClock.elapsedRealtime() - startTime
+
+            println("Inference time = ${executionTime}ms")
 
             inferenceProgressJob.cancelAndJoin()
 
-            saveOutputBitmap(inputBitmap)?.let { Result.success() } ?: Result.failure()
+            saveOutputBitmap(inputBitmap)?.let {
+                Result.success(ImageFilterWorkStateUtils.toSuccessResultData(it, executionTime))
+            } ?: Result.failure()
         } finally {
             upscalingEngine.freeResources()
         }

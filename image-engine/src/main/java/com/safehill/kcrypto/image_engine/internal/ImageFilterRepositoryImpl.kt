@@ -44,7 +44,7 @@ internal class ImageFilterRepositoryImpl(context: Context): ImageFilterRepositor
                     }
                 )
                 WorkInfo.State.SUCCEEDED -> {
-                    emit(ImageFilterWorkState.Success)
+                    emit(ImageFilterWorkStateUtils.fromSuccessResultData(workInfoOfRequest.outputData))
                     currentCoroutineContext().cancel(WorkTerminatedCancellationException())
                 }
                 WorkInfo.State.FAILED ->  {

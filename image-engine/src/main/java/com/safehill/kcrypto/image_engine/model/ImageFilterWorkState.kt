@@ -1,5 +1,7 @@
 package com.safehill.kcrypto.image_engine.model
 
+import android.net.Uri
+
 sealed interface ImageFilterWorkState {
 
     data class Running(
@@ -16,7 +18,7 @@ sealed interface ImageFilterWorkState {
 
     data object Queued: ImageFilterWorkState
 
-    data object Success: ImageFilterWorkState
+    data class Success(val outputImageUri: Uri, val executionTime: Long): ImageFilterWorkState
 
     data object Error: ImageFilterWorkState
 }
