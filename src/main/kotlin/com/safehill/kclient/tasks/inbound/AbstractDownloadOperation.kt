@@ -4,7 +4,6 @@ import com.safehill.SafehillClient
 import com.safehill.kclient.controllers.AssetsDownloadManager
 import com.safehill.kclient.errors.DownloadError
 import com.safehill.kclient.models.assets.AssetDescriptor
-import com.safehill.kclient.models.assets.DecryptedAsset
 import com.safehill.kclient.models.assets.LibraryPhoto
 import com.safehill.kclient.network.GlobalIdentifier
 import com.safehill.kclient.tasks.BackgroundTask
@@ -26,10 +25,8 @@ abstract class AbstractDownloadOperation(
     override suspend fun run() {
         try {
             val descriptors = getDescriptors()
-            if (descriptors.isNotEmpty()) {
-                processAssetsInDescriptors(
-                    descriptors = descriptors
-                )
+            descriptors.forEach {
+                it.informDelegates()
             }
         } catch (e: Exception) {
             println("Error in download operation:$e " + e.message)
@@ -64,7 +61,7 @@ abstract class AbstractDownloadOperation(
                     assetsDownloadManager.downloadAsset(
                         descriptor = descriptor
                     ).onSuccess { decryptedAsset ->
-                        decryptedAsset.informDelegates()
+//                        decryptedAsset.informDelegates(descriptor)
                     }.onFailure { error ->
                         error.handleDownloadError(
                             descriptor = descriptor
@@ -75,7 +72,7 @@ abstract class AbstractDownloadOperation(
         }
     }
 
-    private fun DecryptedAsset.informDelegates() {
+    private fun AssetDescriptor.informDelegates() {
         listeners.forEach { it.fetched(this) }
     }
 

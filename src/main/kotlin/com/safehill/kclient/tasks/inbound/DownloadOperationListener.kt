@@ -1,6 +1,6 @@
 package com.safehill.kclient.tasks.inbound
 
-import com.safehill.kclient.models.assets.DecryptedAsset
+import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.LibraryPhoto
 import com.safehill.kclient.network.GlobalIdentifier
 
@@ -8,7 +8,7 @@ import com.safehill.kclient.network.GlobalIdentifier
 interface DownloadOperationListener {
 
     fun fetched(
-        decryptedAsset: DecryptedAsset
+        assetDescriptor: AssetDescriptor,
     )
 
     fun didIdentify(libraryPhotos: Map<GlobalIdentifier,LibraryPhoto>)

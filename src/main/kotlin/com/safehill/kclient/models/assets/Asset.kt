@@ -16,17 +16,18 @@ sealed class Asset {
         val libraryPhoto: LibraryPhoto
     ) : Asset()
 
-    data class Downloading(
-        val globalIdentifier: AssetGlobalIdentifier
-    ) : Asset()
 
-    data class Downloaded(val decryptedAsset: DecryptedAsset) : Asset()
+    data class Downloaded(
+        val globalIdentifier: AssetGlobalIdentifier,
+        val descriptor: AssetDescriptor? = null
+    ) : Asset() {
+        constructor(descriptor: AssetDescriptor) : this(descriptor.globalIdentifier, descriptor)
+    }
 
     val debugType: String
         get() = when (this) {
             is FromPhotosLibrary -> "FromPhotosLibrary"
             is BackedUpLibraryPhoto -> "BackedUpLibraryPhoto"
-            is Downloading -> "downloading"
             is Downloaded -> "downloaded"
         }
 
@@ -34,8 +35,7 @@ sealed class Asset {
         get() = when (this) {
             is FromPhotosLibrary -> libraryPhoto.localIdentifier
             is BackedUpLibraryPhoto -> globalIdentifier
-            is Downloading -> globalIdentifier
-            is Downloaded -> decryptedAsset.globalIdentifier
+            is Downloaded -> globalIdentifier
         }
 
     val isFromLocalLibrary: Boolean
@@ -44,12 +44,10 @@ sealed class Asset {
             else -> false
         }
 
-    val isDownloading: Boolean
-        get() = this is Downloading
 
     val isFromRemoteLibrary: Boolean
         get() = when (this) {
-            is Downloaded, is BackedUpLibraryPhoto, is Downloading -> true
+            is Downloaded, is BackedUpLibraryPhoto -> true
             else -> false
         }
 
@@ -87,7 +85,7 @@ sealed class Asset {
         get() = when (this) {
             is FromPhotosLibrary -> libraryPhoto.creationDate
             is BackedUpLibraryPhoto -> libraryPhoto.creationDate
-            is Downloaded -> decryptedAsset.creationDate
+            is Downloaded -> null
             else -> null
         }
 
