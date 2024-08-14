@@ -66,6 +66,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
@@ -517,9 +518,9 @@ class RemoteServer(
         }
 
         val remoteServer = this
-        val deferredResults = encryptedVersionByPresignedURL.map { kv ->
-            coroutineScope {
-                async {
+        coroutineScope {
+            encryptedVersionByPresignedURL.map { kv ->
+                launch {
                     val presignedURL = kv.key
                     val encryptedVersion = kv.value
                     try {
@@ -535,8 +536,6 @@ class RemoteServer(
                 }
             }
         }
-        deferredResults
-            .awaitAll()
     }
 
     override suspend fun markAsset(

@@ -15,6 +15,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class S3Proxy {
@@ -22,15 +23,13 @@ class S3Proxy {
     companion object {
 
         suspend fun uploadData(dataByPresignedURL: Map<String, ByteArray>) {
-            val deferredResults = dataByPresignedURL.map { kv ->
-                coroutineScope {
-                    async {
+            coroutineScope {
+                dataByPresignedURL.map { kv ->
+                    launch {
                         upload(kv.value, kv.key)
                     }
                 }
             }
-            deferredResults
-                .awaitAll()
         }
 
         suspend fun upload(
