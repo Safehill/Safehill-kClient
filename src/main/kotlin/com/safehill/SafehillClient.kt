@@ -52,7 +52,8 @@ class SafehillClient private constructor(
             this.host = remoteServerEnvironment.hostName
             this.protocol = when (remoteServerEnvironment) {
                 is RemoteServerEnvironment.Development -> URLProtocol.WS
-                RemoteServerEnvironment.Production -> URLProtocol.WSS
+                RemoteServerEnvironment.Production,
+                RemoteServerEnvironment.Staging -> URLProtocol.WSS
             }
             this.port = remoteServerEnvironment.port
         }.build()
@@ -61,7 +62,8 @@ class SafehillClient private constructor(
             this.host = remoteServerEnvironment.hostName
             this.protocol = when (remoteServerEnvironment) {
                 is RemoteServerEnvironment.Development -> URLProtocol.HTTP
-                RemoteServerEnvironment.Production -> URLProtocol.HTTPS
+                RemoteServerEnvironment.Production,
+                RemoteServerEnvironment.Staging -> URLProtocol.HTTPS
             }
             this.port = remoteServerEnvironment.port
         }
