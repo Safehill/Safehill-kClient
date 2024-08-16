@@ -53,4 +53,5 @@ dependencies {
     implementation("io.ktor:ktor-client-cio:$ktor_version")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
     implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("com.jakewharton.timber:timber:5.0.1")
 }

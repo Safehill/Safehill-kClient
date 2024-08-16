@@ -28,7 +28,10 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import java.io.File
+import java.util.UUID
 
+// TODO: improve temp file handling, currently there is no logic to delete them when app crashes
+// while a model is being downloaded
 internal class MLModelsRepositoryImpl(context: Context): MLModelsRepository {
 
     private val httpClient by lazy {
@@ -39,6 +42,7 @@ internal class MLModelsRepositoryImpl(context: Context): MLModelsRepository {
         }
     }
     private val modelsStorageDir = context.cacheDir.resolve("image-models")
+    private val tmpDownloadDir = context.noBackupFilesDir.resolve("tmp-models")
 
     private fun downloadModel(model: MLModel): Flow<DownloadModelState> = channelFlow {
         httpClient.prepareGet(model.url).execute { response ->
@@ -48,7 +52,8 @@ internal class MLModelsRepositoryImpl(context: Context): MLModelsRepository {
                 return@execute
             }
 
-            val modelFile = model.file
+            val tmpFile = tmpDownloadDir.resolve(UUID.randomUUID().toString())
+            val targetFile = model.file
 
             try {
                 val channel = response.bodyAsChannel()
@@ -56,9 +61,9 @@ internal class MLModelsRepositoryImpl(context: Context): MLModelsRepository {
                 val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
                 val bufferSize = buffer.size.toLong()
 
-                modelFile.createNewFile()
+                tmpFile.createNewFile()
                 trySend(DownloadModelState.Loading(0, totalBytes))
-                modelFile.outputStream().use {
+                tmpFile.outputStream().use {
                     var startTime = SystemClock.elapsedRealtime()
 
                     while (!channel.isClosedForRead) {
@@ -78,15 +83,20 @@ internal class MLModelsRepositoryImpl(context: Context): MLModelsRepository {
                         }
                     }
                 }
-                trySend(DownloadModelState.Success(modelFile))
-            } catch (e: Exception) {
-                if (e is CancellationException) {
-                    modelFile.delete()
-                    throw e
+
+                // Move downloaded model to final location
+                if (tmpFile.renameTo(targetFile)) {
+                    trySend(DownloadModelState.Success(targetFile))
                 } else {
                     trySend(DownloadModelState.Error)
-                    modelFile.delete()
                 }
+            } catch (e: Exception) {
+                when(e) {
+                    is CancellationException -> throw e
+                    else -> trySend(DownloadModelState.Error)
+                }
+            } finally {
+                tmpFile.delete()
             }
         }
     }
@@ -101,6 +111,7 @@ internal class MLModelsRepositoryImpl(context: Context): MLModelsRepository {
         }
 
         modelsStorageDir.createDir()
+        tmpDownloadDir.createDir()
         downloadModel(model).collect(::emit)
     }.flowOn(Dispatchers.IO)
 
