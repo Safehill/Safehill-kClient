@@ -8,6 +8,12 @@ import kotlinx.coroutines.flow.Flow
 
 interface ImageFilterRepository {
 
+    /**
+     * Apply a filter on a image with the given [ImageFilterArgs] using a background worker
+     *
+     * @return a [Flow] emitting the state of the work. NOTE: the worker will be cancelled
+     * if the flow collector is cancelled before it's completion
+     */
     fun applyFilterAsync(config: ImageFilterArgs): Flow<ImageFilterWorkState>
 }
 

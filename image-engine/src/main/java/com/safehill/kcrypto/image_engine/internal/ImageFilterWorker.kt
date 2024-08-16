@@ -45,6 +45,8 @@ internal class ImageFilterWorker(
             return@withContext Result.failure()
         }
 
+        // Since this is a compute intensive task that might run for a long time, it's better to
+        // run it as foreground work
         markAsForeground()
 
         val inputBitmap = readInputBitmap() ?: return@withContext Result.failure()
@@ -69,8 +71,6 @@ internal class ImageFilterWorker(
                 placeholderColour = Color.WHITE
             )
             val executionTime = SystemClock.elapsedRealtime() - startTime
-
-            println("Inference time = ${executionTime}ms")
 
             inferenceProgressJob.cancelAndJoin()
 
@@ -186,7 +186,17 @@ internal class ImageFilterWorker(
 
     private fun readInputBitmap(): Bitmap? = applicationContext.contentResolver
         .openInputStream(config.inputImage)
-        .use(BitmapFactory::decodeStream)
+        .use(BitmapFactory::decodeStream)?.let { decodedBitmap ->
+            if (decodedBitmap.config == Bitmap.Config.ARGB_8888) {
+                decodedBitmap
+            } else {
+                val convertedBitmap = decodedBitmap.copy(Bitmap.Config.ARGB_8888, true)
+
+                decodedBitmap.recycle()
+
+                convertedBitmap
+            }
+        }
 
     private companion object {
 

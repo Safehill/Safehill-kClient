@@ -6,7 +6,8 @@ import java.io.File
 import java.nio.ByteBuffer
 
 /**
- * For now we don't have to worry about concurrency
+ * JNI bridge to the native UpscalingEngine implementation that can be used run inference
+ * with a pretrained model in MNN format. The model must contain a single RGB input and output
  *
  * @param modelFile the pretrained model to use in .mnn format
  * @param scale expected upscaling factor of the model
@@ -42,6 +43,9 @@ class UpscalingEngine(val modelFile: File, val scale: Int, val tileSize: Int) {
         outputBitmap: Bitmap
     ): Int
 
+    /**
+     * Run inference the [inputBitmap] and [outputBitmap] must use [Bitmap.Config.ARGB_8888]
+     */
     fun runUpscaling(
         progressTracker: JNIProgressTracker,
         coroutineScope: CoroutineScope,
@@ -49,6 +53,13 @@ class UpscalingEngine(val modelFile: File, val scale: Int, val tileSize: Int) {
         outputBitmap: Bitmap,
         placeholderColour: Int,
     ): MNNInterpreterError? {
+        require(inputBitmap.config == Bitmap.Config.ARGB_8888) {
+            "Input bitmap must have ARGB_8888 config"
+        }
+        require(outputBitmap.config == Bitmap.Config.ARGB_8888) {
+            "Output bitmap must have ARGB_8888 config"
+        }
+
         if (enginePtr == 0L) {
             val errorValue = ByteBuffer.allocateDirect(1)
             enginePtr = createUpscalingEngineFile(
