@@ -1,77 +1,105 @@
 package com.safehill.kclient.tasks.inbound
 
+import com.safehill.SafehillClient
+import com.safehill.kclient.controllers.AssetsDownloadManager
+import com.safehill.kclient.errors.DownloadError
 import com.safehill.kclient.models.assets.AssetDescriptor
-import com.safehill.kclient.models.assets.AssetQuality
-import com.safehill.kclient.models.assets.DecryptedAssetImpl
-import com.safehill.kclient.models.users.ServerUser
-import com.safehill.kclient.models.users.UserIdentifier
+import com.safehill.kclient.models.assets.DecryptedAsset
+import com.safehill.kclient.models.assets.LibraryPhoto
+import com.safehill.kclient.network.GlobalIdentifier
 import com.safehill.kclient.tasks.BackgroundTask
-import com.safehill.kcrypto.models.ShareablePayload
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 
-abstract class AbstractDownloadOperation : DownloadOperation, BackgroundTask {
+abstract class AbstractDownloadOperation(
+    safehillClient: SafehillClient
+) : DownloadOperation, BackgroundTask {
 
-    suspend fun getUsersInDescriptors(descriptors: List<AssetDescriptor>): Map<UserIdentifier, ServerUser> {
-        val userIds = descriptors
-            .map { d -> d.sharingInfo.sharedByUserIdentifier }
-            .distinct()
-        return this.getUsers(userIds)
-    }
+    private val assetsDownloadManager: AssetsDownloadManager = AssetsDownloadManager(
+        safehillClient
+    )
+
+    abstract val libraryPhotoProvider: LibraryPhotoProvider
+
+    abstract suspend fun getDescriptors(): List<AssetDescriptor>
 
     override suspend fun run() {
         try {
             val descriptors = getDescriptors()
-            val users = this.getUsersInDescriptors(descriptors)
-
-            listeners.forEach { listener ->
-                listener.received(
-                    descriptors,
-                    referencingUsers = users
+            if (descriptors.isNotEmpty()) {
+                processAssetsInDescriptors(
+                    descriptors = descriptors
                 )
             }
-
-            if (descriptors.isNotEmpty()) {
-                process(descriptors)
-            }
         } catch (e: Exception) {
-            println(e.message)
+            println("Error in download operation:$e " + e.message)
         }
     }
 
-    override suspend fun processAssetsInDescriptors(descriptors: List<AssetDescriptor>) {
-        val allUsersDict = this.getUsersInDescriptors(descriptors)
-        val quality = AssetQuality.LowResolution
-        val assetGIds = descriptors.map { it.globalIdentifier }.distinct()
-        val assetsDict = this.getEncryptedAssets(assetGIds, versions = listOf(quality))
+    private suspend fun List<AssetDescriptor>.filterBackedUpAssetsAndInform(): List<AssetDescriptor> {
+        val libraryAssets = libraryPhotoProvider.getLocalPhotos()
+        val libraryAssetWithLocalIdentifier = libraryAssets.associateBy { it.localIdentifier }
 
-        descriptors.forEach { descriptor ->
-            allUsersDict[descriptor.sharingInfo.sharedByUserIdentifier]?.let { senderUser ->
-                assetsDict[descriptor.globalIdentifier]?.let { encryptedAsset ->
-                    encryptedAsset.encryptedVersions[quality]?.let { assetVersion ->
-                        val sharedSecret = ShareablePayload(
-                            ephemeralPublicKeyData = assetVersion.publicKeyData,
-                            ciphertext = assetVersion.encryptedSecret,
-                            signature = assetVersion.publicSignatureData,
-                            recipient = this.user
-                        )
-                        val decryptedData = this.user.decrypted(
-                            assetVersion.encryptedData,
-                            encryptedSecret = sharedSecret,
-                            protocolSalt = this.user.encryptionSalt,
-                            receivedFrom = senderUser
-                        )
-                        val decryptedAsset = DecryptedAssetImpl(
-                            encryptedAsset.globalIdentifier,
-                            encryptedAsset.localIdentifier,
-                            encryptedAsset.creationDate,
-                            decryptedVersions = mapOf(quality to decryptedData)
-                        )
+        val remoteAssets = this
+        val backedUpAssets = mutableMapOf<GlobalIdentifier, LibraryPhoto>()
+        val nonBackedUpAssets = mutableListOf<AssetDescriptor>()
 
-                        listeners.forEach { it.fetched(decryptedAsset) }
+        remoteAssets.forEach { remoteAsset ->
+            val backedUpAsset = libraryAssetWithLocalIdentifier[remoteAsset.localIdentifier]
+            if (backedUpAsset != null) {
+                backedUpAssets[remoteAsset.globalIdentifier] = backedUpAsset
+            } else {
+                nonBackedUpAssets.add(remoteAsset)
+            }
+        }
+        listeners.forEach { it.didIdentify(backedUpAssets) }
+        return nonBackedUpAssets
+    }
 
-                        RemoteDownloadOperation.alreadyProcessed.add(descriptor.globalIdentifier)
+    private suspend fun processAssetsInDescriptors(descriptors: List<AssetDescriptor>) {
+        coroutineScope {
+            val downloadableDescriptors = descriptors.filterBackedUpAssetsAndInform()
+            downloadableDescriptors.forEach { descriptor ->
+                launch {
+                    assetsDownloadManager.downloadAsset(
+                        descriptor = descriptor
+                    ).onSuccess { decryptedAsset ->
+                        decryptedAsset.informDelegates()
+                    }.onFailure { error ->
+                        error.handleDownloadError(
+                            descriptor = descriptor
+                        )
                     }
                 }
             }
         }
     }
+
+    private fun DecryptedAsset.informDelegates() {
+        listeners.forEach { it.fetched(this) }
+    }
+
+
+    private fun Throwable.handleDownloadError(
+        descriptor: AssetDescriptor
+    ) {
+        if (this is DownloadError.IsBlacklisted) {
+            listeners.forEach {
+                it.didFailRepeatedlyDownloadOfAsset(
+                    globalIdentifier = descriptor.globalIdentifier,
+                )
+            }
+        } else {
+            listeners.forEach {
+                it.didFailDownloadOfAsset(
+                    globalIdentifier = descriptor.globalIdentifier,
+                    error = this
+                )
+            }
+        }
+    }
+}
+
+interface LibraryPhotoProvider {
+    suspend fun getLocalPhotos(): List<LibraryPhoto>
 }

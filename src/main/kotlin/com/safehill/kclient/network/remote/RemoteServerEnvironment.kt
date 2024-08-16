@@ -13,4 +13,9 @@ sealed class RemoteServerEnvironment(
         hostName = "app.safehill.io",
         port = 443
     )
+
+    data object Staging : RemoteServerEnvironment(
+        hostName = "safehill-stage-1-ec0cd53b3592.herokuapp.com",
+        port = 443
+    )
 }

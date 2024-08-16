@@ -1,4 +1,4 @@
-package com.safehill.kcrypto.models
+package com.safehill.kclient.models
 
 import java.security.KeyPair
 import java.security.KeyPairGenerator

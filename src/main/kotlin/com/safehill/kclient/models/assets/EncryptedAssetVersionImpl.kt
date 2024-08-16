@@ -1,9 +1,9 @@
 package com.safehill.kclient.models.assets
 
-class EncryptedAssetVersionImpl(
-    override val quality: AssetQuality,
-    override val encryptedData: ByteArray,
-    override val encryptedSecret: ByteArray,
-    override val publicKeyData: ByteArray,
-    override val publicSignatureData: ByteArray
-) : EncryptedAssetVersion
+class EncryptedAssetVersion(
+    val quality: AssetQuality,
+    val encryptedData: ByteArray,
+    val encryptedSecret: ByteArray,
+    val publicKeyData: ByteArray,
+    val publicSignatureData: ByteArray
+)

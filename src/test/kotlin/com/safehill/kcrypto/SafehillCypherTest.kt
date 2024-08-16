@@ -1,6 +1,6 @@
-package com.safehill.kcrypto
+package com.safehill.kclient
 
-import com.safehill.kcrypto.models.SafehillKeyPair
+import com.safehill.kclient.models.SafehillKeyPair
 import org.junit.jupiter.api.Test
 
 class SafehillCypherTest {

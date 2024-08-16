@@ -6,8 +6,8 @@ import java.util.Date
 
 data class AssetDescriptorImpl(
     override val globalIdentifier: AssetGlobalIdentifier,
-    override val localIdentifier: AssetLocalIdentifier?,
-    override val creationDate: Instant?,
+    override val localIdentifier: AssetLocalIdentifier,
+    override val creationDate: Instant,
     override var uploadState: AssetDescriptor.UploadState,
     override var sharingInfo: AssetDescriptor.SharingInfo
 ) : AssetDescriptor {

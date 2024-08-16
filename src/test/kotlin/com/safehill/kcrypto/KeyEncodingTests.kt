@@ -1,8 +1,8 @@
-package com.safehill.kcrypto
+package com.safehill.kclient
 
-import com.safehill.kcrypto.models.SafehillKeyPair
-import com.safehill.kcrypto.models.SafehillPrivateKey
-import com.safehill.kcrypto.models.SafehillPublicKey
+import com.safehill.kclient.models.SafehillKeyPair
+import com.safehill.kclient.models.SafehillPrivateKey
+import com.safehill.kclient.models.SafehillPublicKey
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.junit.jupiter.api.Test
 import java.security.Security

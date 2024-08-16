@@ -1,4 +1,4 @@
-package com.safehill.kcrypto.models
+package com.safehill.kclient.models
 
 import java.math.BigInteger
 import java.security.MessageDigest

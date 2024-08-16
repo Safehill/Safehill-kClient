@@ -1,5 +1,6 @@
 package com.safehill.kclient.network.remote
 
+import com.github.kittinunf.fuel.core.HttpException
 import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.responseObject
@@ -9,8 +10,10 @@ import com.safehill.kclient.models.assets.AssetDescriptorUploadState
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAsset
+import com.safehill.kclient.models.assets.EncryptedAssetVersion
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.assets.ShareableEncryptedAsset
+import com.safehill.kclient.models.dtos.AssetDeleteCriteriaDTO
 import com.safehill.kclient.models.dtos.AssetDescriptorDTO
 import com.safehill.kclient.models.dtos.AssetDescriptorFilterCriteriaDTO
 import com.safehill.kclient.models.dtos.AssetOutputDTO
@@ -42,7 +45,6 @@ import com.safehill.kclient.models.dtos.UserInputDTO
 import com.safehill.kclient.models.dtos.UserPhoneNumbersDTO
 import com.safehill.kclient.models.dtos.UserUpdateDTO
 import com.safehill.kclient.models.dtos.toAssetDescriptor
-import com.safehill.kclient.models.serde.toIso8601String
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
@@ -53,18 +55,28 @@ import com.safehill.kclient.network.api.authorization.AuthorizationApiImpl
 import com.safehill.kclient.network.api.getMappingOrThrow
 import com.safehill.kclient.network.api.getOrElseOnSafehillError
 import com.safehill.kclient.network.api.getOrThrow
+import com.safehill.kclient.network.api.postForResponseObject
 import com.safehill.kclient.network.exceptions.SafehillError
-import com.safehill.kcrypto.SafehillCypher
-import com.safehill.kcrypto.models.RemoteCryptoUser
-import com.safehill.kcrypto.models.ShareablePayload
+import com.safehill.kclient.SafehillCypher
+import com.safehill.kclient.models.RemoteCryptoUser
+import com.safehill.kclient.models.ShareablePayload
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.security.MessageDigest
 import java.time.Instant
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.util.Base64
-import java.util.Date
 
 
 // For Fuel how to see https://www.baeldung.com/kotlin/fuel
@@ -281,60 +293,31 @@ class RemoteServer(
             .items
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     @Throws
-    override suspend fun getAssetDescriptors(after: Date?): List<AssetDescriptor> {
-        val bearerToken =
-            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
-        val descriptorFilterCriteriaDTO = AssetDescriptorFilterCriteriaDTO(
-            after = after?.toIso8601String(),
-            globalIdentifiers = null,
-            groupIds = null
+    override suspend fun getAssetDescriptors(after: Instant?): List<AssetDescriptor> {
+        return getAssetDescriptors(
+            assetGlobalIdentifiers = null,
+            groupIds = null,
+            after = after
         )
-
-        return "/assets/descriptors/retrieve".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Json.encodeToString(descriptorFilterCriteriaDTO))
-            .responseObject(
-                json = Json {
-                    ignoreUnknownKeys = true
-                    explicitNulls = false
-                }, loader = ListSerializer(
-                    AssetDescriptorDTO.serializer()
-                )
-            )
-            .getOrThrow()
-            .map(AssetDescriptorDTO::toAssetDescriptor)
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     @Throws
     override suspend fun getAssetDescriptors(
         assetGlobalIdentifiers: List<AssetGlobalIdentifier>?,
         groupIds: List<GroupId>?,
-        after: Date?
+        after: Instant?
     ): List<AssetDescriptor> {
-        val bearerToken =
-            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
         val descriptorFilterCriteriaDTO = AssetDescriptorFilterCriteriaDTO(
-            after = after?.toIso8601String(),
+            after = after?.toString(),
             globalIdentifiers = assetGlobalIdentifiers,
             groupIds = groupIds
         )
-
-        return "/assets/descriptors/retrieve".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Json.encodeToString(descriptorFilterCriteriaDTO))
-            .responseObject(
-                json = Json {
-                    ignoreUnknownKeys = true
-                    explicitNulls = false
-                }, loader = ListSerializer(
-                    AssetDescriptorDTO.serializer()
-                )
-            )
-            .getOrThrow()
-            .map(AssetDescriptorDTO::toAssetDescriptor)
+        return postForResponseObject<AssetDescriptorFilterCriteriaDTO, List<AssetDescriptorDTO>>(
+            endPoint = "/assets/descriptors/retrieve",
+            request = descriptorFilterCriteriaDTO,
+            authenticationRequired = true
+        ).map(AssetDescriptorDTO::toAssetDescriptor)
     }
 
     override suspend fun getAssets(threadId: String): ConversationThreadAssetsDTO {
@@ -350,25 +333,20 @@ class RemoteServer(
     @Throws
     override suspend fun getAssets(
         globalIdentifiers: List<AssetGlobalIdentifier>,
-        versions: List<AssetQuality>?,
+        versions: List<AssetQuality>,
     ): Map<AssetGlobalIdentifier, EncryptedAsset> {
-        val bearerToken =
-            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
         val assetFilterCriteriaDTO = AssetSearchCriteriaDTO(
             globalIdentifiers = globalIdentifiers,
-            versionNames = versions?.map { it.value }
+            versionNames = versions.map { it.value }
         )
 
-        val assetOutputDTOs = "/assets/retrieve".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Json.encodeToString(assetFilterCriteriaDTO))
-            .responseObject(
-                loader = ListSerializer(AssetOutputDTO.serializer()),
-                json = ignorantJson
-            )
-            .getOrThrow()
-
+        val assetOutputDTOs = postForResponseObject<AssetSearchCriteriaDTO, List<AssetOutputDTO>>(
+            endPoint = "/assets/retrieve",
+            request = assetFilterCriteriaDTO,
+            authenticationRequired = true
+        )
         return S3Proxy.fetchAssets(assetOutputDTOs)
+
     }
 
     @Throws
@@ -386,14 +364,16 @@ class RemoteServer(
             this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
 
         val assetCreatedAt = asset.creationDate ?: run { Instant.MIN }
+        val dateTime = OffsetDateTime.ofInstant(assetCreatedAt, ZoneOffset.UTC)
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX")
         val requestBody = com.safehill.kclient.models.dtos.AssetInputDTO(
             asset.globalIdentifier,
             asset.localIdentifier,
-            assetCreatedAt,
+            dateTime.format(formatter),
             groupId,
             asset.encryptedVersions.map {
                 com.safehill.kclient.models.dtos.AssetVersionInputDTO(
-                    it.key.toString(),
+                    it.key.value,
                     Base64.getEncoder().encodeToString(it.value.publicKeyData),
                     Base64.getEncoder().encodeToString(it.value.publicSignatureData),
                     Base64.getEncoder().encodeToString(it.value.encryptedSecret),
@@ -510,7 +490,37 @@ class RemoteServer(
         asset: EncryptedAsset,
         filterVersions: List<AssetQuality>,
     ) {
-        TODO("Not yet implemented")
+        val encryptedVersionByPresignedURL =
+        asset.encryptedVersions.values.filter { filterVersions.contains(it.quality) }
+            .mapNotNull { encryptedVersion ->
+                try {
+                    val serverAssetVersion = serverAsset.versions.first {
+                        it.versionName == encryptedVersion.quality.value
+                    }
+                    serverAssetVersion.presignedURL to encryptedVersion
+                } catch (_: NoSuchElementException) {
+                    println("no server asset provided for version ${encryptedVersion.quality.value}")
+                    null
+                }
+            }.toMap()
+
+        val remoteServer = this
+        coroutineScope {
+            encryptedVersionByPresignedURL.map { (presignedURL, encryptedVersion) ->
+                launch {
+                    try {
+                        S3Proxy.upload(encryptedVersion.encryptedData, presignedURL)
+                        remoteServer.markAsset(
+                            asset.globalIdentifier,
+                            encryptedVersion.quality,
+                            AssetDescriptorUploadState.Completed
+                        )
+                    } catch (exception: Exception) {
+                        print(exception)
+                    }
+                }
+            }
+        }
     }
 
     override suspend fun markAsset(
@@ -518,7 +528,16 @@ class RemoteServer(
         quality: AssetQuality,
         asState: AssetDescriptorUploadState,
     ) {
-        TODO("Not yet implemented")
+        val bearerToken =
+            this.requestor.authToken ?: throw HttpException(
+                401,
+                "unauthorized"
+            )
+
+        "assets/$assetGlobalIdentifier/versions/${quality.value}/uploaded".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .response()
+            .getOrThrow()
     }
 
     @Throws
@@ -530,7 +549,7 @@ class RemoteServer(
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(
                 Gson().toJson(
-                    com.safehill.kclient.models.dtos.AssetDeleteCriteriaDTO(
+                    AssetDeleteCriteriaDTO(
                         globalIdentifiers
                     )
                 )

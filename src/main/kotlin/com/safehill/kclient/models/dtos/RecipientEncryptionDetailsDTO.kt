@@ -1,7 +1,7 @@
 package com.safehill.kclient.models.dtos
 
-import com.safehill.kcrypto.base64.decodeBase64
-import com.safehill.kcrypto.models.ShareablePayload
+import com.safehill.kclient.base64.decodeBase64
+import com.safehill.kclient.models.ShareablePayload
 import kotlinx.serialization.Serializable
 
 @Serializable

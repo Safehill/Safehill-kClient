@@ -24,7 +24,7 @@ import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.api.authorization.AuthorizationApi
-import java.util.Date
+import java.time.Instant
 
 interface SafehillApi : AuthorizationApi {
 
@@ -108,14 +108,14 @@ interface SafehillApi : AuthorizationApi {
     suspend fun getAssetDescriptors(
         assetGlobalIdentifiers: List<AssetGlobalIdentifier>?,
         groupIds: List<GroupId>?,
-        after: Date?
+        after: Instant?
     ): List<AssetDescriptor>
 
     /**
      * Retrieve asset descriptor created or updated since the reference date
      * @param after retrieve only the ones uploaded or shared after this date
      */
-    suspend fun getAssetDescriptors(after: Date?): List<AssetDescriptor>
+    suspend fun getAssetDescriptors(after: Instant?): List<AssetDescriptor>
 
     suspend fun getAssets(
         threadId: String
@@ -130,7 +130,7 @@ interface SafehillApi : AuthorizationApi {
     ///   - the encrypted assets from the server
     suspend fun getAssets(
         globalIdentifiers: List<AssetGlobalIdentifier>,
-        versions: List<AssetQuality>?
+        versions: List<AssetQuality>
     ): Map<AssetGlobalIdentifier, EncryptedAsset>
 
     // MARK: Assets Write

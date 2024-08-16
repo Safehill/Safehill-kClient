@@ -1,6 +1,6 @@
 package com.safehill.kclient.models.users
 
-import com.safehill.kcrypto.models.CryptoUser
+import com.safehill.kclient.models.CryptoUser
 
 interface ServerUser: CryptoUser {
     val identifier: UserIdentifier

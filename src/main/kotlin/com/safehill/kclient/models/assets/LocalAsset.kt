@@ -1,12 +1,12 @@
 package com.safehill.kclient.models.assets
 
-import java.util.Date
+import java.time.Instant
 
 typealias AssetLocalIdentifier = String
 typealias AssetGlobalIdentifier = String
 
 class LocalAsset(
     val localIdentifier: AssetLocalIdentifier,
-    val createdAt: Date?,
+    val createdAt: Instant?,
     val data: ByteArray
 )

@@ -4,56 +4,43 @@ import java.net.URI
 import java.time.Instant
 
 sealed class Asset {
-    data class FromAndroidPhotosLibrary(val androidAsset: AndroidAsset) : Asset()
-    data class FromAndroidPhotosLibraryBackedUp(val backedUpAndroidAsset: BackedUpAndroidAsset) :
-        Asset()
 
-    data class Downloading(val assetDescriptor: AssetDescriptor) : Asset()
+    data class FromPhotosLibrary(
+        val libraryPhoto: LibraryPhoto
+    ) : Asset() {
+        val localIdentifier = libraryPhoto.localIdentifier
+    }
+
+    data class BackedUpLibraryPhoto(
+        val globalIdentifier: String,
+        val libraryPhoto: LibraryPhoto
+    ) : Asset()
+
+    data class Downloading(
+        val globalIdentifier: AssetGlobalIdentifier
+    ) : Asset()
+
     data class Downloaded(val decryptedAsset: DecryptedAsset) : Asset()
 
     val debugType: String
         get() = when (this) {
-            is FromAndroidPhotosLibrary -> "fromAndroidPhotosLibrary"
-            is FromAndroidPhotosLibraryBackedUp -> "fromAndroidPhotosLibraryBackedUp"
+            is FromPhotosLibrary -> "FromPhotosLibrary"
+            is BackedUpLibraryPhoto -> "BackedUpLibraryPhoto"
             is Downloading -> "downloading"
             is Downloaded -> "downloaded"
         }
 
     val identifier: String
         get() = when (this) {
-            is FromAndroidPhotosLibrary -> androidAsset.localIdentifier
-            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.androidAsset.localIdentifier
-            is Downloading -> assetDescriptor.localIdentifier ?: assetDescriptor.globalIdentifier
-            is Downloaded -> decryptedAsset.localIdentifier ?: decryptedAsset.globalIdentifier
-        }
-
-    val localIdentifier: String?
-        get() = when (this) {
-            is FromAndroidPhotosLibrary -> androidAsset.localIdentifier
-            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.androidAsset.localIdentifier
-            is Downloading -> assetDescriptor.localIdentifier
-            is Downloaded -> decryptedAsset.localIdentifier
-        }
-
-    val globalIdentifier: String?
-        get() = when (this) {
-            is FromAndroidPhotosLibrary -> null
-            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.globalIdentifier
-            is Downloading -> assetDescriptor.globalIdentifier
+            is FromPhotosLibrary -> libraryPhoto.localIdentifier
+            is BackedUpLibraryPhoto -> globalIdentifier
+            is Downloading -> globalIdentifier
             is Downloaded -> decryptedAsset.globalIdentifier
-        }
-
-    val creationDate: Instant?
-        get() = when (this) {
-            is FromAndroidPhotosLibrary -> androidAsset.creationDate
-            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.androidAsset.creationDate
-            is Downloading -> assetDescriptor.creationDate
-            is Downloaded -> decryptedAsset.creationDate
         }
 
     val isFromLocalLibrary: Boolean
         get() = when (this) {
-            is FromAndroidPhotosLibrary, is FromAndroidPhotosLibraryBackedUp -> true
+            is FromPhotosLibrary, is BackedUpLibraryPhoto -> true
             else -> false
         }
 
@@ -62,7 +49,7 @@ sealed class Asset {
 
     val isFromRemoteLibrary: Boolean
         get() = when (this) {
-            is Downloaded, is FromAndroidPhotosLibraryBackedUp, is Downloading -> true
+            is Downloaded, is BackedUpLibraryPhoto, is Downloading -> true
             else -> false
         }
 
@@ -77,36 +64,47 @@ sealed class Asset {
 
     val width: Int?
         get() = when (this) {
-            is FromAndroidPhotosLibrary -> androidAsset.pixelWidth
-            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.androidAsset.pixelWidth
+            is FromPhotosLibrary -> libraryPhoto.pixelWidth
+            is BackedUpLibraryPhoto -> libraryPhoto.pixelWidth
             else -> null
         }
 
     val height: Int?
         get() = when (this) {
-            is FromAndroidPhotosLibrary -> androidAsset.pixelHeight
-            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.androidAsset.pixelHeight
+            is FromPhotosLibrary -> libraryPhoto.pixelHeight
+            is BackedUpLibraryPhoto -> libraryPhoto.pixelHeight
             else -> null
         }
 
     val uri: URI?
         get() = when (this) {
-            is FromAndroidPhotosLibrary -> androidAsset.uri
-            is FromAndroidPhotosLibraryBackedUp -> backedUpAndroidAsset.androidAsset.uri
+            is FromPhotosLibrary -> libraryPhoto.uri
+            is BackedUpLibraryPhoto -> libraryPhoto.uri
             else -> null
         }
+
+    val creationDate: Instant?
+        get() = when (this) {
+            is FromPhotosLibrary -> libraryPhoto.creationDate
+            is BackedUpLibraryPhoto -> libraryPhoto.creationDate
+            is Downloaded -> decryptedAsset.creationDate
+            else -> null
+        }
+
+    val type: String
+        get() = when (this) {
+            is FromPhotosLibrary -> "from the Photos library"
+            else -> "In your lockbox"
+        }
+
+
 }
 
-data class AndroidAsset(
+data class LibraryPhoto(
     val localIdentifier: String,
     val creationDate: Instant?,
     val pixelWidth: Int?,
     val pixelHeight: Int?,
     val uri: URI?,
     val displayName: String?
-)
-
-data class BackedUpAndroidAsset(
-    val globalIdentifier: String,
-    val androidAsset: AndroidAsset
 )

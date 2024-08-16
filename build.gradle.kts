@@ -45,7 +45,7 @@ application {
 
 tasks.withType<Jar> {
     manifest {
-        attributes["Main-Class"] = "com.safehill.kcrypto.Main.kt"
+        attributes["Main-Class"] = "com.safehill.kclient.Main.kt"
     }
 }
 

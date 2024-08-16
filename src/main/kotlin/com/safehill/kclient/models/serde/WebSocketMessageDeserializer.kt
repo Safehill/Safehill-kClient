@@ -91,7 +91,7 @@ enum class MessageType(
     REACTION_ADD("reaction-add", ReactionChange.serializer()),
     REACTION_REMOVE("reaction-remove", ReactionChange.serializer()),
     THREAD_ADD("thread-add", ThreadCreated.serializer()),
-    ASSETS_SHARE("assets-share", ThreadAssets.serializer()),
+    ASSETS_SHARE("thread-assets-share", ThreadAssets.serializer()),
     CONNECTION_REQUEST("connection-request", NewConnectionRequest.serializer())
 
 }

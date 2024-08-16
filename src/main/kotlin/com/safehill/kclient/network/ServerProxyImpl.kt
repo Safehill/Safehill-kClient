@@ -1,30 +1,21 @@
 package com.safehill.kclient.network
 
 import com.safehill.kclient.models.assets.AssetDescriptor
-import com.safehill.kclient.models.assets.AssetDescriptorUploadState
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAsset
-import com.safehill.kclient.models.assets.EncryptedAssetImpl
 import com.safehill.kclient.models.assets.GroupId
-import com.safehill.kclient.models.assets.ShareableEncryptedAsset
-import com.safehill.kclient.models.dtos.AssetOutputDTO
-import com.safehill.kclient.models.dtos.AuthResponseDTO
 import com.safehill.kclient.models.dtos.ConversationThreadAssetsDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
-import com.safehill.kclient.models.dtos.HashedPhoneNumber
 import com.safehill.kclient.models.dtos.InteractionsGroupDTO
 import com.safehill.kclient.models.dtos.InteractionsSummaryDTO
 import com.safehill.kclient.models.dtos.MessageInputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
-import com.safehill.kclient.models.dtos.ReactionInputDTO
-import com.safehill.kclient.models.dtos.ReactionOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
-import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
-import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
+import com.safehill.kclient.network.exceptions.SafehillError
 import com.safehill.kclient.network.local.LocalServerInterface
 import com.safehill.kclient.util.runCatchingPreservingCancellationException
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -34,7 +25,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import java.util.Date
+import java.time.Instant
 
 class ServerProxyImpl(
     override val localServer: LocalServerInterface,
@@ -75,22 +66,10 @@ class ServerProxyImpl(
         }
     }
 
-    override suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<HashedPhoneNumber>): Map<HashedPhoneNumber, RemoteUser> {
-        return remoteServer.getUsersWithPhoneNumber(hashedPhoneNumbers)
-    }
-
-    override suspend fun searchUsers(query: String, per: Int, page: Int): List<RemoteUser> {
-        return remoteServer.searchUsers(query, per, page)
-    }
-
-    override suspend fun getAssetDescriptors(after: Date?): List<AssetDescriptor> {
-        return remoteServer.getAssetDescriptors(after)
-    }
-
     override suspend fun getAssets(threadId: String): ConversationThreadAssetsDTO {
         return try {
             remoteServer.getAssets(threadId).also {
-                localServer.addThreadAssets(
+                localServer.storeThreadAssets(
                     threadId = threadId,
                     conversationThreadAssetsDTO = it
                 )
@@ -101,39 +80,6 @@ class ServerProxyImpl(
         }
     }
 
-    override suspend fun getAssetDescriptors(
-        assetGlobalIdentifiers: List<AssetGlobalIdentifier>?,
-        groupIds: List<GroupId>?,
-        after: Date?
-    ): List<AssetDescriptor> {
-        return remoteServer.getAssetDescriptors(assetGlobalIdentifiers, groupIds, after)
-    }
-
-    override suspend fun getAssets(
-        globalIdentifiers: List<AssetGlobalIdentifier>,
-        versions: List<AssetQuality>?
-    ): Map<AssetGlobalIdentifier, EncryptedAsset> {
-        return remoteServer.getAssets(globalIdentifiers, versions)
-    }
-
-    override suspend fun create(
-        assets: List<EncryptedAsset>,
-        groupId: GroupId,
-        filterVersions: List<AssetQuality>?
-    ): List<AssetOutputDTO> {
-        return remoteServer.create(assets, groupId, filterVersions)
-    }
-
-    override suspend fun share(asset: ShareableEncryptedAsset) {
-        remoteServer.share(asset)
-    }
-
-    override suspend fun unshare(
-        assetId: AssetGlobalIdentifier,
-        userPublicIdentifier: UserIdentifier
-    ) {
-        remoteServer.unshare(assetId, userPublicIdentifier)
-    }
 
     override suspend fun topLevelInteractionsSummary(): InteractionsSummaryDTO {
         return runCatchingPreservingCancellationException {
@@ -188,52 +134,6 @@ class ServerProxyImpl(
         }
     }
 
-    override suspend fun upload(
-        serverAsset: AssetOutputDTO,
-        asset: EncryptedAsset,
-        filterVersions: List<AssetQuality>
-    ) {
-        remoteServer.upload(serverAsset, asset, filterVersions)
-    }
-
-    override suspend fun markAsset(
-        assetGlobalIdentifier: AssetGlobalIdentifier,
-        quality: AssetQuality,
-        asState: AssetDescriptorUploadState
-    ) {
-        remoteServer.markAsset(assetGlobalIdentifier, quality, asState)
-    }
-
-    override suspend fun deleteAssets(globalIdentifiers: List<AssetGlobalIdentifier>): List<AssetGlobalIdentifier> {
-        return remoteServer.deleteAssets(globalIdentifiers)
-    }
-
-    override suspend fun setGroupEncryptionDetails(
-        groupId: GroupId,
-        recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>
-    ) {
-        return remoteServer.setGroupEncryptionDetails(groupId, recipientsEncryptionDetails)
-    }
-
-    override suspend fun deleteGroup(groupId: GroupId) {
-        remoteServer.deleteGroup(groupId)
-    }
-
-    override suspend fun retrieveGroupUserEncryptionDetails(groupId: GroupId): List<RecipientEncryptionDetailsDTO> {
-        return remoteServer.retrieveGroupUserEncryptionDetails(groupId)
-    }
-
-    override suspend fun addReactions(
-        reactions: List<ReactionInputDTO>,
-        toGroupId: GroupId
-    ): List<ReactionOutputDTO> {
-        return remoteServer.addReactions(reactions, toGroupId)
-    }
-
-    override suspend fun removeReaction(reaction: ReactionOutputDTO, fromGroupId: GroupId) {
-        remoteServer.removeReaction(reaction, fromGroupId)
-    }
-
     /***
      * This function will try to fetch interactions from remote server and if it fails, retrieves locally.
      */
@@ -266,6 +166,107 @@ class ServerProxyImpl(
         }
     }
 
+    private fun Map<AssetGlobalIdentifier, EncryptedAsset>.getMissingAssets(
+        globalIdentifiers: List<AssetGlobalIdentifier>,
+        versions: List<AssetQuality>
+    ): Map<GlobalIdentifier, List<AssetQuality>> {
+        return buildMap {
+            val assetIdentifiersNotFoundInLocal = (globalIdentifiers - this.keys)
+            putAll(assetIdentifiersNotFoundInLocal.associateWith { versions })
+            this@getMissingAssets.forEach { (globalIdentifier, encryptedAsset) ->
+                val versionsNotFoundInLocal = (versions - encryptedAsset.encryptedVersions.keys)
+                if (versionsNotFoundInLocal.isNotEmpty()) {
+                    put(globalIdentifier, versionsNotFoundInLocal)
+                }
+            }
+        }
+    }
+
+    private suspend fun fetchRemoteAssets(
+        globalIdentifiersAndQualities: Map<AssetGlobalIdentifier, List<AssetQuality>>,
+    ): Map<AssetGlobalIdentifier, EncryptedAsset> {
+        return coroutineScope {
+            globalIdentifiersAndQualities.map { (globalIdentifier, assetQualities) ->
+                async {
+                    runCatchingPreservingCancellationException {
+                        remoteServer.getAssets(
+                            globalIdentifiers = listOf(globalIdentifier),
+                            versions = assetQualities
+                        )[globalIdentifier]
+                    }.onFailure {
+                        println("Failed to fetch asset with id $globalIdentifier and quality $assetQualities")
+                    }.getOrNull()
+                }
+            }.awaitAll()
+                .filterNotNull()
+                .associateBy { it.globalIdentifier }
+        }
+    }
+
+    private suspend fun getAssetsFromRemoteAndStore(
+        globalIdentifiersAndQualities: Map<AssetGlobalIdentifier, List<AssetQuality>>,
+    ): Map<AssetGlobalIdentifier, EncryptedAsset> {
+        val remoteDescriptors = remoteServer.getAssetDescriptors(
+            assetGlobalIdentifiers = globalIdentifiersAndQualities.keys.toList(),
+            groupIds = null, after = null
+        )
+
+        val identifiersToFetch = remoteDescriptors.map { it.globalIdentifier }
+        val assetIdentifiersToFetch =
+            globalIdentifiersAndQualities.filter { it.key in identifiersToFetch }
+
+        val remoteAssets = fetchRemoteAssets(assetIdentifiersToFetch)
+        localServer.storeAssetsWithDescriptor(
+            encryptedAssetsWithDescriptor = remoteDescriptors.mapNotNull { assetDescriptor ->
+                remoteAssets[assetDescriptor.globalIdentifier]?.let { encryptedAsset ->
+                    assetDescriptor to encryptedAsset
+                }
+            }.toMap()
+        )
+        return remoteAssets
+    }
+
+    override suspend fun getAssets(
+        globalIdentifiers: List<AssetGlobalIdentifier>,
+        versions: List<AssetQuality>
+    ): Map<AssetGlobalIdentifier, EncryptedAsset> {
+        val localAssets = localServer.getAssets(
+            globalIdentifiers = globalIdentifiers,
+            versions = versions
+        )
+        val assetsNotFoundInLocal = localAssets.getMissingAssets(
+            globalIdentifiers = globalIdentifiers, versions = versions
+        ).also { if (it.isEmpty()) return localAssets }
+
+        val remoteAssets = getAssetsFromRemoteAndStore(
+            globalIdentifiersAndQualities = assetsNotFoundInLocal
+        )
+
+        return combineLocalAndRemoteAssets(
+            remoteAssets = remoteAssets,
+            localAssets = localAssets
+        )
+    }
+
+    private fun combineLocalAndRemoteAssets(
+        remoteAssets: Map<AssetGlobalIdentifier, EncryptedAsset>,
+        localAssets: Map<AssetGlobalIdentifier, EncryptedAsset>
+    ): Map<AssetGlobalIdentifier, EncryptedAsset> {
+        return buildMap {
+            putAll(remoteAssets)
+            localAssets.forEach { (globalIdentifier, encryptedLocalAsset) ->
+                val existingEncryptedAsset = remoteAssets[globalIdentifier]
+                if (existingEncryptedAsset != null) {
+                    this[globalIdentifier] = existingEncryptedAsset.copy(
+                        encryptedVersions = existingEncryptedAsset.encryptedVersions + encryptedLocalAsset.encryptedVersions
+                    )
+                } else {
+                    this[globalIdentifier] = encryptedLocalAsset
+                }
+            }
+        }
+    }
+
     override suspend fun addMessages(
         messages: List<MessageInputDTO>,
         groupId: GroupId
@@ -292,45 +293,66 @@ class ServerProxyImpl(
         return localServer.getUsers(serverUsers.map { it.identifier })
     }
 
-    override suspend fun createUser(name: String): ServerUser {
-        return remoteServer.createUser(name)
+    override suspend fun getAssetDescriptors(
+        assetGlobalIdentifiers: List<AssetGlobalIdentifier>?,
+        groupIds: List<GroupId>?,
+        after: Instant?
+    ): List<AssetDescriptor> {
+        // All asset descriptors are being fetched.
+        // Directly retrieve all descriptors from remote server.
+        return if (assetGlobalIdentifiers == null) {
+            remoteServer.getAssetDescriptors(
+                assetGlobalIdentifiers = null,
+                groupIds = groupIds,
+                after = after
+            )
+        } else {
+            val locallyAvailableDescriptors = localServer.getAssetDescriptors(
+                assetGlobalIdentifiers = assetGlobalIdentifiers,
+                groupIds = groupIds,
+                after = after
+            )
+            val remainingDescriptors =
+                assetGlobalIdentifiers - locallyAvailableDescriptors.map { it.globalIdentifier }
+                    .toSet()
+            if (remainingDescriptors.isEmpty()) {
+                locallyAvailableDescriptors
+            } else {
+                remoteServer.getAssetDescriptors(
+                    assetGlobalIdentifiers = remainingDescriptors,
+                    groupIds = groupIds,
+                    after = after
+                )
+            }
+        }
     }
 
-    override suspend fun sendCodeToUser(
-        countryCode: Int,
-        phoneNumber: Long,
-        code: String,
-        medium: SendCodeToUserRequestDTO.Medium
-    ) {
-        return remoteServer.sendCodeToUser(countryCode, phoneNumber, code, medium)
-    }
-
-    override suspend fun updateUser(
-        name: String?,
-        phoneNumber: String?,
-        email: String?
-    ): ServerUser {
-        return remoteServer.updateUser(name, phoneNumber, email)
-    }
-
-    override suspend fun deleteAccount() {
-        remoteServer.deleteAccount()
-    }
-
-    override suspend fun signIn(): AuthResponseDTO {
-        return remoteServer.signIn()
-    }
-
-    override suspend fun registerDevice(deviceId: String, token: String) {
-        remoteServer.registerDevice(
-            deviceId = deviceId,
-            token = token
-        )
-    }
-
-
-    override suspend fun getAllLocalUsers(): List<ServerUser> {
-        TODO("Not yet implemented")
+    override suspend fun getAsset(
+        globalIdentifier: GlobalIdentifier,
+        quality: AssetQuality,
+        cacheAfterFetch: Boolean
+    ): EncryptedAsset {
+        return localServer.getAssets(
+            globalIdentifiers = listOf(globalIdentifier),
+            versions = listOf(quality)
+        )[globalIdentifier]?.takeIf {
+            it.encryptedVersions.containsKey(quality)
+        } ?: run {
+            val remoteAsset = remoteServer.getAssets(
+                globalIdentifiers = listOf(globalIdentifier),
+                versions = listOf(quality)
+            )[globalIdentifier] ?: throw SafehillError.ClientError.NotFound
+            if (cacheAfterFetch) {
+                val remoteDescriptor = getAssetDescriptors(
+                    assetGlobalIdentifiers = listOf(globalIdentifier),
+                    groupIds = null, after = null
+                ).first()
+                localServer.storeAssetsWithDescriptor(
+                    encryptedAssetsWithDescriptor = mapOf(remoteDescriptor to remoteAsset)
+                )
+            }
+            remoteAsset
+        }
     }
 
     //
@@ -421,12 +443,13 @@ class ServerProxyImpl(
                     if (version != AssetQuality.HighResolution &&
                         encryptedAsset.encryptedVersions.containsKey(version)
                     ) {
-                        newEncryptedVersions[version] = encryptedAsset.encryptedVersions[version]!!
+                        newEncryptedVersions[version] =
+                            encryptedAsset.encryptedVersions[version]!!
                     }
                 }
             }
 
-            return@mapValues EncryptedAssetImpl(
+            return@mapValues EncryptedAsset(
                 globalIdentifier = encryptedAsset.globalIdentifier,
                 localIdentifier = encryptedAsset.localIdentifier,
                 creationDate = encryptedAsset.creationDate,
@@ -441,10 +464,4 @@ class ServerProxyImpl(
         //TODO("Not yet implemented")
     }
 
-    override suspend fun getLocalAssetDescriptors(
-        globalIdentifiers: List<GlobalIdentifier>?,
-        filteringGroups: List<String>?
-    ): List<AssetDescriptor> {
-        return localServer.getAssetDescriptors(globalIdentifiers, filteringGroups)
-    }
 }

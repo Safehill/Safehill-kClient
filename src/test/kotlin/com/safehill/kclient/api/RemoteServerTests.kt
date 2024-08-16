@@ -2,8 +2,8 @@ package com.safehill.kclient.api
 
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetQuality
-import com.safehill.kclient.models.assets.EncryptedAssetImpl
-import com.safehill.kclient.models.assets.EncryptedAssetVersionImpl
+import com.safehill.kclient.models.assets.EncryptedAsset
+import com.safehill.kclient.models.assets.EncryptedAssetVersion
 import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.dtos.AuthResponseDTO
 import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
@@ -11,8 +11,8 @@ import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.exceptions.SafehillError
 import com.safehill.kclient.network.remote.RemoteServer
-import com.safehill.kcrypto.models.LocalCryptoUser
-import com.safehill.kcrypto.models.SafehillKeyPair
+import com.safehill.kclient.models.LocalCryptoUser
+import com.safehill.kclient.models.SafehillKeyPair
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -240,14 +240,14 @@ class RemoteServerTests {
         val groupId = "sampleGroupId"
         val assetKey = SafehillKeyPair.generate()
         val assetSignature = SafehillKeyPair.generate()
-        val encryptedAsset = EncryptedAssetImpl(
+        val encryptedAsset = EncryptedAsset(
             globalIdentifier = "globalIdentifier",
             localIdentifier = null,
             creationDate = Date(0).toInstant(),
             encryptedVersions = mapOf(
                 Pair(
                     AssetQuality.LowResolution,
-                    EncryptedAssetVersionImpl(
+                    EncryptedAssetVersion(
                         quality = AssetQuality.LowResolution,
                         encryptedData = "encryptedData".toByteArray(),
                         encryptedSecret = "encryptedData".toByteArray(),

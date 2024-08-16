@@ -3,7 +3,10 @@ package com.safehill
 import com.github.kittinunf.fuel.core.FuelManager
 import com.github.kittinunf.fuel.core.interceptors.LogRequestInterceptor
 import com.github.kittinunf.fuel.core.interceptors.LogResponseInterceptor
+import com.safehill.kclient.controllers.UserController
 import com.safehill.kclient.controllers.UserInteractionController
+import com.safehill.kclient.logging.DefaultSafehillLogger
+import com.safehill.kclient.logging.SafehillLogger
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.ServerProxyImpl
@@ -29,6 +32,12 @@ class SafehillClient private constructor(
         )
     }
 
+    val userController by lazy {
+        UserController(
+            serverProxy = serverProxy
+        )
+    }
+
     suspend fun connectToSocket(deviceId: String) {
         webSocketApi.connectToSocket(deviceId = deviceId, currentUser = currentUser)
     }
@@ -36,13 +45,15 @@ class SafehillClient private constructor(
     class Builder(
         private val localServer: LocalServerInterface,
         private val currentUser: LocalUser,
-        private val remoteServerEnvironment: RemoteServerEnvironment
+        private val remoteServerEnvironment: RemoteServerEnvironment,
+        private val safehillLogger: SafehillLogger = DefaultSafehillLogger()
     ) {
         private fun buildWsURL() = URLBuilder().apply {
             this.host = remoteServerEnvironment.hostName
             this.protocol = when (remoteServerEnvironment) {
                 is RemoteServerEnvironment.Development -> URLProtocol.WS
-                RemoteServerEnvironment.Production -> URLProtocol.WSS
+                RemoteServerEnvironment.Production,
+                RemoteServerEnvironment.Staging -> URLProtocol.WSS
             }
             this.port = remoteServerEnvironment.port
         }.build()
@@ -51,7 +62,8 @@ class SafehillClient private constructor(
             this.host = remoteServerEnvironment.hostName
             this.protocol = when (remoteServerEnvironment) {
                 is RemoteServerEnvironment.Development -> URLProtocol.HTTP
-                RemoteServerEnvironment.Production -> URLProtocol.HTTPS
+                RemoteServerEnvironment.Production,
+                RemoteServerEnvironment.Staging -> URLProtocol.HTTPS
             }
             this.port = remoteServerEnvironment.port
         }
@@ -80,6 +92,7 @@ class SafehillClient private constructor(
         fun build(): SafehillClient {
             setupBouncyCastle()
             setUpFuelConfiguration()
+            logger = safehillLogger
             return SafehillClient(
                 serverProxy = ServerProxyImpl(
                     localServer = localServer,
@@ -94,5 +107,12 @@ class SafehillClient private constructor(
                 currentUser = currentUser
             )
         }
+    }
+
+    companion object {
+
+        // Do we want a singleton logger or each safehill client should be responsible for its own logger?
+        var logger: SafehillLogger = DefaultSafehillLogger()
+            private set
     }
 }

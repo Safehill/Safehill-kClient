@@ -1,7 +1,7 @@
 package com.safehill.kclient.models.users
 
 import com.safehill.kclient.models.serde.Base64DataSerializer
-import com.safehill.kcrypto.models.SafehillPublicKey
+import com.safehill.kclient.models.SafehillPublicKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.security.PublicKey

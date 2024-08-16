@@ -2,7 +2,9 @@ package com.safehill.kclient.models.assets
 
 import java.time.Instant
 
-interface DecryptedAsset: RemoteAssetIdentifiable {
+data class DecryptedAsset(
+    val globalIdentifier: AssetGlobalIdentifier,
+    val localIdentifier: AssetLocalIdentifier?,
+    val creationDate: Instant?,
     var decryptedVersions: Map<AssetQuality, ByteArray>
-    val creationDate: Instant?
-}
+)

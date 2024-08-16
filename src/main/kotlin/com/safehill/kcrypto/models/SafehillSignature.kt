@@ -1,4 +1,4 @@
-package com.safehill.kcrypto.models
+package com.safehill.kclient.models
 
 import java.security.PrivateKey
 import java.security.PublicKey

@@ -1,5 +1,6 @@
 package com.safehill.kclient.network
 
+import com.safehill.SafehillClient
 import com.safehill.kclient.models.dtos.websockets.WebSocketMessage
 import com.safehill.kclient.models.serde.WebSocketMessageDeserializer
 import com.safehill.kclient.models.users.LocalUser
@@ -16,10 +17,12 @@ import io.ktor.http.Url
 import io.ktor.websocket.Frame
 import io.ktor.websocket.readText
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.serialization.json.Json
 import kotlin.coroutines.cancellation.CancellationException
@@ -40,12 +43,7 @@ class WebSocketApi internal constructor(
 
     private val httpClient = HttpClient(CIO) {
         install(Logging) {
-            this.logger = object : Logger {
-                override fun log(message: String) {
-                    //todo discuss way of properly logging from library
-                    println("Socket message $message")
-                }
-            }
+            this.logger = Logger.SAFEHILL_CLIENT_LOGGER
         }
         install(WebSockets)
     }
@@ -69,14 +67,25 @@ class WebSocketApi internal constructor(
                 parameter("deviceId", deviceId)
             }
         ) {
-            this.incoming.consumeEach { frame ->
-                if (frame is Frame.Text) {
-                    val socketData = Json.decodeFromString(
-                        deserializer = WebSocketMessageDeserializer,
-                        string = frame.readText()
-                    )
-                    println("Socket message $socketData")
-                    _socketMessage.emit(socketData)
+            val socketSession = this
+            coroutineScope {
+                launch {
+                    socketSession.incoming.consumeEach { frame ->
+                        if (frame is Frame.Text) {
+                            val socketData = Json.decodeFromString(
+                                deserializer = WebSocketMessageDeserializer,
+                                string = frame.readText()
+                            )
+                            SafehillClient.logger.verbose("Socket message $socketData")
+                            _socketMessage.emit(socketData)
+                        }
+                    }
+                }
+                launch {
+                    while (isActive) {
+                        socketSession.outgoing.send(Frame.Ping("ping".toByteArray()))
+                        delay(5.seconds)
+                    }
                 }
             }
         }
@@ -125,3 +134,10 @@ class WebSocketApi internal constructor(
         private const val MAX_RETRY_DELAY: Int = 8
     }
 }
+
+val Logger.Companion.SAFEHILL_CLIENT_LOGGER
+    get() = object : Logger {
+        override fun log(message: String) {
+            SafehillClient.logger.verbose(message)
+        }
+    }

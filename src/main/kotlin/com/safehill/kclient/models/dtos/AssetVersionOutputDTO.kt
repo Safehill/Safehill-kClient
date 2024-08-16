@@ -12,7 +12,7 @@ data class AssetVersionOutputDTO(
     @SerialName("publicSignature")
     @Serializable(with = Base64DataSerializer::class) val publicSignatureData: ByteArray,
     @Serializable(with = Base64DataSerializer::class) val encryptedSecret: ByteArray,
-    val presignedURL: String? = null,
+    val presignedURL: String,
     val presignedURLExpiresInMinutes: Int? = null,
 ) {
 

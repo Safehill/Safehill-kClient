@@ -19,6 +19,11 @@ interface AssetDescriptor : RemoteAssetIdentifiable {
                 Failed -> "failed"
             }
         }
+
+        fun isDownloadable() = when (this) {
+            Partial, Completed -> true
+            NotStarted, Failed -> false
+        }
     }
 
     interface SharingInfo {
@@ -26,11 +31,13 @@ interface AssetDescriptor : RemoteAssetIdentifiable {
         interface GroupInfo {
             /// The name of the asset group (optional)
             val name: String?
+
             /// ISO8601 formatted datetime, representing the time the asset group was created
             val createdAt: Date?
         }
 
         val sharedByUserIdentifier: UserIdentifier
+
         /// Maps user public identifiers to asset group identifiers
         val sharedWithUserIdentifiersInGroup: Map<UserIdentifier, GroupId>
         val groupInfoById: Map<GroupId, GroupInfo>
@@ -44,8 +51,8 @@ interface AssetDescriptor : RemoteAssetIdentifiable {
     }
 
     override val globalIdentifier: AssetGlobalIdentifier
-    override val localIdentifier: AssetLocalIdentifier?
-    val creationDate: Instant?
+    override val localIdentifier: AssetLocalIdentifier
+    val creationDate: Instant
     var uploadState: UploadState
     var sharingInfo: SharingInfo
 
