@@ -423,6 +423,7 @@ class RemoteServer(
                 ConversationThreadOutputDTO.serializer(),
                 Json {
                     explicitNulls = false
+                    ignoreUnknownKeys = true
                 }
             )
             .getOrElseOnSafehillError {
@@ -458,6 +459,7 @@ class RemoteServer(
                 ListSerializer(ConversationThreadOutputDTO.serializer()),
                 Json {
                     explicitNulls = false
+                    ignoreUnknownKeys = true
                 }
             )
             .getOrThrow()
@@ -474,7 +476,10 @@ class RemoteServer(
             name = name,
             recipients = recipientsEncryptionDetails
         )
-        val json = Json { explicitNulls = false }
+        val json = Json {
+            explicitNulls = false
+            ignoreUnknownKeys = true
+        }
 
 
         return "/threads/upsert".httpPost()
