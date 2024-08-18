@@ -1,25 +1,13 @@
 package com.safehill.kclient.tasks.inbound
 
-import com.safehill.kclient.models.assets.DecryptedAsset
-import com.safehill.kclient.models.assets.LibraryPhoto
-import com.safehill.kclient.network.GlobalIdentifier
+import com.safehill.kclient.models.assets.AssetDescriptor
 
 
 interface DownloadOperationListener {
 
-    fun fetched(
-        decryptedAsset: DecryptedAsset
+    fun onNewAssetDescriptors(
+        assetDescriptors: List<AssetDescriptor>
     )
 
-    fun didIdentify(libraryPhotos: Map<GlobalIdentifier,LibraryPhoto>)
-
-    fun didFailDownloadOfAsset(
-        globalIdentifier: GlobalIdentifier,
-        error: Throwable
-    )
-
-    fun didFailRepeatedlyDownloadOfAsset(
-        globalIdentifier: GlobalIdentifier,
-    )
 
 }
