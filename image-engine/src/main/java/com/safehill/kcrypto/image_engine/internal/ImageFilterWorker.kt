@@ -63,13 +63,17 @@ internal class ImageFilterWorker(
             val startTime = SystemClock.elapsedRealtime()
 
             // Reuse inputBitmap to save memory since both input and output have the same resolution
-            upscalingEngine.runUpscaling(
+            val error = upscalingEngine.runUpscaling(
                 progressTracker = jniProgressTracker,
                 coroutineScope = this,
                 inputBitmap = inputBitmap,
                 outputBitmap = inputBitmap,
                 placeholderColour = Color.WHITE
             )
+            if (error != null) {
+                return@withContext Result.failure()
+            }
+
             val executionTime = SystemClock.elapsedRealtime() - startTime
 
             inferenceProgressJob.cancelAndJoin()
