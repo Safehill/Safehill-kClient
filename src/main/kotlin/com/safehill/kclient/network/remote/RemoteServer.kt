@@ -5,6 +5,7 @@ import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.responseObject
 import com.google.gson.Gson
+import com.safehill.SafehillClient
 import com.safehill.kclient.SafehillCypher
 import com.safehill.kclient.models.RemoteCryptoUser
 import com.safehill.kclient.models.ShareablePayload
@@ -489,7 +490,9 @@ class RemoteServer(
                         }
                         serverAssetVersion.presignedURL to encryptedVersion
                     } catch (_: NoSuchElementException) {
-                        println("no server asset provided for version ${encryptedVersion.quality.value}")
+                        SafehillClient.logger.log(
+                            "no server asset provided for version ${encryptedVersion.quality.value}"
+                        )
                         null
                     }
                 }.toMap()
@@ -506,7 +509,9 @@ class RemoteServer(
                             AssetDescriptorUploadState.Completed
                         )
                     } catch (exception: Exception) {
-                        print(exception)
+                        SafehillClient.logger.error(
+                            exception.message ?: "Error while marking asset ${asset.globalIdentifier} ${encryptedVersion.quality}"
+                        )
                     }
                 }
             }
