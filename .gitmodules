@@ -4,9 +4,9 @@
 [submodule "image-engine/src/main/cpp/opencv"]
 	path = image-engine/src/main/cpp/opencv
 	url = https://github.com/opencv/opencv
-[submodule "image-engine/src/main/cpp/MNN"]
-	path = image-engine/src/main/cpp/MNN
-	url = https://github.com/alibaba/MNN/
 [submodule "image-engine/src/main/cpp/cxxopts"]
 	path = image-engine/src/main/cpp/cxxopts
 	url = https://github.com/jarro2783/cxxopts
+[submodule "image-engine/src/main/cpp/MNN"]
+	path = image-engine/src/main/cpp/MNN
+	url = https://github.com/alibaba/MNN/
