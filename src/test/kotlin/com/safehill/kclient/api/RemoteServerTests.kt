@@ -242,7 +242,7 @@ class RemoteServerTests {
         val assetSignature = SafehillKeyPair.generate()
         val encryptedAsset = EncryptedAsset(
             globalIdentifier = "globalIdentifier",
-            localIdentifier = null,
+            localIdentifier = "localIdentifier",
             creationDate = Date(0).toInstant(),
             encryptedVersions = mapOf(
                 Pair(
