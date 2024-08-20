@@ -108,9 +108,16 @@ class ServerProxyImpl(
         }
     }
 
-    override suspend fun retrieveThread(usersIdentifiers: List<UserIdentifier>): ConversationThreadOutputDTO? {
-        return localServer.retrieveThread(usersIdentifiers) ?: remoteServer.retrieveThread(
-            usersIdentifiers
+    override suspend fun retrieveThread(
+        usersIdentifiers: List<UserIdentifier>,
+        phoneNumbers: List<String>
+    ): ConversationThreadOutputDTO? {
+        return localServer.retrieveThread(
+            usersIdentifiers = usersIdentifiers,
+            phoneNumbers = phoneNumbers
+        ) ?: remoteServer.retrieveThread(
+            usersIdentifiers = usersIdentifiers,
+            phoneNumbers = phoneNumbers
         )?.also {
             localServer.createOrUpdateThread(listOf(it))
         }
