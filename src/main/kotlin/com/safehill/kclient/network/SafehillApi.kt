@@ -165,7 +165,8 @@ interface SafehillApi : AuthorizationApi {
     suspend fun topLevelInteractionsSummary(): InteractionsSummaryDTO
 
     suspend fun retrieveThread(
-        usersIdentifiers: List<UserIdentifier>
+        usersIdentifiers: List<UserIdentifier>,
+        phoneNumbers: List<HashedPhoneNumber>
     ): ConversationThreadOutputDTO?
 
     suspend fun retrieveThread(
