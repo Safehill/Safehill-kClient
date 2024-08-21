@@ -5,7 +5,6 @@ import com.safehill.kclient.models.assets.AssetDescriptorImpl
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.assets.UploadState
 import com.safehill.kclient.models.serde.InstantSerializer
-import com.safehill.kclient.models.serde.toIso8601Date
 import com.safehill.kclient.models.users.UserIdentifier
 import kotlinx.serialization.Serializable
 import java.time.Instant
@@ -28,7 +27,8 @@ data class SharingInfoDTO(
 
 @Serializable
 data class GroupInfoDTO(
-    val createdAt: String,
+    @Serializable(with = InstantSerializer::class)
+    val createdAt: Instant,
     val name: String?
 )
 
@@ -44,7 +44,7 @@ fun AssetDescriptorDTO.toAssetDescriptor(): AssetDescriptor {
             groupInfoById = sharingInfo.groupInfoById.mapValues {
                 with(it.value) {
                     AssetDescriptorImpl.SharingInfoImpl.GroupInfoImpl(
-                        createdAt = this.createdAt.toIso8601Date(),
+                        createdAt = this.createdAt,
                         name = this.name
                     )
                 }
