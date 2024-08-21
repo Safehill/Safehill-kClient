@@ -17,6 +17,7 @@ import io.ktor.http.Url
 import io.ktor.websocket.Frame
 import io.ktor.websocket.readText
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -67,22 +68,24 @@ class WebSocketApi internal constructor(
             }
         ) {
             val socketSession = this
-            launch {
-                socketSession.incoming.consumeEach { frame ->
-                    if (frame is Frame.Text) {
-                        val socketData = Json.decodeFromString(
-                            deserializer = WebSocketMessageDeserializer,
-                            string = frame.readText()
-                        )
-                        SafehillClient.logger.verbose("Socket message $socketData")
-                        _socketMessage.emit(socketData)
+            coroutineScope {
+                launch {
+                    socketSession.incoming.consumeEach { frame ->
+                        if (frame is Frame.Text) {
+                            val socketData = Json.decodeFromString(
+                                deserializer = WebSocketMessageDeserializer,
+                                string = frame.readText()
+                            )
+                            SafehillClient.logger.verbose("Socket message $socketData")
+                            _socketMessage.emit(socketData)
+                        }
                     }
                 }
-            }
-            launch {
-                while (isActive) {
-                    socketSession.outgoing.send(Frame.Ping("ping".toByteArray()))
-                    delay(5.seconds)
+                launch {
+                    while (isActive) {
+                        socketSession.outgoing.send(Frame.Ping("ping".toByteArray()))
+                        delay(5.seconds)
+                    }
                 }
             }
         }

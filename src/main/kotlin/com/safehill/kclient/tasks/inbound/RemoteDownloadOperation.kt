@@ -8,10 +8,7 @@ import com.safehill.kclient.models.users.LocalUser
 class RemoteDownloadOperation(
     private val safehillClient: SafehillClient,
     override val listeners: List<DownloadOperationListener>,
-    override val libraryPhotoProvider: LibraryPhotoProvider,
-) : AbstractDownloadOperation(
-    safehillClient = safehillClient
-) {
+) : AbstractDownloadOperation() {
 
     companion object {
         var alreadyProcessed = mutableListOf<AssetGlobalIdentifier>()

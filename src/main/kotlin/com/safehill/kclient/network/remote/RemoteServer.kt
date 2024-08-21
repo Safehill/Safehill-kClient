@@ -65,6 +65,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
@@ -421,6 +423,7 @@ class RemoteServer(
                 ConversationThreadOutputDTO.serializer(),
                 Json {
                     explicitNulls = false
+                    ignoreUnknownKeys = true
                 }
             )
             .getOrElseOnSafehillError {
@@ -456,6 +459,7 @@ class RemoteServer(
                 ListSerializer(ConversationThreadOutputDTO.serializer()),
                 Json {
                     explicitNulls = false
+                    ignoreUnknownKeys = true
                 }
             )
             .getOrThrow()
@@ -472,7 +476,10 @@ class RemoteServer(
             name = name,
             recipients = recipientsEncryptionDetails
         )
-        val json = Json { explicitNulls = false }
+        val json = Json {
+            explicitNulls = false
+            ignoreUnknownKeys = true
+        }
 
 
         return "/threads/upsert".httpPost()
@@ -489,52 +496,36 @@ class RemoteServer(
         filterVersions: List<AssetQuality>,
     ) {
         val encryptedVersionByPresignedURL =
-            emptyMap<String, EncryptedAssetVersion>().toMutableMap()
-
-        for (encryptedVersion in asset.encryptedVersions.values) {
-            if (!filterVersions.contains(encryptedVersion.quality)) {
-                continue
-            }
-
-            try {
-                val serverAssetVersion = serverAsset.versions.first {
-                    version -> version.versionName == encryptedVersion.quality.value
+        asset.encryptedVersions.values.filter { filterVersions.contains(it.quality) }
+            .mapNotNull { encryptedVersion ->
+                try {
+                    val serverAssetVersion = serverAsset.versions.first {
+                        it.versionName == encryptedVersion.quality.value
+                    }
+                    serverAssetVersion.presignedURL to encryptedVersion
+                } catch (_: NoSuchElementException) {
+                    println("no server asset provided for version ${encryptedVersion.quality.value}")
+                    null
                 }
-                serverAssetVersion.presignedURL?.let {
-                    encryptedVersionByPresignedURL[it] = encryptedVersion
-                    S3Proxy.upload(encryptedVersion.encryptedData, it)
-                    this.markAsset(
-                        asset.globalIdentifier,
-                        encryptedVersion.quality,
-                        AssetDescriptorUploadState.Completed
-                    )
-                }
-            } catch (_: NoSuchElementException) {
-                println("no server asset provided for version ${encryptedVersion.quality.value}")
-                continue
-            }
-        }
+            }.toMap()
 
         val remoteServer = this
-        val coroutineScope = CoroutineScope(Job() + Dispatchers.IO)
-        val deferredResults = encryptedVersionByPresignedURL.map { kv ->
-            coroutineScope.async {
-                val presignedURL = kv.key
-                val encryptedVersion = kv.value
-                try {
-                    S3Proxy.upload(encryptedVersion.encryptedData, presignedURL)
-                } catch (exception: Exception) {
-                    print(exception)
+        coroutineScope {
+            encryptedVersionByPresignedURL.map { (presignedURL, encryptedVersion) ->
+                launch {
+                    try {
+                        S3Proxy.upload(encryptedVersion.encryptedData, presignedURL)
+                        remoteServer.markAsset(
+                            asset.globalIdentifier,
+                            encryptedVersion.quality,
+                            AssetDescriptorUploadState.Completed
+                        )
+                    } catch (exception: Exception) {
+                        print(exception)
+                    }
                 }
-                remoteServer.markAsset(
-                    asset.globalIdentifier,
-                    encryptedVersion.quality,
-                    AssetDescriptorUploadState.Completed
-                )
             }
         }
-        deferredResults
-            .awaitAll()
     }
 
     override suspend fun markAsset(

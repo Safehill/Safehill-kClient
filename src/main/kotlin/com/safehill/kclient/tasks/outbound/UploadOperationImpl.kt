@@ -13,7 +13,6 @@ import com.safehill.kclient.network.exceptions.SafehillError
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -230,9 +229,7 @@ class UploadOperationImpl(
         }
     }
 
-    override fun stop() {
-        scope.cancel()
-    }
+    override fun stop() {}
 
     override suspend fun run() {
         for(queueItem in outboundQueueItems) {
