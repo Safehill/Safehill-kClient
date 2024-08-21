@@ -8,18 +8,18 @@ data class AssetDescriptorImpl(
     override val globalIdentifier: AssetGlobalIdentifier,
     override val localIdentifier: AssetLocalIdentifier,
     override val creationDate: Instant,
-    override var uploadState: AssetDescriptor.UploadState,
-    override var sharingInfo: AssetDescriptor.SharingInfo
+    override var uploadState: UploadState,
+    override var sharingInfo: SharingInfo
 ) : AssetDescriptor {
 
     data class SharingInfoImpl(
         override val sharedByUserIdentifier: UserIdentifier,
-        override val sharedWithUserIdentifiersInGroup: Map<UserIdentifier, GroupId>,
-        override val groupInfoById: Map<GroupId, AssetDescriptor.SharingInfo.GroupInfo>
-    ) : AssetDescriptor.SharingInfo {
+        override val groupIdsByRecipientUserIdentifier: Map<UserIdentifier, List<GroupId>>,
+        override val groupInfoById: Map<GroupId, GroupInfo>
+    ) : SharingInfo {
 
         data class GroupInfoImpl(
             override val name: String?, override val createdAt: Date?
-        ) : AssetDescriptor.SharingInfo.GroupInfo {}
+        ) : GroupInfo
     }
 }
