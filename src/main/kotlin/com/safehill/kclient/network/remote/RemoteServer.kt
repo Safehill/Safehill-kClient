@@ -5,12 +5,15 @@ import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.responseObject
 import com.google.gson.Gson
+import com.safehill.SafehillClient
+import com.safehill.kclient.SafehillCypher
+import com.safehill.kclient.models.RemoteCryptoUser
+import com.safehill.kclient.models.ShareablePayload
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetDescriptorUploadState
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAsset
-import com.safehill.kclient.models.assets.EncryptedAssetVersion
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.assets.ShareableEncryptedAsset
 import com.safehill.kclient.models.dtos.AssetDeleteCriteriaDTO
@@ -57,14 +60,6 @@ import com.safehill.kclient.network.api.getOrElseOnSafehillError
 import com.safehill.kclient.network.api.getOrThrow
 import com.safehill.kclient.network.api.postForResponseObject
 import com.safehill.kclient.network.exceptions.SafehillError
-import com.safehill.kclient.SafehillCypher
-import com.safehill.kclient.models.RemoteCryptoUser
-import com.safehill.kclient.models.ShareablePayload
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -409,8 +404,16 @@ class RemoteServer(
             .getOrThrow()
     }
 
-    override suspend fun retrieveThread(usersIdentifiers: List<UserIdentifier>): ConversationThreadOutputDTO? {
-        return listThreads(usersIdentifiers).firstOrNull()
+    override suspend fun retrieveThread(
+        usersIdentifiers: List<UserIdentifier>,
+        phoneNumbers: List<HashedPhoneNumber>
+    ): ConversationThreadOutputDTO? {
+        return listThreads(
+            RetrieveThreadDTO(
+                byUsersPublicIdentifiers = usersIdentifiers,
+                byInvitedPhoneNumbers = phoneNumbers
+            )
+        ).firstOrNull()
     }
 
     @OptIn(ExperimentalSerializationApi::class)
@@ -440,29 +443,12 @@ class RemoteServer(
         return listThreads(null)
     }
 
-
-    @OptIn(ExperimentalSerializationApi::class)
-    private fun listThreads(usersIdentifiers: List<UserIdentifier>?): List<ConversationThreadOutputDTO> {
-        val bearerToken = this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
-
-        val request = usersIdentifiers?.let {
-            RetrieveThreadDTO(
-                byUsersPublicIdentifiers = it
-            )
-        }
-
-
-        return "/threads/retrieve".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Json.encodeToString(request))
-            .responseObject(
-                ListSerializer(ConversationThreadOutputDTO.serializer()),
-                Json {
-                    explicitNulls = false
-                    ignoreUnknownKeys = true
-                }
-            )
-            .getOrThrow()
+    private suspend fun listThreads(retrieveThreadDTO: RetrieveThreadDTO?): List<ConversationThreadOutputDTO> {
+        return postForResponseObject<RetrieveThreadDTO, List<ConversationThreadOutputDTO>>(
+            endPoint = "/threads/retrieve",
+            request = retrieveThreadDTO,
+            authenticationRequired = true
+        )
     }
 
     @OptIn(ExperimentalSerializationApi::class)
@@ -496,18 +482,20 @@ class RemoteServer(
         filterVersions: List<AssetQuality>,
     ) {
         val encryptedVersionByPresignedURL =
-        asset.encryptedVersions.values.filter { filterVersions.contains(it.quality) }
-            .mapNotNull { encryptedVersion ->
-                try {
-                    val serverAssetVersion = serverAsset.versions.first {
-                        it.versionName == encryptedVersion.quality.value
+            asset.encryptedVersions.values.filter { filterVersions.contains(it.quality) }
+                .mapNotNull { encryptedVersion ->
+                    try {
+                        val serverAssetVersion = serverAsset.versions.first {
+                            it.versionName == encryptedVersion.quality.value
+                        }
+                        serverAssetVersion.presignedURL to encryptedVersion
+                    } catch (_: NoSuchElementException) {
+                        SafehillClient.logger.log(
+                            "no server asset provided for version ${encryptedVersion.quality.value}"
+                        )
+                        null
                     }
-                    serverAssetVersion.presignedURL to encryptedVersion
-                } catch (_: NoSuchElementException) {
-                    println("no server asset provided for version ${encryptedVersion.quality.value}")
-                    null
-                }
-            }.toMap()
+                }.toMap()
 
         val remoteServer = this
         coroutineScope {
@@ -521,7 +509,9 @@ class RemoteServer(
                             AssetDescriptorUploadState.Completed
                         )
                     } catch (exception: Exception) {
-                        print(exception)
+                        SafehillClient.logger.error(
+                            exception.message ?: "Error while marking asset ${asset.globalIdentifier} ${encryptedVersion.quality}"
+                        )
                     }
                 }
             }
