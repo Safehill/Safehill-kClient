@@ -21,6 +21,10 @@ abstract class AbstractDownloadOperation : DownloadOperation, BackgroundTask {
     }
 
     private fun processAssetsInDescriptors(descriptors: List<AssetDescriptor>) {
+        safehillClient.assetDescriptorCache.upsertAssetDescriptors(descriptors)
+
+        // Will this be redundant listener?
+        // Can we collect asset descriptors from descriptors cache?
         listeners.forEach {
             it.onNewAssetDescriptors(descriptors)
         }

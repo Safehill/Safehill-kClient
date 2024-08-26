@@ -3,19 +3,15 @@ package com.safehill.kclient.tasks.inbound
 import com.safehill.SafehillClient
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
-import com.safehill.kclient.models.users.LocalUser
 
 class RemoteDownloadOperation(
-    private val safehillClient: SafehillClient,
+    override val safehillClient: SafehillClient,
     override val listeners: List<DownloadOperationListener>,
 ) : AbstractDownloadOperation() {
 
     companion object {
         var alreadyProcessed = mutableListOf<AssetGlobalIdentifier>()
     }
-
-    override val user: LocalUser
-        get() = safehillClient.currentUser
 
     override suspend fun getDescriptors(): List<AssetDescriptor> {
         val remoteDescriptors =
