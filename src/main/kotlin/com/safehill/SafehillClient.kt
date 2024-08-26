@@ -7,6 +7,7 @@ import com.safehill.kclient.controllers.UserController
 import com.safehill.kclient.controllers.UserInteractionController
 import com.safehill.kclient.logging.DefaultSafehillLogger
 import com.safehill.kclient.logging.SafehillLogger
+import com.safehill.kclient.models.assets.AssetDescriptorsCache
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.ServerProxyImpl
@@ -35,6 +36,12 @@ class SafehillClient private constructor(
     val userController by lazy {
         UserController(
             serverProxy = serverProxy
+        )
+    }
+
+    val assetDescriptorCache by lazy {
+        AssetDescriptorsCache(
+            currentUser = currentUser
         )
     }
 
