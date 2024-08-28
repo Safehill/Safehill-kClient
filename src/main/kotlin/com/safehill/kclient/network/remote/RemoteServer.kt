@@ -5,12 +5,14 @@ import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.responseObject
 import com.google.gson.Gson
+import com.safehill.kclient.SafehillCypher
+import com.safehill.kclient.models.RemoteCryptoUser
+import com.safehill.kclient.models.ShareablePayload
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetDescriptorUploadState
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAsset
-import com.safehill.kclient.models.assets.EncryptedAssetVersion
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.assets.ShareableEncryptedAsset
 import com.safehill.kclient.models.dtos.AssetDeleteCriteriaDTO
@@ -57,14 +59,6 @@ import com.safehill.kclient.network.api.getOrElseOnSafehillError
 import com.safehill.kclient.network.api.getOrThrow
 import com.safehill.kclient.network.api.postForResponseObject
 import com.safehill.kclient.network.exceptions.SafehillError
-import com.safehill.kclient.SafehillCypher
-import com.safehill.kclient.models.RemoteCryptoUser
-import com.safehill.kclient.models.ShareablePayload
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -390,7 +384,35 @@ class RemoteServer(
     }
 
     override suspend fun share(asset: ShareableEncryptedAsset) {
-        TODO("Not yet implemented")
+        if (asset.sharedVersions.isEmpty() || asset.sharedVersions.size > 1) {
+            throw NotImplementedError("Current API only supports share one asset per request")
+        }
+
+        val bearerToken =
+            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
+
+        val versions = mutableListOf<Map<String, Any?>>()
+        for (version in asset.sharedVersions) {
+            val versionDetails = mapOf(
+                "versionName" to version.quality.value,
+                "recipientUserIdentifier" to version.userPublicIdentifier,
+                "recipientEncryptedSecret" to Base64.getEncoder().encodeToString(version.encryptedSecret),
+                "ephemeralPublicKey" to Base64.getEncoder().encodeToString(version.ephemeralPublicKey),
+                "publicSignature" to Base64.getEncoder().encodeToString(version.publicSignature)
+            )
+            versions.add(versionDetails)
+        }
+
+        val requestBody = mapOf(
+            "globalAssetIdentifier" to asset.globalIdentifier,
+            "versionSharingDetails" to versions,
+            "groupId" to asset.groupId
+        )
+        "/assets/share".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Gson().toJson(requestBody))
+            .responseObject(AssetOutputDTO.serializer())
+            .getOrThrow()
     }
 
     override suspend fun unshare(
@@ -521,7 +543,7 @@ class RemoteServer(
                             AssetDescriptorUploadState.Completed
                         )
                     } catch (exception: Exception) {
-                        print(exception)
+                        throw exception
                     }
                 }
             }

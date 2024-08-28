@@ -7,9 +7,7 @@ sealed class Asset {
 
     data class FromPhotosLibrary(
         val libraryPhoto: LibraryPhoto
-    ) : Asset() {
-        val localIdentifier = libraryPhoto.localIdentifier
-    }
+    ) : Asset()
 
     data class BackedUpLibraryPhoto(
         val globalIdentifier: String,
@@ -37,6 +35,16 @@ sealed class Asset {
             is Downloading -> globalIdentifier
             is Downloaded -> decryptedAsset.globalIdentifier
         }
+
+    val localIdentifier: String?
+        get() = when (this) {
+            is FromPhotosLibrary -> libraryPhoto.localIdentifier
+            is BackedUpLibraryPhoto -> libraryPhoto.localIdentifier
+            is Downloading -> null
+            is Downloaded -> decryptedAsset.localIdentifier
+        }
+
+
 
     val isFromLocalLibrary: Boolean
         get() = when (this) {
@@ -82,6 +90,11 @@ sealed class Asset {
             is BackedUpLibraryPhoto -> libraryPhoto.uri
             else -> null
         }
+    val data: ByteArray?
+        get() = when (this) {
+            is Downloaded -> decryptedAsset.decryptedVersions[AssetQuality.LowResolution]
+            else -> null
+        }
 
     val creationDate: Instant?
         get() = when (this) {
@@ -96,7 +109,6 @@ sealed class Asset {
             is FromPhotosLibrary -> "from the Photos library"
             else -> "In your lockbox"
         }
-
 
 }
 

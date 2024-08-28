@@ -5,6 +5,9 @@ import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.assets.LocalAsset
+import com.safehill.kclient.models.assets.ShareableEncryptedAsset
+import com.safehill.kclient.models.assets.ShareableEncryptedAssetImpl
+import com.safehill.kclient.models.assets.ShareableEncryptedAssetVersionImpl
 import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
@@ -71,10 +74,24 @@ class UploadOperationImpl(
         groupId: GroupId,
         recipients: List<ServerUser>
     ) {
-        TODO("Not yet implemented")
+        scope.launch {
+            assetQualities.forEach {
+                val item = OutboundQueueItem(
+                    OutboundQueueItem.OperationType.Share,
+                    it,
+                    localAsset,
+                    globalIdentifier,
+                    groupId,
+                    recipients,
+                    null
+                )
+                outboundQueueItems.send(item)
+                outboundQueueItemManager.addOutboundQueueItem(item)
+            }
+        }
     }
 
-    suspend fun upload(outboundQueueItem: OutboundQueueItem) {
+    private suspend fun upload(outboundQueueItem: OutboundQueueItem) {
         try {
             val globalIdentifier = outboundQueueItem.globalIdentifier ?: return
 
@@ -105,42 +122,50 @@ class UploadOperationImpl(
 
     private fun notifyListenersStartedEncrypting(outboundQueueItem: OutboundQueueItem) {
         listeners.forEach {
-            it.startedEncrypting(
-                outboundQueueItem.localAsset.localIdentifier,
-                outboundQueueItem.groupId,
-                outboundQueueItem.assetQuality
-            )
+            outboundQueueItem.localAsset?.localIdentifier?.let { localAsset ->
+                it.startedEncrypting(
+                    localAsset,
+                    outboundQueueItem.groupId,
+                    outboundQueueItem.assetQuality
+                )
+            }
         }
     }
 
     private fun notifyListenersFinishedEncrypting(outboundQueueItem: OutboundQueueItem) {
         listeners.forEach {
-            it.finishedEncrypting(
-                outboundQueueItem.localAsset.localIdentifier,
-                outboundQueueItem.groupId,
-                outboundQueueItem.assetQuality
-            )
+            outboundQueueItem.localAsset?.let { localAsset ->
+                it.finishedEncrypting(
+                    localAsset.localIdentifier,
+                    outboundQueueItem.groupId,
+                    outboundQueueItem.assetQuality
+                )
+            }
         }
     }
 
     private fun notifyListenersStartedUploading(outboundQueueItem: OutboundQueueItem) {
         listeners.forEach {
-            it.startedUploading(
-                outboundQueueItem.localAsset.localIdentifier,
-                outboundQueueItem.groupId,
-                outboundQueueItem.assetQuality
-            )
+            outboundQueueItem.localAsset?.let { localAsset ->
+                it.startedUploading(
+                    localAsset.localIdentifier,
+                    outboundQueueItem.groupId,
+                    outboundQueueItem.assetQuality
+                )
+            }
         }
     }
 
     private fun notifyListenersFinishedUploading(outboundQueueItem: OutboundQueueItem, globalIdentifier: String) {
         listeners.forEach {
-            it.finishedUploading(
-                outboundQueueItem.localAsset.localIdentifier,
-                globalIdentifier,
-                outboundQueueItem.groupId,
-                outboundQueueItem.assetQuality
-            )
+            outboundQueueItem.localAsset?.let { localAsset ->
+                it.finishedUploading(
+                    localAsset.localIdentifier,
+                    globalIdentifier,
+                    outboundQueueItem.groupId,
+                    outboundQueueItem.assetQuality
+                )
+            }
         }
     }
 
@@ -180,7 +205,7 @@ class UploadOperationImpl(
                 outboundQueueItem.recipients,
                 outboundQueueItem.uri
             )
-            this.share(shareQueueItem)
+            outboundQueueItems.send(shareQueueItem)
         }
     }
 
@@ -205,24 +230,52 @@ class UploadOperationImpl(
         }
     }
 
-    suspend fun share(outboundQueueItem: OutboundQueueItem) {
+    private suspend fun share(outboundQueueItem: OutboundQueueItem) {
         listeners.forEach {
             it.startedSharing(
-                outboundQueueItem.localAsset.localIdentifier,
+                outboundQueueItem.localAsset?.localIdentifier,
                 outboundQueueItem.globalIdentifier!!,
                 outboundQueueItem.groupId,
                 outboundQueueItem.recipients
             )
         }
 
-        // 1. Encrypt the asset for all recipients
-
-        // 2. Call serverProxy.share() with these encryption details
+        if (outboundQueueItem.globalIdentifier == null) return
+        try {
+            for (recipient in outboundQueueItem.recipients) {
+                val (_, sharablePayload) = encrypter.getSharablePayload(outboundQueueItem, user, recipient)
+                serverProxy.share(
+                    ShareableEncryptedAssetImpl(
+                        outboundQueueItem.globalIdentifier,
+                        listOf(
+                            ShareableEncryptedAssetVersionImpl(
+                                outboundQueueItem.assetQuality,
+                                recipient.identifier,
+                                sharablePayload.ciphertext,
+                                sharablePayload.ephemeralPublicKeyData,
+                                sharablePayload.signature
+                            )
+                        ),
+                        outboundQueueItem.groupId
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            listeners.forEach {
+                it.failedSharing(
+                    outboundQueueItem.localAsset?.localIdentifier,
+                    outboundQueueItem.globalIdentifier,
+                    outboundQueueItem.groupId,
+                    outboundQueueItem.recipients
+                )
+            }
+            return
+        }
 
         listeners.forEach {
             it.finishedSharing(
-                outboundQueueItem.localAsset.localIdentifier,
-                outboundQueueItem.globalIdentifier!!,
+                outboundQueueItem.localAsset?.localIdentifier,
+                outboundQueueItem.globalIdentifier,
                 outboundQueueItem.groupId,
                 outboundQueueItem.recipients
             )
