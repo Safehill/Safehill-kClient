@@ -5,9 +5,6 @@ import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.responseObject
 import com.google.gson.Gson
-import com.safehill.kclient.SafehillCypher
-import com.safehill.kclient.models.RemoteCryptoUser
-import com.safehill.kclient.models.ShareablePayload
 import com.safehill.SafehillClient
 import com.safehill.kclient.SafehillCypher
 import com.safehill.kclient.models.RemoteCryptoUser

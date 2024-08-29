@@ -1,11 +1,11 @@
 package com.safehill.kclient.tasks.outbound
 
+import com.safehill.kclient.models.ShareablePayload
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.assets.LocalAsset
-import com.safehill.kclient.models.assets.ShareableEncryptedAsset
 import com.safehill.kclient.models.assets.ShareableEncryptedAssetImpl
 import com.safehill.kclient.models.assets.ShareableEncryptedAssetVersionImpl
 import com.safehill.kclient.models.dtos.AssetOutputDTO
@@ -250,52 +250,73 @@ class UploadOperationImpl(
     }
 
     private suspend fun share(outboundQueueItem: OutboundQueueItem) {
+        if (outboundQueueItem.globalIdentifier == null) return
+
+        notifyListenersStartedSharing(outboundQueueItem)
+        try {
+            for (recipient in outboundQueueItem.recipients) {
+                val (_, sharablePayload) = encrypter.getSharablePayload(outboundQueueItem, user, recipient)
+                serverShare(outboundQueueItem, recipient, sharablePayload)
+            }
+        } catch (e: Exception) {
+            //TODO better exception handling
+            println(e.localizedMessage)
+            notifyListenersFailedSharing(outboundQueueItem)
+            return
+        }
+
+        notifyListenersFinishedSharing(outboundQueueItem)
+    }
+
+    private suspend fun serverShare(
+        outboundQueueItem: OutboundQueueItem,
+        recipient: ServerUser,
+        sharablePayload: ShareablePayload
+    ) {
+        serverProxy.share(
+            ShareableEncryptedAssetImpl(
+                outboundQueueItem.globalIdentifier!!,
+                listOf(
+                    ShareableEncryptedAssetVersionImpl(
+                        outboundQueueItem.assetQuality,
+                        recipient.identifier,
+                        sharablePayload.ciphertext,
+                        sharablePayload.ephemeralPublicKeyData,
+                        sharablePayload.signature
+                    )
+                ),
+                outboundQueueItem.groupId
+            )
+        )
+    }
+
+    private fun notifyListenersFinishedSharing(outboundQueueItem: OutboundQueueItem) {
         listeners.forEach {
-            it.startedSharing(
+            it.finishedSharing(
                 outboundQueueItem.localAsset?.localIdentifier,
                 outboundQueueItem.globalIdentifier!!,
                 outboundQueueItem.groupId,
                 outboundQueueItem.recipients
             )
         }
+    }
 
-        if (outboundQueueItem.globalIdentifier == null) return
-        try {
-            for (recipient in outboundQueueItem.recipients) {
-                val (_, sharablePayload) = encrypter.getSharablePayload(outboundQueueItem, user, recipient)
-                serverProxy.share(
-                    ShareableEncryptedAssetImpl(
-                        outboundQueueItem.globalIdentifier,
-                        listOf(
-                            ShareableEncryptedAssetVersionImpl(
-                                outboundQueueItem.assetQuality,
-                                recipient.identifier,
-                                sharablePayload.ciphertext,
-                                sharablePayload.ephemeralPublicKeyData,
-                                sharablePayload.signature
-                            )
-                        ),
-                        outboundQueueItem.groupId
-                    )
-                )
-            }
-        } catch (e: Exception) {
-            print(e)
-            listeners.forEach {
-                it.failedSharing(
-                    outboundQueueItem.localAsset?.localIdentifier,
-                    outboundQueueItem.globalIdentifier,
-                    outboundQueueItem.groupId,
-                    outboundQueueItem.recipients
-                )
-            }
-            return
-        }
-
+    private fun notifyListenersFailedSharing(outboundQueueItem: OutboundQueueItem) {
         listeners.forEach {
-            it.finishedSharing(
+            it.failedSharing(
                 outboundQueueItem.localAsset?.localIdentifier,
-                outboundQueueItem.globalIdentifier,
+                outboundQueueItem.globalIdentifier!!,
+                outboundQueueItem.groupId,
+                outboundQueueItem.recipients
+            )
+        }
+    }
+
+    private fun notifyListenersStartedSharing(outboundQueueItem: OutboundQueueItem) {
+        listeners.forEach {
+            it.startedSharing(
+                outboundQueueItem.localAsset?.localIdentifier,
+                outboundQueueItem.globalIdentifier!!,
                 outboundQueueItem.groupId,
                 outboundQueueItem.recipients
             )
