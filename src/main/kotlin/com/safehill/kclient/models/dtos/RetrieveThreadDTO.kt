@@ -4,5 +4,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class RetrieveThreadDTO(
-    val byUsersPublicIdentifiers: List<String>
+    val byUsersPublicIdentifiers: List<String>,
+    val byInvitedPhoneNumbers: List<String>
 )
