@@ -8,7 +8,7 @@ import com.google.gson.Gson
 import com.safehill.SafehillClient
 import com.safehill.kclient.SafehillCypher
 import com.safehill.kclient.models.RemoteCryptoUser
-import com.safehill.kclient.models.ShareablePayload
+import com.safehill.kcrypto.models.ShareablePayload
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetDescriptorUploadState
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier

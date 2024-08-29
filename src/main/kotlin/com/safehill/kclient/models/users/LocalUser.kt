@@ -5,7 +5,7 @@ import com.safehill.kclient.models.dtos.BearerToken
 import com.safehill.kclient.models.CryptoUser
 import com.safehill.kclient.models.LocalCryptoUser
 import com.safehill.kclient.models.SHUserContext
-import com.safehill.kclient.models.ShareablePayload
+import com.safehill.kcrypto.models.ShareablePayload
 import java.security.PublicKey
 import java.util.Base64
 
