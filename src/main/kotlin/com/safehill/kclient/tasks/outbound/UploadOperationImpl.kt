@@ -169,6 +169,18 @@ class UploadOperationImpl(
         }
     }
 
+    private fun notifyListenersFailedUploading(outboundQueueItem: OutboundQueueItem) {
+        listeners.forEach {
+            outboundQueueItem.localAsset?.let { localAsset ->
+                it.failedUploading(
+                    localAsset.localIdentifier,
+                    outboundQueueItem.groupId,
+                    outboundQueueItem.assetQuality
+                )
+            }
+        }
+    }
+
     private suspend fun createServerAssets(
         outboundQueueItem: OutboundQueueItem,
         encryptedAsset: EncryptedAsset,
@@ -195,17 +207,20 @@ class UploadOperationImpl(
     }
 
     private suspend fun shareIfRecipientsExist(outboundQueueItem: OutboundQueueItem, globalIdentifier: String) {
-        if (outboundQueueItem.recipients.isNotEmpty()) {
-            val shareQueueItem = OutboundQueueItem(
-                OutboundQueueItem.OperationType.Share,
-                outboundQueueItem.assetQuality,
-                outboundQueueItem.localAsset,
-                globalIdentifier,
-                outboundQueueItem.groupId,
-                outboundQueueItem.recipients,
-                outboundQueueItem.uri
-            )
-            outboundQueueItems.send(shareQueueItem)
+        scope.launch {
+            if (outboundQueueItem.recipients.isNotEmpty()) {
+                val shareQueueItem = OutboundQueueItem(
+                    OutboundQueueItem.OperationType.Share,
+                    outboundQueueItem.assetQuality,
+                    outboundQueueItem.localAsset,
+                    globalIdentifier,
+                    outboundQueueItem.groupId,
+                    outboundQueueItem.recipients,
+                    outboundQueueItem.uri
+                )
+                outboundQueueItems.send(shareQueueItem)
+                outboundQueueItemManager.addOutboundQueueItem(shareQueueItem)
+            }
         }
     }
 
@@ -215,11 +230,15 @@ class UploadOperationImpl(
             is SafehillError.ClientError.Conflict -> {
                 if (!outboundQueueItem.force) {
                     outboundQueueItem.force = true
-                } else return
+                } else {
+                    notifyListenersFailedUploading(outboundQueueItem)
+                    return
+                }
             }
             is SafehillError.ClientError.BadRequest,
             SafehillError.ClientError.Unauthorized,
             SafehillError.ClientError.PaymentRequired -> {
+                notifyListenersFailedUploading(outboundQueueItem)
                 return
             }
         }
@@ -261,6 +280,7 @@ class UploadOperationImpl(
                 )
             }
         } catch (e: Exception) {
+            print(e)
             listeners.forEach {
                 it.failedSharing(
                     outboundQueueItem.localAsset?.localIdentifier,

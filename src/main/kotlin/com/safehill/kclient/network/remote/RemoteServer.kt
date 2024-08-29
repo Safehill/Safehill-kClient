@@ -62,6 +62,7 @@ import com.safehill.kclient.network.exceptions.SafehillError
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -382,7 +383,20 @@ class RemoteServer(
             .getOrThrow()
         return listOf(shOutput)
     }
-
+    @Serializable
+    data class ShareVersionDetails(
+        val versionName: String,
+        val recipientUserIdentifier: String,
+        val recipientEncryptedSecret: String,
+        val ephemeralPublicKey: String,
+        val publicSignature: String
+    )
+    @Serializable
+    data class ShareRequestBody(
+        val globalAssetIdentifier: String,
+        val versionSharingDetails: List<ShareVersionDetails>,
+        val groupId: String
+    )
     override suspend fun share(asset: ShareableEncryptedAsset) {
         if (asset.sharedVersions.isEmpty() || asset.sharedVersions.size > 1) {
             throw NotImplementedError("Current API only supports share one asset per request")
@@ -391,27 +405,27 @@ class RemoteServer(
         val bearerToken =
             this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
 
-        val versions = mutableListOf<Map<String, Any?>>()
+        val versions = mutableListOf<ShareVersionDetails>()
         for (version in asset.sharedVersions) {
-            val versionDetails = mapOf(
-                "versionName" to version.quality.value,
-                "recipientUserIdentifier" to version.userPublicIdentifier,
-                "recipientEncryptedSecret" to Base64.getEncoder().encodeToString(version.encryptedSecret),
-                "ephemeralPublicKey" to Base64.getEncoder().encodeToString(version.ephemeralPublicKey),
-                "publicSignature" to Base64.getEncoder().encodeToString(version.publicSignature)
+            val versionDetails = ShareVersionDetails(
+                versionName = version.quality.value,
+                recipientUserIdentifier = version.userPublicIdentifier,
+                recipientEncryptedSecret = Base64.getEncoder().encodeToString(version.encryptedSecret),
+                ephemeralPublicKey = Base64.getEncoder().encodeToString(version.ephemeralPublicKey),
+                publicSignature = Base64.getEncoder().encodeToString(version.publicSignature)
             )
             versions.add(versionDetails)
         }
 
-        val requestBody = mapOf(
-            "globalAssetIdentifier" to asset.globalIdentifier,
-            "versionSharingDetails" to versions,
-            "groupId" to asset.groupId
+        val requestBody = ShareRequestBody(
+            globalAssetIdentifier = asset.globalIdentifier,
+            versionSharingDetails = versions,  // Puoi avere più versioni in una lista
+            groupId = asset.groupId
         )
         "/assets/share".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Gson().toJson(requestBody))
-            .responseObject(AssetOutputDTO.serializer())
+            .body(Json.encodeToString(ShareRequestBody.serializer(), requestBody))
+            .responseString()
             .getOrThrow()
     }
 

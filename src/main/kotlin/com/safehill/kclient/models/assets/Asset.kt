@@ -61,14 +61,6 @@ sealed class Asset {
             else -> false
         }
 
-    val uploadState: AssetDescriptor.UploadState
-        get() {
-//            val auc = AssetsUploadController.shared
-//            return localIdentifier?.let { auc.uploadState(it) }
-//                ?: globalIdentifier?.let { auc.uploadState(it) }
-//                ?: AssetDescriptor.UploadState.NotStarted
-            return AssetDescriptor.UploadState.NotStarted
-        }
 
     val width: Int?
         get() = when (this) {
