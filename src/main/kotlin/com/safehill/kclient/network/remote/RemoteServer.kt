@@ -8,7 +8,6 @@ import com.google.gson.Gson
 import com.safehill.SafehillClient
 import com.safehill.kclient.SafehillCypher
 import com.safehill.kclient.models.RemoteCryptoUser
-import com.safehill.kcrypto.models.ShareablePayload
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetDescriptorUploadState
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
@@ -58,8 +57,11 @@ import com.safehill.kclient.network.api.authorization.AuthorizationApiImpl
 import com.safehill.kclient.network.api.getMappingOrThrow
 import com.safehill.kclient.network.api.getOrElseOnSafehillError
 import com.safehill.kclient.network.api.getOrThrow
+import com.safehill.kclient.network.api.group.GroupApi
+import com.safehill.kclient.network.api.group.GroupApiImpl
 import com.safehill.kclient.network.api.postForResponseObject
 import com.safehill.kclient.network.exceptions.SafehillError
+import com.safehill.kcrypto.models.ShareablePayload
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -79,7 +81,8 @@ import java.util.Base64
 class RemoteServer(
     override val requestor: LocalUser
 ) : SafehillApi,
-    AuthorizationApi by AuthorizationApiImpl(requestor) {
+    AuthorizationApi by AuthorizationApiImpl(requestor),
+    GroupApi by GroupApiImpl(requestor) {
 
     @OptIn(ExperimentalSerializationApi::class)
     private val ignorantJson = Json {
@@ -510,7 +513,8 @@ class RemoteServer(
                         )
                     } catch (exception: Exception) {
                         SafehillClient.logger.error(
-                            exception.message ?: "Error while marking asset ${asset.globalIdentifier} ${encryptedVersion.quality}"
+                            exception.message
+                                ?: "Error while marking asset ${asset.globalIdentifier} ${encryptedVersion.quality}"
                         )
                     }
                 }
@@ -557,14 +561,6 @@ class RemoteServer(
         groupId: GroupId,
         recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>,
     ) {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun deleteGroup(groupId: GroupId) {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun retrieveGroupUserEncryptionDetails(groupId: GroupId): List<RecipientEncryptionDetailsDTO> {
         TODO("Not yet implemented")
     }
 

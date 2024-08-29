@@ -24,9 +24,10 @@ import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.api.authorization.AuthorizationApi
+import com.safehill.kclient.network.api.group.GroupApi
 import java.time.Instant
 
-interface SafehillApi : AuthorizationApi {
+interface SafehillApi : AuthorizationApi, GroupApi {
 
     /// Creates a new user given their credentials, their public key and public signature (store in the `requestor` object)
     /// - Parameters:
@@ -212,19 +213,6 @@ interface SafehillApi : AuthorizationApi {
         groupId: GroupId,
         recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>
     )
-
-    /// Delete a group, related messages and reactions, given its id
-    /// - Parameters:
-    ///   - groupId: the group identifier
-    suspend fun deleteGroup(groupId: GroupId)
-
-    /// Retrieved the E2EE details for a group, if one exists
-    /// - Parameters:
-    ///   - groupId: the group identifier
-    ///   - completionHandler: the callback method
-    suspend fun retrieveGroupUserEncryptionDetails(
-        groupId: GroupId,
-    ): List<RecipientEncryptionDetailsDTO>
 
 
     /// Adds reactions to a share (group)

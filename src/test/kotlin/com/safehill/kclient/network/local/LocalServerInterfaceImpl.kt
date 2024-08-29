@@ -156,7 +156,6 @@ class LocalServerInterfaceImpl : LocalServerInterface {
     }
 
 
-
     override suspend fun create(
         assets: List<EncryptedAsset>,
         groupId: GroupId,
@@ -185,7 +184,6 @@ class LocalServerInterfaceImpl : LocalServerInterface {
     ): ConversationThreadOutputDTO? {
         TODO("Not yet implemented")
     }
-
 
 
     override suspend fun retrieveThread(threadId: String): ConversationThreadOutputDTO? {
@@ -220,11 +218,11 @@ class LocalServerInterfaceImpl : LocalServerInterface {
     }
 
     override suspend fun deleteGroup(groupId: GroupId) {
-        TODO("Not yet implemented")
+        throw SafehillError.ServerError.NotImplemented
     }
 
-    override suspend fun retrieveGroupUserEncryptionDetails(groupId: GroupId): List<RecipientEncryptionDetailsDTO> {
-        TODO("Not yet implemented")
+    override suspend fun retrieveGroupUserEncryptionDetails(groupId: GroupId): RecipientEncryptionDetailsDTO {
+        throw SafehillError.ServerError.NotImplemented
     }
 
     override suspend fun addReactions(
