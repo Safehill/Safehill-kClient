@@ -42,6 +42,8 @@ import com.safehill.kclient.models.dtos.RemoteUserPhoneNumberMatchDto
 import com.safehill.kclient.models.dtos.RemoteUserSearchDTO
 import com.safehill.kclient.models.dtos.RetrieveThreadDTO
 import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
+import com.safehill.kclient.models.dtos.ShareRequestBody
+import com.safehill.kclient.models.dtos.ShareVersionDetails
 import com.safehill.kclient.models.dtos.UserDeviceTokenDTO
 import com.safehill.kclient.models.dtos.UserIdentifiersDTO
 import com.safehill.kclient.models.dtos.UserInputDTO
@@ -63,7 +65,6 @@ import com.safehill.kclient.network.exceptions.SafehillError
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -384,20 +385,7 @@ class RemoteServer(
             .getOrThrow()
         return listOf(shOutput)
     }
-    @Serializable
-    data class ShareVersionDetails(
-        val versionName: String,
-        val recipientUserIdentifier: String,
-        val recipientEncryptedSecret: String,
-        val ephemeralPublicKey: String,
-        val publicSignature: String
-    )
-    @Serializable
-    data class ShareRequestBody(
-        val globalAssetIdentifier: String,
-        val versionSharingDetails: List<ShareVersionDetails>,
-        val groupId: String
-    )
+
     override suspend fun share(asset: ShareableEncryptedAsset) {
         if (asset.sharedVersions.isEmpty() || asset.sharedVersions.size > 1) {
             throw NotImplementedError("Current API only supports share one asset per request")
