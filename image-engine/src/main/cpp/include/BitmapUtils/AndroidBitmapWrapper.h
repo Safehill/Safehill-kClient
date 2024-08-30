@@ -2,8 +2,8 @@
 // Created by Zhenxiang Chen on 30/06/24.
 //
 
-#ifndef SUPERIMAGE_ANDROIDBITMAPWRAPPER_H
-#define SUPERIMAGE_ANDROIDBITMAPWRAPPER_H
+#ifndef SAFEHILL_ANDROIDBITMAPWRAPPER_H
+#define SAFEHILL_ANDROIDBITMAPWRAPPER_H
 
 #include <jni.h>
 #include <opencv2/opencv.hpp>
@@ -19,4 +19,4 @@ private:
     jobject bitmap;
     cv::Mat mat;
 };
-#endif //SUPERIMAGE_ANDROIDBITMAPWRAPPER_H
+#endif //SAFEHILL_ANDROIDBITMAPWRAPPER_H

@@ -2,8 +2,8 @@
 // Created by Zhenxiang Chen on 09/12/23.
 //
 
-#ifndef SUPERIMAGE_IMAGEUTILS_H
-#define SUPERIMAGE_IMAGEUTILS_H
+#ifndef SAFEHILL_IMAGEUTILS_H
+#define SAFEHILL_IMAGEUTILS_H
 
 #include <opencv2/opencv.hpp>
 
@@ -21,4 +21,4 @@ public:
     static bool writeImageRGBAMat(const char* filename, const cv::Mat &mat, OutputFormat format);
 };
 
-#endif //SUPERIMAGE_IMAGEUTILS_H
+#endif //SAFEHILL_IMAGEUTILS_H

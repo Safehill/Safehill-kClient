@@ -2,8 +2,8 @@
 // Created by Zhenxiang Chen on 24/08/23.
 //
 
-#ifndef SUPERIMAGE_UPSCALINGENGINE_H
-#define SUPERIMAGE_UPSCALINGENGINE_H
+#ifndef SAFEHILL_UPSCALINGENGINE_H
+#define SAFEHILL_UPSCALINGENGINE_H
 
 #include <jni.h>
 #include <opencv2/opencv.hpp>
@@ -61,4 +61,4 @@ private:
 };
 
 
-#endif //SUPERIMAGE_UPSCALINGENGINE_H
+#endif //SAFEHILL_UPSCALINGENGINE_H

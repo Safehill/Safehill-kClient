@@ -2,8 +2,8 @@
 // Created by Zhenxiang Chen on 04/01/24.
 //
 
-#ifndef SUPERIMAGE_JNIUTILS_H
-#define SUPERIMAGE_JNIUTILS_H
+#ifndef SAFEHILL_JNIUTILS_H
+#define SAFEHILL_JNIUTILS_H
 
 #include <string>
 #include <jni.h>
@@ -20,4 +20,4 @@ public:
     static std::string jstringToStdString(JNIEnv* env, jstring jstr);
 };
 
-#endif //SUPERIMAGE_JNIUTILS_H
+#endif //SAFEHILL_JNIUTILS_H

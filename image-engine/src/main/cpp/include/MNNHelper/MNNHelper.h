@@ -2,8 +2,8 @@
 // Created by Zhenxiang Chen on 14/12/23.
 //
 
-#ifndef SUPERIMAGE_MNNHELPER_H
-#define SUPERIMAGE_MNNHELPER_H
+#ifndef SAFEHILL_MNNHELPER_H
+#define SAFEHILL_MNNHELPER_H
 
 #include <MNN/Interpreter.hpp>
 
@@ -14,4 +14,4 @@ public:
     static MNN::Session* createSessionWithCPUBackend(MNN::Interpreter *interpreter);
 };
 
-#endif //SUPERIMAGE_MNNHELPER_H
+#endif //SAFEHILL_MNNHELPER_H

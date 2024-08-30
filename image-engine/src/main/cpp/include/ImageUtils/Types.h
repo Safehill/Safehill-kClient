@@ -4,8 +4,8 @@
 
 #include <Eigen/Core>
 
-#ifndef SUPERIMAGE_TYPES_H
-#define SUPERIMAGE_TYPES_H
+#ifndef SAFEHILL_TYPES_H
+#define SAFEHILL_TYPES_H
 
 using PixelMatrix = Eigen::Map<Eigen::Matrix<int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>;
 
@@ -14,4 +14,4 @@ struct image_dimensions {
     int height;
 };
 
-#endif //SUPERIMAGE_TYPES_H
+#endif //SAFEHILL_TYPES_H

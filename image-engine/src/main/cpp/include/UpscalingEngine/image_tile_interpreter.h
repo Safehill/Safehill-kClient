@@ -2,8 +2,8 @@
 // Created by Zhenxiang Chen on 06/02/23.
 //
 
-#ifndef SUPERIMAGE_IMAGE_TILE_INTERPRETER_H
-#define SUPERIMAGE_IMAGE_TILE_INTERPRETER_H
+#ifndef SAFEHILL_IMAGE_TILE_INTERPRETER_H
+#define SAFEHILL_IMAGE_TILE_INTERPRETER_H
 
 #include <MNN/Interpreter.hpp>
 
@@ -57,4 +57,4 @@ private:
     void releaseSession();
 };
 
-#endif //SUPERIMAGE_IMAGE_TILE_INTERPRETER_H
+#endif //SAFEHILL_IMAGE_TILE_INTERPRETER_H
