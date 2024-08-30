@@ -3,7 +3,7 @@
 #include <filesystem>
 
 #include "ImageUtils/ImageUtils.h"
-#include "UpscalingEngine/UpscalingEngine.h"
+#include "InferenceEngine/InferenceEngine.h"
 
 bool createDirectoryIfNotExists(const std::string& directoryPath) {
     std::filesystem::path path(directoryPath);
@@ -17,25 +17,25 @@ bool createDirectoryIfNotExists(const std::string& directoryPath) {
 
 
 void processImage(
-    const std::filesystem::path &inputImagePath,
-    UpscalingEngine &engine,
-    std::filesystem::path &outputDir) {
+        const std::filesystem::path &inputImagePath,
+        InferenceEngine &engine,
+        std::filesystem::path &outputDir) {
 
     auto inputMat = ImageUtils::loadImageAsRGBAMat(std::filesystem::absolute(inputImagePath).c_str());
     auto outputMat = cv::Mat(inputMat.rows * engine.scale, inputMat.cols * engine.scale, inputMat.type());
     const auto outputImagePath = std::filesystem::absolute(outputDir / inputImagePath.filename());
 
-    engine.upscaleImage(nullptr, nullptr, nullptr, inputMat, outputMat);
+    engine.runInference(nullptr, nullptr, nullptr, inputMat, outputMat);
 
     ImageUtils::writeImageRGBAMat(outputImagePath.c_str(), outputMat, ImageUtils::OutputFormat::PNG);
 }
 
 int main(int argc, char** argv) {
-    cxxopts::Options options("UpscalingEngine_demo", "UpscalingEngine demo");
+    cxxopts::Options options("InferenceEngine_demo", "InferenceEngine demo");
 
     options.add_options()
         ("i,input", "Input image file", cxxopts::value<std::string>())
-        ("m,model", "Upscaling model file in MNN format", cxxopts::value<std::string>())
+        ("m,model", "Model file in MNN format", cxxopts::value<std::string>())
         ("s,scale", "The scaling factor of the model", cxxopts::value<uint32_t>())
         ("o,output", "Output directory", cxxopts::value<std::string>())
         ("t,tile-size", "Tile size used in processing, specify 0 or negative to disable tiling", cxxopts::value<std::int32_t>())
@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
     const auto outputDir = result["output"].as<std::string>();
     const auto tileSize = result["tile-size"].as<std::int32_t>();
 
-    auto upscalingEngine = UpscalingEngine(model.c_str(), scale, tileSize, INT32_MAX);
+    auto inferenceEngine = InferenceEngine(model.c_str(), scale, tileSize, INT32_MAX);
 
     try {
         if (!createDirectoryIfNotExists(outputDir)) {
@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
     std::filesystem::path outputPath(outputDir);
     for (const auto& entry : std::filesystem::directory_iterator(directoryPath)) {
         if (entry.is_regular_file()) {
-            processImage(entry.path(), upscalingEngine, outputPath);
+            processImage(entry.path(), inferenceEngine, outputPath);
         }
     }
 

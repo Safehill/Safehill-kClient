@@ -18,7 +18,7 @@ import androidx.work.WorkerParameters
 import com.safehill.kcrypto.image_engine.MLModelsRepository
 import com.safehill.kcrypto.image_engine.R
 import com.safehill.kcrypto.image_engine.jni.JNIProgressTracker
-import com.safehill.kcrypto.image_engine.jni.UpscalingEngine
+import com.safehill.kcrypto.image_engine.jni.InferenceEngine
 import com.safehill.kcrypto.image_engine.model.DownloadModelState
 import com.safehill.kcrypto.image_engine.model.ImageFilterArgs
 import com.safehill.kcrypto.image_engine.model.ImageFilterWorkState
@@ -55,7 +55,7 @@ internal class ImageFilterWorker(
             is DownloadModelState.Loading -> throw IllegalStateException("Download model ended with $it")
             is DownloadModelState.Success -> it.file
         }
-        val upscalingEngine = UpscalingEngine(modelFile, 1, 0)
+        val inferenceEngine = InferenceEngine(modelFile, 1, 0)
 
         try {
             val jniProgressTracker = JNIProgressTracker()
@@ -63,7 +63,7 @@ internal class ImageFilterWorker(
             val startTime = SystemClock.elapsedRealtime()
 
             // Reuse inputBitmap to save memory since both input and output have the same resolution
-            val error = upscalingEngine.runUpscaling(
+            val error = inferenceEngine.runInference(
                 progressTracker = jniProgressTracker,
                 coroutineScope = this,
                 inputBitmap = inputBitmap,
@@ -82,7 +82,7 @@ internal class ImageFilterWorker(
                 Result.success(ImageFilterWorkStateUtils.toSuccessResultData(it, executionTime))
             } ?: Result.failure()
         } finally {
-            upscalingEngine.freeResources()
+            inferenceEngine.freeResources()
         }
     }
 

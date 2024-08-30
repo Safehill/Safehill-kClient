@@ -94,19 +94,19 @@ add_library(MNNHelper SHARED src/MNNHelper/MNNHelper.cpp)
 target_include_directories(MNNHelper PRIVATE ${MNN_INCLUDE})
 target_link_libraries(MNNHelper MNN)
 
-# Upscaling Engine
+# Inference Engine
 add_library(
-        UpscalingEngine
+        InferenceEngine
         SHARED
-        src/UpscalingEngine/coroutine_utils.cpp
-        src/UpscalingEngine/progress_tracker.cpp
-        src/UpscalingEngine/image_tile_interpreter.cpp
-        src/UpscalingEngine/UpscalingEngine.cpp
-        src/UpscalingEngine/UpscalingEngineJNI.cpp)
-target_include_directories(UpscalingEngine PUBLIC ${OPENCV_INCLUDES} ${EIGEN_INCLUDE} ${MNN_INCLUDE})
-target_link_libraries(UpscalingEngine ${PLATFORM_LIBRARIES} opencv_imgproc JNIUtils MNNHelper)
+        src/InferenceEngine/coroutine_utils.cpp
+        src/InferenceEngine/progress_tracker.cpp
+        src/InferenceEngine/image_tile_interpreter.cpp
+        src/InferenceEngine/InferenceEngine.cpp
+        src/InferenceEngine/InferenceEngineJNI.cpp)
+target_include_directories(InferenceEngine PUBLIC ${OPENCV_INCLUDES} ${EIGEN_INCLUDE} ${MNN_INCLUDE})
+target_link_libraries(InferenceEngine ${PLATFORM_LIBRARIES} opencv_imgproc JNIUtils MNNHelper)
 
-# Upscaling Engine - demo
-add_executable(UpscalingEngine_demo src/UpscalingEngine/UpscalingEngine_demo.cpp)
-target_include_directories(UpscalingEngine_demo PRIVATE ${CXXOPTS_INCLUDE})
-target_link_libraries(UpscalingEngine_demo PRIVATE UpscalingEngine)
+# Inference Engine - demo
+add_executable(InferenceEngine_demo src/InferenceEngine/InferenceEngine_demo.cpp)
+target_include_directories(InferenceEngine_demo PRIVATE ${CXXOPTS_INCLUDE})
+target_link_libraries(InferenceEngine_demo PRIVATE InferenceEngine)

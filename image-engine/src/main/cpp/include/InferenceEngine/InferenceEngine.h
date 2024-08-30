@@ -2,8 +2,8 @@
 // Created by Zhenxiang Chen on 24/08/23.
 //
 
-#ifndef SAFEHILL_UPSCALINGENGINE_H
-#define SAFEHILL_UPSCALINGENGINE_H
+#ifndef SAFEHILL_INFERENCEENGINE_H
+#define SAFEHILL_INFERENCEENGINE_H
 
 #include <jni.h>
 #include <opencv2/opencv.hpp>
@@ -14,14 +14,14 @@
 
 #define REALESRGAN_INPUT_TILE_PADDING 10
 
-class UpscalingEngine {
+class InferenceEngine {
 
 public:
-    UpscalingEngine(const char* model_path,
+    InferenceEngine(const char* model_path,
                     const int scale,
                     const int tile_size,
                     const int32_t placeholderColour);
-    ~UpscalingEngine();
+    ~InferenceEngine();
 
     const int scale;
 
@@ -32,7 +32,7 @@ public:
      */
     const int32_t placeholderColour;
 
-    void upscaleImage(
+    void runInference(
             JNIEnv* jni_env,
             jobject progress_tracker,
             jobject coroutine_scope,
@@ -61,4 +61,4 @@ private:
 };
 
 
-#endif //SAFEHILL_UPSCALINGENGINE_H
+#endif //SAFEHILL_INFERENCEENGINE_H

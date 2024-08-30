@@ -5,7 +5,7 @@
 #include <thread>
 
 #include <MNNHelper/MNNHelper.h>
-#include <UpscalingEngine/image_tile_interpreter.h>
+#include <InferenceEngine/image_tile_interpreter.h>
 
 void ImageTileInterpreter::inference() const {
     // Feed data to the interpreter

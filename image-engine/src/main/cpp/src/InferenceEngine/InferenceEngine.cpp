@@ -4,8 +4,8 @@
 
 #include <chrono>
 
-#include <UpscalingEngine/image_tile_interpreter.h>
-#include <UpscalingEngine/UpscalingEngine.h>
+#include <InferenceEngine/image_tile_interpreter.h>
+#include <InferenceEngine/InferenceEngine.h>
 #include "coroutine_utils.h"
 #include "progress_tracker.h"
 
@@ -31,7 +31,7 @@ cv::Vec4b alphaComposition(const cv::Vec4b srcColour, const int32_t destColour) 
     return {newRed, newGreen, newBlue, newAlpha};
 }
 
-void UpscalingEngine::pixelsMatrixToFloatArray(const cv::Mat& tile,
+void InferenceEngine::pixelsMatrixToFloatArray(const cv::Mat& tile,
                                                const Eigen::TensorMap<Eigen::Tensor<float, 3, Eigen::RowMajor>>& tensor) const {
 
     // Convert input image int array to float array
@@ -55,42 +55,7 @@ void UpscalingEngine::pixelsMatrixToFloatArray(const cv::Mat& tile,
     }
 }
 
-void output_tensor_to_pixels_matrix(
-        cv::Mat& matrix,
-        const Eigen::Tensor<float, 3, Eigen::RowMajor>& tensor) {
-
-    for (int y = 0; y < tensor.dimension(1); y++) {
-        for (int x = 0; x < tensor.dimension(2); x++) {
-            // When we have RGB values, we pack them into output_tile single pixel.
-            // Format is ABGR for android, and ARGB for desktop
-            // Assume little endian order since this will only run on ARM and x86
-            const uint8_t r = std::clamp<float>(tensor(0, y, x) * 255, 0, 255);
-            const uint8_t g = std::clamp<float>(tensor(1, y, x) * 255, 0, 255);
-            const uint8_t b = std::clamp<float>(tensor(2, y, x) * 255, 0, 255);
-            matrix.at<cv::Vec4b>(y, x) = {r, g, b, UCHAR_MAX};
-        }
-    }
-}
-
-Eigen::Tensor<float, 3, Eigen::RowMajor> trim_tensor_padding(
-        const int scale,
-        const std::pair<int, int> x_padding,
-        const std::pair<int, int> y_padding,
-        const Eigen::TensorMap<Eigen::Tensor<float, 3, Eigen::RowMajor>>* tensor) {
-
-    Eigen::array<Eigen::Index, 3> offsets = {
-            0,
-            y_padding.first * scale,
-            x_padding.first * scale};
-    Eigen::array<Eigen::Index, 3> extents = {
-            tensor->dimension(0),
-            tensor->dimension(1) - y_padding.first * scale - y_padding.second * scale,
-            tensor->dimension(2) - x_padding.first * scale - x_padding.second * scale};
-
-    return tensor->slice(offsets, extents);
-}
-
-std::pair<int, int> UpscalingEngine::calculateInputTilePadding(
+std::pair<int, int> InferenceEngine::calculateInputTilePadding(
         const int position,
         const int axis_size,
         const int tile_size,
@@ -110,7 +75,7 @@ std::pair<int, int> UpscalingEngine::calculateInputTilePadding(
     }
 }
 
-void UpscalingEngine::upscaleImage(
+void InferenceEngine::runInference(
         JNIEnv *jni_env,
         jobject progress_tracker,
         jobject coroutine_scope,
@@ -208,14 +173,14 @@ void UpscalingEngine::upscaleImage(
     }
 }
 
-UpscalingEngine::UpscalingEngine(const char *model_path,
+InferenceEngine::InferenceEngine(const char *model_path,
                                  const int scale,
                                  const int tile_size,
                                  const int32_t placeholderColour) : interpreter(model_path), scale(scale), tileSize(tile_size), placeholderColour(
         placeholderColour) {
 }
 
-cv::Size UpscalingEngine::copyTensorToMatRegion(cv::Size size,
+cv::Size InferenceEngine::copyTensorToMatRegion(cv::Size size,
                                                 cv::Point2i position,
                                                 std::pair<int, int> xPadding,
                                                 std::pair<int, int> yPadding,
@@ -256,7 +221,7 @@ cv::Size UpscalingEngine::copyTensorToMatRegion(cv::Size size,
     return destBlockSize;
 }
 
-cv::Vec4b UpscalingEngine::getColourAt(cv::Point2i position,
+cv::Vec4b InferenceEngine::getColourAt(cv::Point2i position,
                                        const Eigen::TensorMap<Eigen::Tensor<float, 3, Eigen::RowMajor>> &tensor) {
 
     return cv::Vec4b(
@@ -269,4 +234,4 @@ cv::Vec4b UpscalingEngine::getColourAt(cv::Point2i position,
             UCHAR_MAX);
 }
 
-UpscalingEngine::~UpscalingEngine() = default;
+InferenceEngine::~InferenceEngine() = default;
