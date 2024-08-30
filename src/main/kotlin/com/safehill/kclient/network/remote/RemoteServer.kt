@@ -47,6 +47,7 @@ import com.safehill.kclient.models.dtos.UserInputDTO
 import com.safehill.kclient.models.dtos.UserPhoneNumbersDTO
 import com.safehill.kclient.models.dtos.UserUpdateDTO
 import com.safehill.kclient.models.dtos.toAssetDescriptor
+import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
@@ -575,34 +576,27 @@ class RemoteServer(
         TODO("Not yet implemented")
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     override suspend fun retrieveInteractions(
-        inGroupId: GroupId,
+        anchorId: String,
+        interactionAnchor: InteractionAnchor,
         per: Int,
         page: Int,
         before: String?
     ): InteractionsGroupDTO {
-        val bearerToken =
-            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
-
         val requestBody = GetInteractionDTO(
             per = per,
             page = page,
             referencedInteractionId = null,
             before = before
         )
-
-        return "interactions/user-threads/$inGroupId".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Json.encodeToString(requestBody))
-            .responseObject<InteractionsGroupDTO>(
-                Json {
-                    ignoreUnknownKeys = true
-                    explicitNulls = false
-                }
-            )
-            .getOrThrow()
-
+        return postForResponseObject(
+            endPoint = when (interactionAnchor) {
+                InteractionAnchor.THREAD -> "interactions/user-threads/$anchorId"
+                InteractionAnchor.GROUP -> "interactions/assets-groups/$anchorId"
+            },
+            request = requestBody,
+            authenticationRequired = true
+        )
     }
 
     @OptIn(ExperimentalSerializationApi::class)

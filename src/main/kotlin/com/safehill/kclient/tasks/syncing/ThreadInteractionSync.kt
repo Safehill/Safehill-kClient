@@ -87,7 +87,7 @@ class ThreadInteractionSync(
                 ).also {
                     serverProxy.localServer.insertMessages(
                         messages = listOf(this.toMessageDTO()),
-                        threadId = this.anchorId
+                        anchorId = this.anchorId
                     )
                 }
             }

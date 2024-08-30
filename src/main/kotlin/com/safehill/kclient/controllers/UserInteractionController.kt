@@ -8,6 +8,7 @@ import com.safehill.kclient.models.dtos.InteractionsGroupDTO
 import com.safehill.kclient.models.dtos.MessageInputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
+import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.ServerProxy
@@ -39,7 +40,10 @@ class UserInteractionController internal constructor(
     ): Result<MessageOutputDTO> {
         return runCatching {
             val symmetricKey = getSymmetricKey(threadId) ?: return Result.failure(
-                InteractionErrors.MissingE2EEDetails(threadId)
+                InteractionErrors.MissingE2EEDetails(
+                    anchorId = threadId,
+                    anchor = InteractionAnchor.THREAD
+                )
             )
             val encryptedMessage =
                 EncryptedData(data = message.toByteArray(), symmetricKey).encryptedData
@@ -61,7 +65,8 @@ class UserInteractionController internal constructor(
     ): Result<InteractionsGroupDTO> {
         return safeApiCall {
             serverProxy.retrieveInteractions(
-                inGroupId = threadId,
+                anchorId = threadId,
+                interactionAnchor = InteractionAnchor.THREAD,
                 per = limit,
                 page = 1,
                 before = before
@@ -123,8 +128,8 @@ class UserInteractionController internal constructor(
         msg: String
     ) : Exception(msg) {
 
-        class MissingE2EEDetails(val threadId: String) :
-            InteractionErrors("The E2EE details for thread with id $threadId is not found.")
+        class MissingE2EEDetails(val anchorId: String, anchor: InteractionAnchor) :
+            InteractionErrors("The E2EE details for anchor = $anchor with id $anchor is not found.")
 
     }
 }
