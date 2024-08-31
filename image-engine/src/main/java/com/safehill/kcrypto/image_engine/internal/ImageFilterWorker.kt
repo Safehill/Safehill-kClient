@@ -35,9 +35,16 @@ internal class ImageFilterWorker(
     params: WorkerParameters
 ): CoroutineWorker(appContext, params) {
 
-    private val config = ImageFilterConfigUtils.fromWorkData(params.inputData)
-    private val mlModelsRepository = MLModelsRepository(appContext)
+    private val args: ImageFilterArgs
+    private val mlModelsRepository: MLModelsRepository
     private val notificationManager = NotificationManagerCompat.from(appContext)
+
+    init {
+        ImageFilterWorkerInputUtils.fromWorkData(params.inputData).let {
+            args = it.first
+            mlModelsRepository = MLModelsRepository(appContext, it.second)
+        }
+    }
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         // Avoid re-launching work after crash
@@ -89,7 +96,7 @@ internal class ImageFilterWorker(
     private suspend fun downloadMLModel(): DownloadModelState {
         lateinit var result: DownloadModelState
 
-        mlModelsRepository.getOrDownloadModel(config.type.mlModel).collect {
+        mlModelsRepository.getOrDownloadModel(args.type.mlModel).collect {
             result = it
 
             if (it is DownloadModelState.Loading) {
@@ -189,7 +196,7 @@ internal class ImageFilterWorker(
     }
 
     private fun readInputBitmap(): Bitmap? = applicationContext.contentResolver
-        .openInputStream(config.inputImage)
+        .openInputStream(args.inputImage)
         .use(BitmapFactory::decodeStream)?.let { decodedBitmap ->
             if (decodedBitmap.config == Bitmap.Config.ARGB_8888) {
                 decodedBitmap

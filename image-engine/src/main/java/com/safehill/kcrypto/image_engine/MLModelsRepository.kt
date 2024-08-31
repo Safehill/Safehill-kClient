@@ -2,6 +2,7 @@ package com.safehill.kcrypto.image_engine
 
 import android.content.Context
 import com.safehill.kcrypto.image_engine.internal.MLModelsRepositoryImpl
+import com.safehill.kcrypto.image_engine.model.CDNEnvironment
 import com.safehill.kcrypto.image_engine.model.DownloadModelState
 import com.safehill.kcrypto.image_engine.model.MLModel
 import kotlinx.coroutines.flow.Flow
@@ -14,5 +15,7 @@ interface MLModelsRepository {
     fun getOrDownloadModel(model: MLModel): Flow<DownloadModelState>
 }
 
-fun MLModelsRepository(context: Context): MLModelsRepository =
-    MLModelsRepositoryImpl(context)
+fun MLModelsRepository(
+    context: Context,
+    cdnEnvironment: CDNEnvironment
+): MLModelsRepository = MLModelsRepositoryImpl(context, cdnEnvironment)

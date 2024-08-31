@@ -5,6 +5,7 @@ import android.os.SystemClock
 import com.safehill.kcrypto.image_engine.model.DownloadModelState
 import com.safehill.kcrypto.image_engine.model.MLModel
 import com.safehill.kcrypto.image_engine.MLModelsRepository
+import com.safehill.kcrypto.image_engine.model.CDNEnvironment
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
@@ -26,7 +27,10 @@ import java.util.UUID
 
 // TODO: improve temp file handling, currently there is no logic to delete them when app crashes
 // while a model is being downloaded
-internal class MLModelsRepositoryImpl(context: Context): MLModelsRepository {
+internal class MLModelsRepositoryImpl(
+    context: Context,
+    private val cdnEnvironment: CDNEnvironment
+): MLModelsRepository {
 
     private val httpClient by lazy {
         HttpClient(CIO) {
@@ -39,7 +43,7 @@ internal class MLModelsRepositoryImpl(context: Context): MLModelsRepository {
     private val tmpDownloadDir = context.noBackupFilesDir.resolve("tmp-models")
 
     private fun downloadModel(model: MLModel): Flow<DownloadModelState> = channelFlow {
-        httpClient.prepareGet(model.url).execute { response ->
+        httpClient.prepareGet(model.getDownloadUrl(cdnEnvironment)).execute { response ->
             if (!response.status.isSuccess()) {
                 response.cancel()
                 trySend(DownloadModelState.Error)

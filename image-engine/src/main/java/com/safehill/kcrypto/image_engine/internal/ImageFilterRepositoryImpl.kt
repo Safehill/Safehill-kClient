@@ -5,7 +5,9 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.safehill.kcrypto.image_engine.ImageFilterRepository
+import com.safehill.kcrypto.image_engine.model.CDNEnvironment
 import com.safehill.kcrypto.image_engine.model.ImageFilterArgs
 import com.safehill.kcrypto.image_engine.model.ImageFilterWorkState
 import kotlinx.coroutines.CancellationException
@@ -15,7 +17,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.transform
 
-internal class ImageFilterRepositoryImpl(context: Context): ImageFilterRepository {
+internal class ImageFilterRepositoryImpl(
+    context: Context,
+    private val cdnEnvironment: CDNEnvironment
+): ImageFilterRepository {
 
     private val workManager by lazy {
         WorkManager.getInstance(context)
@@ -25,7 +30,7 @@ internal class ImageFilterRepositoryImpl(context: Context): ImageFilterRepositor
 
     override fun applyFilterAsync(config: ImageFilterArgs): Flow<ImageFilterWorkState> {
         val request = OneTimeWorkRequestBuilder<ImageFilterWorker>()
-            .setInputData(ImageFilterConfigUtils.toWorkData(config))
+            .setInputData(ImageFilterWorkerInputUtils.toWorkData(config, cdnEnvironment))
             .build()
 
         workManager.enqueueUniqueWork(IMAGE_FILTER_WORKER_TAG, ExistingWorkPolicy.KEEP, request)
