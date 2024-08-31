@@ -29,9 +29,9 @@ class UserInteractionController internal constructor(
     }
 
     suspend fun retrieveLastMessage(
-        threadId: String
+        anchorId: String
     ): MessageOutputDTO? {
-        return serverProxy.localServer.retrieveLastMessage(threadId)
+        return serverProxy.localServer.retrieveLastMessage(anchorId)
     }
 
     suspend fun sendMessage(
