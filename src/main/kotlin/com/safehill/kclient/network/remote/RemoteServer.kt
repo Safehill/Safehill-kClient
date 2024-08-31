@@ -599,28 +599,22 @@ class RemoteServer(
         )
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     override suspend fun addMessages(
         messages: List<MessageInputDTO>,
-        groupId: GroupId
+        anchorId: String,
+        interactionAnchor: InteractionAnchor
     ): List<MessageOutputDTO> {
         require(messages.size == 1) {
             "Can only add one message at a time."
         }
-        val bearerToken =
-            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
 
-        return "interactions/user-threads/$groupId/messages".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Json.encodeToString(messages.first()))
-            .responseObject<MessageOutputDTO>(
-                Json {
-                    ignoreUnknownKeys = true
-                    explicitNulls = false
-                }
-            )
-            .getOrThrow()
-            .run(::listOf)
+        return postForResponseObject(
+            endPoint = when (interactionAnchor) {
+                InteractionAnchor.THREAD -> "interactions/user-threads/$anchorId/messages"
+                InteractionAnchor.GROUP -> "interactions/assets-groups/$anchorId/messages"
+            },
+            request = Json.encodeToString(messages.first()),
+            authenticationRequired = true
+        )
     }
-
 }

@@ -251,15 +251,18 @@ interface SafehillApi : AuthorizationApi, GroupApi {
         before: String?
     ): InteractionsGroupDTO
 
-    /// Adds a messages to a share (group)
-    /// - Parameters:
-    ///   - messages: the message details
-    ///   - groupId: the group identifier
-    /// - Returns:
-    ///   - the list of messages created
+    /**
+     * Adds messages to a share (group or thread).
+     *
+     * @param messages The message details.
+     * @param anchorId The group or thread identifier.
+     * @param interactionAnchor Either [InteractionAnchor.THREAD] or [InteractionAnchor.GROUP]
+     * @return The list of messages created.
+     */
     suspend fun addMessages(
         messages: List<MessageInputDTO>,
-        groupId: GroupId
+        anchorId: String,
+        interactionAnchor: InteractionAnchor
     ): List<MessageOutputDTO>
 
     suspend fun listThreads(): List<ConversationThreadOutputDTO>

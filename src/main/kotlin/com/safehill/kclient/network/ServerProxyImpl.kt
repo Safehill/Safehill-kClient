@@ -281,10 +281,11 @@ class ServerProxyImpl(
 
     override suspend fun addMessages(
         messages: List<MessageInputDTO>,
-        groupId: GroupId
+        anchorId: String,
+        interactionAnchor: InteractionAnchor
     ): List<MessageOutputDTO> {
-        return remoteServer.addMessages(messages, groupId).also {
-            localServer.insertMessages(it, groupId)
+        return remoteServer.addMessages(messages, anchorId, interactionAnchor).also {
+            localServer.insertMessages(it, anchorId)
         }
     }
 

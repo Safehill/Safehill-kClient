@@ -36,15 +36,16 @@ class UserInteractionController internal constructor(
 
     suspend fun sendMessage(
         message: String,
-        threadId: String
+        anchorId: String,
+        interactionAnchor: InteractionAnchor
     ): Result<MessageOutputDTO> {
         return runCatching {
-            val symmetricKey = getSymmetricKey(threadId) ?: return Result.failure(
-                InteractionErrors.MissingE2EEDetails(
-                    anchorId = threadId,
-                    anchor = InteractionAnchor.THREAD
-                )
-            )
+            val symmetricKey =
+                getSymmetricKey(anchorId = anchorId, interactionAnchor = interactionAnchor)
+                    ?: throw InteractionErrors.MissingE2EEDetails(
+                        anchorId = anchorId,
+                        anchor = interactionAnchor
+                    )
             val encryptedMessage =
                 EncryptedData(data = message.toByteArray(), symmetricKey).encryptedData
             val messageDTO = MessageInputDTO(
@@ -53,20 +54,25 @@ class UserInteractionController internal constructor(
                 inReplyToAssetGlobalIdentifier = null,
                 inReplyToInteractionId = null
             )
-            serverProxy.addMessages(listOf(messageDTO), threadId).first()
+            serverProxy.addMessages(
+                messages = listOf(messageDTO),
+                anchorId = anchorId,
+                interactionAnchor = interactionAnchor
+            ).first()
         }
     }
 
 
     suspend fun retrieveInteractions(
         before: String?,
-        threadId: String,
+        anchorId: String,
+        interactionAnchor: InteractionAnchor,
         limit: Int
     ): Result<InteractionsGroupDTO> {
         return safeApiCall {
             serverProxy.retrieveInteractions(
-                anchorId = threadId,
-                interactionAnchor = InteractionAnchor.THREAD,
+                anchorId = anchorId,
+                interactionAnchor = interactionAnchor,
                 per = limit,
                 page = 1,
                 before = before
@@ -118,8 +124,19 @@ class UserInteractionController internal constructor(
         }
     }
 
-    private suspend fun getSymmetricKey(threadId: String): SymmetricKey? {
-        val encryptionDetails = serverProxy.retrieveThread(threadId = threadId)
+    private suspend fun getSymmetricKey(
+        anchorId: String,
+        interactionAnchor: InteractionAnchor
+    ): SymmetricKey? {
+        val encryptionDetails: RecipientEncryptionDetailsDTO? = when (interactionAnchor) {
+            InteractionAnchor.THREAD -> {
+                serverProxy.retrieveThread(threadId = anchorId)?.encryptionDetails
+            }
+
+            InteractionAnchor.GROUP -> {
+                serverProxy.retrieveGroupUserEncryptionDetails(groupId = anchorId)
+            }
+        }
         return encryptionDetails?.getSymmetricKey(currentUser)
     }
 
