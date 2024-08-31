@@ -38,7 +38,9 @@ class WebSocketApi internal constructor(
 
     private val connectionMutex = Mutex()
 
-    private val _socketMessage = MutableSharedFlow<WebSocketMessage>()
+    private val _socketMessage = MutableSharedFlow<WebSocketMessage>(
+        extraBufferCapacity = 32
+    )
     val socketMessages = _socketMessage.asSharedFlow()
 
     private val httpClient = HttpClient(CIO) {
