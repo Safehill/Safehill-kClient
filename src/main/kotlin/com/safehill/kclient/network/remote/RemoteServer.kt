@@ -608,13 +608,13 @@ class RemoteServer(
             "Can only add one message at a time."
         }
 
-        return postForResponseObject(
+        return postForResponseObject<MessageInputDTO, MessageOutputDTO>(
             endPoint = when (interactionAnchor) {
                 InteractionAnchor.THREAD -> "interactions/user-threads/$anchorId/messages"
                 InteractionAnchor.GROUP -> "interactions/assets-groups/$anchorId/messages"
             },
-            request = Json.encodeToString(messages.first()),
+            request = messages.first(),
             authenticationRequired = true
-        )
+        ).run(::listOf)
     }
 }
