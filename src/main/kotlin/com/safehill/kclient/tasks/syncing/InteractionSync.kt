@@ -1,15 +1,12 @@
 package com.safehill.kclient.tasks.syncing
 
-import com.safehill.kclient.models.dtos.ConversationThreadAssetDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
-import com.safehill.kclient.models.dtos.InteractionsThreadSummaryDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.dtos.websockets.InteractionSocketMessage
 import com.safehill.kclient.models.dtos.websockets.TextMessage
 import com.safehill.kclient.models.dtos.websockets.ThreadAssets
 import com.safehill.kclient.models.dtos.websockets.ThreadCreated
 import com.safehill.kclient.models.dtos.websockets.WebSocketMessage
-import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.WebSocketApi
 import com.safehill.kclient.tasks.BackgroundTask
@@ -18,11 +15,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-class ThreadInteractionSync(
+class InteractionSync(
+    interactionSyncListeners: List<InteractionSyncListener>,
     private val serverProxy: ServerProxy,
-    private val threadInteractionSyncListener: InteractionSyncListener,
     private val webSocketApi: WebSocketApi
 ) : BackgroundTask {
+
+    private val interactionSyncListener =
+        InteractionSyncListenerListDelegate(interactionSyncListeners)
 
     private val singleTaskExecutor = SingleTaskExecutor()
 
@@ -62,7 +62,7 @@ class ThreadInteractionSync(
     }
 
     private suspend fun ThreadCreated.notifyCreationOfThread() {
-        threadInteractionSyncListener.didAddThread(
+        interactionSyncListener.didAddThread(
             threadDTO = thread
         ).also {
             serverProxy.localServer.createOrUpdateThread(
@@ -72,27 +72,22 @@ class ThreadInteractionSync(
     }
 
     private suspend fun ThreadAssets.notifyNewAssetInThread() {
-        threadInteractionSyncListener.didReceivePhotoMessages(
+        interactionSyncListener.didReceivePhotoMessages(
             threadId = threadId,
             conversationThreadAssetDtos = assets
         )
     }
 
     private suspend fun TextMessage.notifyTextMessage() {
-        when (anchorType) {
-            InteractionAnchor.THREAD -> {
-                threadInteractionSyncListener.didReceiveTextMessages(
-                    messageDtos = listOf(this.toMessageDTO()),
-                    threadId = this.anchorId
-                ).also {
-                    serverProxy.localServer.insertMessages(
-                        messages = listOf(this.toMessageDTO()),
-                        anchorId = this.anchorId
-                    )
-                }
-            }
-
-            InteractionAnchor.GROUP -> {}
+        interactionSyncListener.didReceiveTextMessages(
+            messageDtos = listOf(this.toMessageDTO()),
+            anchorId = this.anchorId,
+            anchor = anchorType
+        ).also {
+            serverProxy.localServer.insertMessages(
+                messages = listOf(this.toMessageDTO()),
+                anchorId = this.anchorId
+            )
         }
     }
 
@@ -120,7 +115,7 @@ class ThreadInteractionSync(
                     localThreads = localThreads
                 )
                 launch {
-                    threadInteractionSyncListener.didFetchRemoteThreadSummary(
+                    interactionSyncListener.didFetchRemoteThreadSummary(
                         interactionsSummaryDTO.summaryByThreadId
                     )
                 }
@@ -141,19 +136,4 @@ class ThreadInteractionSync(
             }
         }
     }
-}
-
-interface InteractionSyncListener {
-    suspend fun didUpdateThreadsList(threadDTOs: List<ConversationThreadOutputDTO>)
-
-    suspend fun didAddThread(threadDTO: ConversationThreadOutputDTO)
-
-    suspend fun didReceiveTextMessages(messageDtos: List<MessageOutputDTO>, threadId: String)
-
-    suspend fun didReceivePhotoMessages(
-        threadId: String,
-        conversationThreadAssetDtos: List<ConversationThreadAssetDTO>
-    )
-
-    suspend fun didFetchRemoteThreadSummary(summaryByThreadId: Map<String, InteractionsThreadSummaryDTO>)
 }
