@@ -124,7 +124,7 @@ class UserInteractionController internal constructor(
         }
     }
 
-    private suspend fun getSymmetricKey(
+    suspend fun getSymmetricKey(
         anchorId: String,
         interactionAnchor: InteractionAnchor
     ): SymmetricKey? {
