@@ -22,6 +22,7 @@ import com.safehill.kclient.models.dtos.ReactionOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
 import com.safehill.kclient.models.dtos.authorization.UserAuthorizationStatusDTO
+import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
@@ -65,7 +66,6 @@ class LocalServerInterfaceImpl : LocalServerInterface {
     override suspend fun deleteThreads(threadIds: List<String>) {
         TODO("Not yet implemented")
     }
-
 
 
     override var requestor: LocalUser
@@ -237,7 +237,8 @@ class LocalServerInterfaceImpl : LocalServerInterface {
     }
 
     override suspend fun retrieveInteractions(
-        inGroupId: GroupId,
+        anchorId: String,
+        interactionAnchor: InteractionAnchor,
         per: Int,
         page: Int,
         before: String?
@@ -247,7 +248,8 @@ class LocalServerInterfaceImpl : LocalServerInterface {
 
     override suspend fun addMessages(
         messages: List<MessageInputDTO>,
-        groupId: GroupId
+        anchorId: String,
+        interactionAnchor: InteractionAnchor
     ): List<MessageOutputDTO> {
         TODO("Not yet implemented")
     }
