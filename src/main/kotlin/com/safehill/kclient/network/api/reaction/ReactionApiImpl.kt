@@ -3,9 +3,10 @@ package com.safehill.kclient.network.api.reaction
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.dtos.ReactionInputDTO
 import com.safehill.kclient.models.dtos.ReactionOutputDTO
+import com.safehill.kclient.models.dtos.RemoveReactionInputDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.network.api.RequestMethod
-import com.safehill.kclient.network.api.fireRequestForObjectResponse
+import com.safehill.kclient.network.api.fireRequestForStringResponse
 import com.safehill.kclient.network.api.postForResponseObject
 import com.safehill.kclient.network.exceptions.SafehillError
 
@@ -25,8 +26,8 @@ class ReactionApiImpl(
         ).run(::listOf)
     }
 
-    override suspend fun removeReaction(reaction: ReactionOutputDTO, fromGroupId: GroupId) {
-        return fireRequestForObjectResponse(
+    override suspend fun removeReaction(reaction: RemoveReactionInputDTO, fromGroupId: GroupId) {
+        fireRequestForStringResponse(
             requestMethod = RequestMethod.Delete,
             endPoint = "interactions/assets-groups/$fromGroupId/reactions",
             request = reaction,

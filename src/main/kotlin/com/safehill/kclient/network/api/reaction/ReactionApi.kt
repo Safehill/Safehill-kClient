@@ -3,6 +3,7 @@ package com.safehill.kclient.network.api.reaction
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.dtos.ReactionInputDTO
 import com.safehill.kclient.models.dtos.ReactionOutputDTO
+import com.safehill.kclient.models.dtos.RemoveReactionInputDTO
 import com.safehill.kclient.network.api.BaseApi
 
 interface ReactionApi : BaseApi {
@@ -24,5 +25,5 @@ interface ReactionApi : BaseApi {
     /// - Parameters:
     ///   - reaction: the reaction type and references to remove
     ///   - fromGroupId: the group the reaction belongs to
-    suspend fun removeReaction(reaction: ReactionOutputDTO, fromGroupId: GroupId)
+    suspend fun removeReaction(reaction: RemoveReactionInputDTO, fromGroupId: GroupId)
 }

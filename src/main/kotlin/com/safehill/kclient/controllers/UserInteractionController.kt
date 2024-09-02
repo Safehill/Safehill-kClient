@@ -11,6 +11,7 @@ import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.dtos.ReactionInputDTO
 import com.safehill.kclient.models.dtos.ReactionOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
+import com.safehill.kclient.models.dtos.RemoveReactionInputDTO
 import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.models.interactions.ReactionType
 import com.safehill.kclient.models.users.LocalUser
@@ -144,6 +145,22 @@ class UserInteractionController internal constructor(
                 ),
                 toGroupId = groupId
             ).first()
+        }
+    }
+
+    suspend fun removeReaction(
+        reactionType: ReactionType,
+        groupId: GroupId
+    ): Result<Unit> {
+        return runCatchingPreservingCancellationException {
+            serverProxy.removeReaction(
+                reaction = RemoveReactionInputDTO(
+                    reactionType = reactionType.toServerValue(),
+                    inReplyToInteractionId = null,
+                    inReplyToAssetGlobalIdentifier = null
+                ),
+                fromGroupId = groupId
+            )
         }
     }
 
