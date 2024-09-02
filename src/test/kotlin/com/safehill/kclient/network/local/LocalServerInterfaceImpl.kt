@@ -20,6 +20,7 @@ import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.dtos.ReactionInputDTO
 import com.safehill.kclient.models.dtos.ReactionOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
+import com.safehill.kclient.models.dtos.RemoveReactionInputDTO
 import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
 import com.safehill.kclient.models.dtos.authorization.UserAuthorizationStatusDTO
 import com.safehill.kclient.models.interactions.InteractionAnchor
@@ -232,7 +233,7 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         TODO("Not yet implemented")
     }
 
-    override suspend fun removeReaction(reaction: ReactionOutputDTO, fromGroupId: GroupId) {
+    override suspend fun removeReaction(reaction: RemoveReactionInputDTO, fromGroupId: GroupId) {
         TODO("Not yet implemented")
     }
 
