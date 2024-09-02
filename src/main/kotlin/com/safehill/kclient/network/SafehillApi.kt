@@ -16,8 +16,6 @@ import com.safehill.kclient.models.dtos.InteractionsGroupDTO
 import com.safehill.kclient.models.dtos.InteractionsSummaryDTO
 import com.safehill.kclient.models.dtos.MessageInputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
-import com.safehill.kclient.models.dtos.ReactionInputDTO
-import com.safehill.kclient.models.dtos.ReactionOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
 import com.safehill.kclient.models.interactions.InteractionAnchor
@@ -26,9 +24,10 @@ import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.api.authorization.AuthorizationApi
 import com.safehill.kclient.network.api.group.GroupApi
+import com.safehill.kclient.network.api.reaction.ReactionApi
 import java.time.Instant
 
-interface SafehillApi : AuthorizationApi, GroupApi {
+interface SafehillApi : AuthorizationApi, GroupApi, ReactionApi {
 
     /// Creates a new user given their credentials, their public key and public signature (store in the `requestor` object)
     /// - Parameters:
@@ -215,26 +214,6 @@ interface SafehillApi : AuthorizationApi, GroupApi {
         recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>
     )
 
-
-    /// Adds reactions to a share (group)
-    /// - Parameters:
-    ///   - reactions: the reactions details
-    ///   - groupId: the group identifier
-    /// - Returns:
-    ///   - the list of reactions added
-    suspend fun addReactions(
-        reactions: List<ReactionInputDTO>,
-        toGroupId: GroupId
-    ): List<ReactionOutputDTO>
-
-    /// Removes a reaction to an asset or a message
-    /// - Parameters:
-    ///   - reaction: the reaction type and references to remove
-    ///   - fromGroupId: the group the reaction belongs to
-    suspend fun removeReaction(
-        reaction: ReactionOutputDTO,
-        fromGroupId: GroupId
-    )
 
     /// Retrieves all the messages and reactions for a group id. Results are paginated and returned in reverse cronological order.
     /// - Parameters:

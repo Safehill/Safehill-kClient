@@ -34,8 +34,6 @@ import com.safehill.kclient.models.dtos.InteractionsGroupDTO
 import com.safehill.kclient.models.dtos.InteractionsSummaryDTO
 import com.safehill.kclient.models.dtos.MessageInputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
-import com.safehill.kclient.models.dtos.ReactionInputDTO
-import com.safehill.kclient.models.dtos.ReactionOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.dtos.RemoteUserPhoneNumberMatchDto
 import com.safehill.kclient.models.dtos.RemoteUserSearchDTO
@@ -61,6 +59,8 @@ import com.safehill.kclient.network.api.getOrThrow
 import com.safehill.kclient.network.api.group.GroupApi
 import com.safehill.kclient.network.api.group.GroupApiImpl
 import com.safehill.kclient.network.api.postForResponseObject
+import com.safehill.kclient.network.api.reaction.ReactionApi
+import com.safehill.kclient.network.api.reaction.ReactionApiImpl
 import com.safehill.kclient.network.exceptions.SafehillError
 import com.safehill.kcrypto.models.ShareablePayload
 import kotlinx.coroutines.coroutineScope
@@ -83,7 +83,8 @@ class RemoteServer(
     override val requestor: LocalUser
 ) : SafehillApi,
     AuthorizationApi by AuthorizationApiImpl(requestor),
-    GroupApi by GroupApiImpl(requestor) {
+    GroupApi by GroupApiImpl(requestor),
+    ReactionApi by ReactionApiImpl(requestor) {
 
     @OptIn(ExperimentalSerializationApi::class)
     private val ignorantJson = Json {
@@ -565,16 +566,6 @@ class RemoteServer(
         TODO("Not yet implemented")
     }
 
-    override suspend fun addReactions(
-        reactions: List<ReactionInputDTO>,
-        toGroupId: GroupId
-    ): List<ReactionOutputDTO> {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun removeReaction(reaction: ReactionOutputDTO, fromGroupId: GroupId) {
-        TODO("Not yet implemented")
-    }
 
     override suspend fun retrieveInteractions(
         anchorId: String,
