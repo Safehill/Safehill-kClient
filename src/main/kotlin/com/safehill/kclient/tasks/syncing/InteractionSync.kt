@@ -11,7 +11,6 @@ import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.WebSocketApi
 import com.safehill.kclient.tasks.BackgroundTask
 import com.safehill.kclient.util.runCatchingPreservingCancellationException
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
@@ -105,35 +104,38 @@ class InteractionSync(
             val interactionsSummary = runCatchingPreservingCancellationException {
                 serverProxy.topLevelInteractionsSummary()
             }
-            interactionsSummary.onSuccess { interactionsSummaryDTO ->
-                val allThreads = interactionsSummaryDTO.summaryByThreadId.map {
-                    it.value.thread
+            interactionsSummary
+                .onSuccess { interactionsSummaryDTO ->
+                    launch {
+                        interactionSyncListener.didFetchRemoteGroupSummary(interactionsSummaryDTO.summaryByGroupId)
+                    }
+                    launch {
+                        val allThreads =
+                            interactionsSummaryDTO.summaryByThreadId.map { it.value.thread }
+                        val localThreads = serverProxy.localServer.listThreads()
+                        deleteThreadsNoLongerOnRemote(
+                            allThreads = allThreads,
+                            localThreads = localThreads
+                        )
+                    }
+                    launch {
+                        interactionSyncListener.didFetchRemoteThreadSummary(
+                            interactionsSummaryDTO.summaryByThreadId
+                        )
+                    }
                 }
-                val localThreads = serverProxy.localServer.listThreads()
-                deleteThreadsNoLongerOnRemote(
-                    allThreads = allThreads,
-                    localThreads = localThreads
-                )
-                launch {
-                    interactionSyncListener.didFetchRemoteThreadSummary(
-                        interactionsSummaryDTO.summaryByThreadId
-                    )
-                }
-            }
         }
     }
 
-    private fun CoroutineScope.deleteThreadsNoLongerOnRemote(
+    private suspend fun deleteThreadsNoLongerOnRemote(
         allThreads: List<ConversationThreadOutputDTO>,
         localThreads: List<ConversationThreadOutputDTO>
     ) {
-        launch {
-            val threadIdsToRemoveLocally = localThreads.filter { localThread ->
-                localThread.threadId !in allThreads.map { it.threadId }
-            }.map { it.threadId }
-            if (threadIdsToRemoveLocally.isNotEmpty()) {
-                serverProxy.localServer.deleteThreads(threadIdsToRemoveLocally)
-            }
+        val threadIdsToRemoveLocally = localThreads.filter { localThread ->
+            localThread.threadId !in allThreads.map { it.threadId }
+        }.map { it.threadId }
+        if (threadIdsToRemoveLocally.isNotEmpty()) {
+            serverProxy.localServer.deleteThreads(threadIdsToRemoveLocally)
         }
     }
 }

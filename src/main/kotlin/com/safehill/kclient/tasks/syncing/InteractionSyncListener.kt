@@ -1,7 +1,9 @@
 package com.safehill.kclient.tasks.syncing
 
+import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.dtos.ConversationThreadAssetDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
+import com.safehill.kclient.models.dtos.InteractionsGroupSummaryDTO
 import com.safehill.kclient.models.dtos.InteractionsThreadSummaryDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.interactions.InteractionAnchor
@@ -25,6 +27,7 @@ interface InteractionSyncListener {
     }
 
     suspend fun didFetchRemoteThreadSummary(summaryByThreadId: Map<String, InteractionsThreadSummaryDTO>) {}
+    suspend fun didFetchRemoteGroupSummary(summaryByGroupId: Map<GroupId, InteractionsGroupSummaryDTO>) {}
 }
 
 
@@ -63,4 +66,7 @@ class InteractionSyncListenerListDelegate(
         interactionListeners.forEach { it.didFetchRemoteThreadSummary(summaryByThreadId) }
     }
 
+    override suspend fun didFetchRemoteGroupSummary(summaryByGroupId: Map<GroupId, InteractionsGroupSummaryDTO>) {
+        interactionListeners.forEach { it.didFetchRemoteGroupSummary(summaryByGroupId) }
+    }
 }
