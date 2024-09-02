@@ -3,7 +3,7 @@ package com.safehill.kclient.models.interactions
 enum class ReactionType {
     Like, Sad, Love, Funny;
 
-    fun toInt(): Int {
+    fun toServerValue(): Int {
         return when (this) {
             Like -> 1
             Sad -> 2

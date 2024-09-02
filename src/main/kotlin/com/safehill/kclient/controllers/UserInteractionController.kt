@@ -3,15 +3,20 @@ package com.safehill.kclient.controllers
 import com.safehill.kclient.base64.base64EncodedString
 import com.safehill.kclient.models.EncryptedData
 import com.safehill.kclient.models.SymmetricKey
+import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.InteractionsGroupDTO
 import com.safehill.kclient.models.dtos.MessageInputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
+import com.safehill.kclient.models.dtos.ReactionInputDTO
+import com.safehill.kclient.models.dtos.ReactionOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.interactions.InteractionAnchor
+import com.safehill.kclient.models.interactions.ReactionType
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.ServerProxy
+import com.safehill.kclient.util.runCatchingPreservingCancellationException
 import com.safehill.kclient.util.safeApiCall
 import java.util.Base64
 
@@ -121,6 +126,24 @@ class UserInteractionController internal constructor(
                 senderPublicSignature = Base64.getEncoder()
                     .encodeToString(currentUser.publicSignatureData)
             )
+        }
+    }
+
+    suspend fun addReaction(
+        reactionType: ReactionType,
+        groupId: GroupId
+    ): Result<ReactionOutputDTO> {
+        return runCatchingPreservingCancellationException {
+            serverProxy.addReactions(
+                reactions = listOf(
+                    ReactionInputDTO(
+                        inReplyToInteractionId = null,
+                        inReplyToAssetGlobalIdentifier = null,
+                        reactionType = reactionType.toServerValue()
+                    )
+                ),
+                toGroupId = groupId
+            ).first()
         }
     }
 

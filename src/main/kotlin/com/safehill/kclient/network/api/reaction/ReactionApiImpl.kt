@@ -7,6 +7,7 @@ import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.network.api.RequestMethod
 import com.safehill.kclient.network.api.fireRequestForObjectResponse
 import com.safehill.kclient.network.api.postForResponseObject
+import com.safehill.kclient.network.exceptions.SafehillError
 
 class ReactionApiImpl(
     override val requestor: LocalUser
@@ -16,11 +17,12 @@ class ReactionApiImpl(
         reactions: List<ReactionInputDTO>,
         toGroupId: GroupId
     ): List<ReactionOutputDTO> {
-        return postForResponseObject(
+        require(reactions.size == 1) { throw SafehillError.ServerError.UnSupportedOperation }
+        return postForResponseObject<ReactionInputDTO, ReactionOutputDTO>(
             endPoint = "interactions/assets-groups/$toGroupId/reactions",
-            request = reactions,
+            request = reactions.first(),
             authenticationRequired = true
-        )
+        ).run(::listOf)
     }
 
     override suspend fun removeReaction(reaction: ReactionOutputDTO, fromGroupId: GroupId) {
