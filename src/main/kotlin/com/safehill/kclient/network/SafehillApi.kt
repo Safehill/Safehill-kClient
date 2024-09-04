@@ -16,17 +16,18 @@ import com.safehill.kclient.models.dtos.InteractionsGroupDTO
 import com.safehill.kclient.models.dtos.InteractionsSummaryDTO
 import com.safehill.kclient.models.dtos.MessageInputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
-import com.safehill.kclient.models.dtos.ReactionInputDTO
-import com.safehill.kclient.models.dtos.ReactionOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
+import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.api.authorization.AuthorizationApi
+import com.safehill.kclient.network.api.group.GroupApi
+import com.safehill.kclient.network.api.reaction.ReactionApi
 import java.time.Instant
 
-interface SafehillApi : AuthorizationApi {
+interface SafehillApi : AuthorizationApi, GroupApi, ReactionApi {
 
     /// Creates a new user given their credentials, their public key and public signature (store in the `requestor` object)
     /// - Parameters:
@@ -213,39 +214,6 @@ interface SafehillApi : AuthorizationApi {
         recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>
     )
 
-    /// Delete a group, related messages and reactions, given its id
-    /// - Parameters:
-    ///   - groupId: the group identifier
-    suspend fun deleteGroup(groupId: GroupId)
-
-    /// Retrieved the E2EE details for a group, if one exists
-    /// - Parameters:
-    ///   - groupId: the group identifier
-    ///   - completionHandler: the callback method
-    suspend fun retrieveGroupUserEncryptionDetails(
-        groupId: GroupId,
-    ): List<RecipientEncryptionDetailsDTO>
-
-
-    /// Adds reactions to a share (group)
-    /// - Parameters:
-    ///   - reactions: the reactions details
-    ///   - groupId: the group identifier
-    /// - Returns:
-    ///   - the list of reactions added
-    suspend fun addReactions(
-        reactions: List<ReactionInputDTO>,
-        toGroupId: GroupId
-    ): List<ReactionOutputDTO>
-
-    /// Removes a reaction to an asset or a message
-    /// - Parameters:
-    ///   - reaction: the reaction type and references to remove
-    ///   - fromGroupId: the group the reaction belongs to
-    suspend fun removeReaction(
-        reaction: ReactionOutputDTO,
-        fromGroupId: GroupId
-    )
 
     /// Retrieves all the messages and reactions for a group id. Results are paginated and returned in reverse cronological order.
     /// - Parameters:
@@ -255,21 +223,25 @@ interface SafehillApi : AuthorizationApi {
     /// - Returns:
     ///   - the list of interactions (reactions and messages) in the group
     suspend fun retrieveInteractions(
-        inGroupId: GroupId,
+        anchorId: String,
+        interactionAnchor: InteractionAnchor,
         per: Int,
         page: Int,
         before: String?
     ): InteractionsGroupDTO
 
-    /// Adds a messages to a share (group)
-    /// - Parameters:
-    ///   - messages: the message details
-    ///   - groupId: the group identifier
-    /// - Returns:
-    ///   - the list of messages created
+    /**
+     * Adds messages to a share (group or thread).
+     *
+     * @param messages The message details.
+     * @param anchorId The group or thread identifier.
+     * @param interactionAnchor Either [InteractionAnchor.THREAD] or [InteractionAnchor.GROUP]
+     * @return The list of messages created.
+     */
     suspend fun addMessages(
         messages: List<MessageInputDTO>,
-        groupId: GroupId
+        anchorId: String,
+        interactionAnchor: InteractionAnchor
     ): List<MessageOutputDTO>
 
     suspend fun listThreads(): List<ConversationThreadOutputDTO>

@@ -10,7 +10,7 @@ import com.safehill.kclient.models.SafehillKeyPair
 import com.safehill.kclient.models.SafehillPrivateKey
 import com.safehill.kclient.models.SafehillPublicKey
 import com.safehill.kclient.models.SafehillSignature
-import com.safehill.kclient.models.ShareablePayload
+import com.safehill.kcrypto.models.ShareablePayload
 import com.safehill.kclient.models.SymmetricKey
 import com.safehill.kclient.models.SymmetricKeySize
 import kotlinx.coroutines.delay

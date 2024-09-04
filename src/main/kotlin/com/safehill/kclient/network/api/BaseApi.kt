@@ -6,6 +6,7 @@ import com.github.kittinunf.fuel.core.Request
 import com.github.kittinunf.fuel.core.ResponseResultOf
 import com.github.kittinunf.fuel.core.extensions.AuthenticatedRequest
 import com.github.kittinunf.fuel.core.extensions.authentication
+import com.github.kittinunf.fuel.httpDelete
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.responseObject
 import com.github.kittinunf.result.Result
@@ -29,7 +30,23 @@ inline fun <reified Request : Any> BaseApi.postForResponseString(
     request: Request? = null,
     authenticationRequired: Boolean = true
 ): String {
-    return createPostRequest(
+    return fireRequestForStringResponse(
+        request = request,
+        requestMethod = RequestMethod.Post,
+        endPoint = endPoint,
+        authenticationRequired = authenticationRequired
+    )
+}
+
+
+inline fun <reified Request : Any> BaseApi.fireRequestForStringResponse(
+    requestMethod: RequestMethod,
+    endPoint: String,
+    request: Request? = null,
+    authenticationRequired: Boolean = true
+): String {
+    return createRequest(
+        requestMethod = requestMethod,
         endPoint = endPoint,
         request = request,
         authenticationRequired = authenticationRequired
@@ -42,13 +59,28 @@ suspend inline fun <reified Request : Any, reified Response : Any> BaseApi.postF
     request: Request? = null,
     authenticationRequired: Boolean = true
 ): Response {
+    return fireRequestForObjectResponse<Request, Response>(
+        requestMethod = RequestMethod.Post,
+        endPoint = endPoint,
+        request = request,
+        authenticationRequired = authenticationRequired
+    )
+}
+
+suspend inline fun <reified Request : Any, reified Response : Any> BaseApi.fireRequestForObjectResponse(
+    requestMethod: RequestMethod,
+    endPoint: String,
+    request: Request? = null,
+    authenticationRequired: Boolean = true
+): Response {
     @OptIn(ExperimentalSerializationApi::class)
     val ignorantJson = Json {
         ignoreUnknownKeys = true
         explicitNulls = false
     }
     return withContext(Dispatchers.IO) {
-        createPostRequest<Request>(
+        createRequest<Request>(
+            requestMethod = requestMethod,
             endPoint = endPoint,
             request = request,
             authenticationRequired = authenticationRequired
@@ -59,13 +91,23 @@ suspend inline fun <reified Request : Any, reified Response : Any> BaseApi.postF
     }
 }
 
-inline fun <reified Req> BaseApi.createPostRequest(
+enum class RequestMethod {
+    Post, Delete
+}
+
+inline fun <reified Req> BaseApi.createRequest(
     endPoint: String,
     request: Req? = null,
+    requestMethod: RequestMethod,
     authenticationRequired: Boolean = true
 ): Request {
     return endPoint
-        .httpPost()
+        .run {
+            when (requestMethod) {
+                RequestMethod.Post -> httpPost()
+                RequestMethod.Delete -> httpDelete()
+            }
+        }
         .apply {
             if (authenticationRequired) {
                 authentication()

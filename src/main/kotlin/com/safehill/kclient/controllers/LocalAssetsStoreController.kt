@@ -3,7 +3,9 @@ package com.safehill.kclient.controllers
 import com.safehill.SafehillClient
 import com.safehill.kclient.errors.CipherError
 import com.safehill.kclient.errors.DownloadError
+import com.safehill.kclient.models.SymmetricKey
 import com.safehill.kclient.models.assets.AssetDescriptor
+import com.safehill.kclient.models.assets.AssetDescriptorsCache
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.DecryptedAsset
@@ -12,11 +14,11 @@ import com.safehill.kclient.models.assets.toDecryptedAsset
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.local.EncryptionHelper
 import com.safehill.kclient.util.runCatchingPreservingCancellationException
-import com.safehill.kclient.models.SymmetricKey
 
 class LocalAssetsStoreController(
     safehillClient: SafehillClient,
-    private var encryptionHelper: EncryptionHelper
+    private var encryptionHelper: EncryptionHelper,
+    private val assetDescriptorsCache: AssetDescriptorsCache
 ) {
     private val serverProxy = safehillClient.serverProxy
     private val currentUser = safehillClient.currentUser
@@ -29,14 +31,17 @@ class LocalAssetsStoreController(
         cacheAfterFetch: Boolean
     ): Result<DecryptedAsset> {
         return runCatchingPreservingCancellationException {
-            val assetDescriptor = descriptor ?: run {
-                val descriptors = serverProxy.getAssetDescriptors(
-                    assetGlobalIdentifiers = listOf(globalIdentifier),
-                    groupIds = null, after = null
-                )
-                descriptors.firstOrNull { it.globalIdentifier == globalIdentifier }
-                    ?: throw DownloadError.AssetDescriptorNotFound(globalIdentifier)
-            }
+            val assetDescriptor =
+                descriptor ?: assetDescriptorsCache.getDescriptor(globalIdentifier) ?: run {
+                    val descriptors = serverProxy.getAssetDescriptors(
+                        assetGlobalIdentifiers = listOf(globalIdentifier),
+                        groupIds = null, after = null
+                    )
+                    descriptors
+                        .firstOrNull { it.globalIdentifier == globalIdentifier }
+                        ?.also(assetDescriptorsCache::upsertAssetDescriptor)
+                        ?: throw DownloadError.AssetDescriptorNotFound(globalIdentifier)
+                }
             val senderUser = getSenderUser(
                 descriptor = assetDescriptor
             )
@@ -50,7 +55,6 @@ class LocalAssetsStoreController(
                 currentUser = currentUser
             )
         }
-
     }
 
     private suspend fun downloadAsset(

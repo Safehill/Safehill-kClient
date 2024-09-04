@@ -8,7 +8,6 @@ import com.google.gson.Gson
 import com.safehill.SafehillClient
 import com.safehill.kclient.SafehillCypher
 import com.safehill.kclient.models.RemoteCryptoUser
-import com.safehill.kclient.models.ShareablePayload
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetDescriptorUploadState
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
@@ -35,8 +34,6 @@ import com.safehill.kclient.models.dtos.InteractionsGroupDTO
 import com.safehill.kclient.models.dtos.InteractionsSummaryDTO
 import com.safehill.kclient.models.dtos.MessageInputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
-import com.safehill.kclient.models.dtos.ReactionInputDTO
-import com.safehill.kclient.models.dtos.ReactionOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.dtos.RemoteUserPhoneNumberMatchDto
 import com.safehill.kclient.models.dtos.RemoteUserSearchDTO
@@ -48,6 +45,7 @@ import com.safehill.kclient.models.dtos.UserInputDTO
 import com.safehill.kclient.models.dtos.UserPhoneNumbersDTO
 import com.safehill.kclient.models.dtos.UserUpdateDTO
 import com.safehill.kclient.models.dtos.toAssetDescriptor
+import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
@@ -58,8 +56,13 @@ import com.safehill.kclient.network.api.authorization.AuthorizationApiImpl
 import com.safehill.kclient.network.api.getMappingOrThrow
 import com.safehill.kclient.network.api.getOrElseOnSafehillError
 import com.safehill.kclient.network.api.getOrThrow
+import com.safehill.kclient.network.api.group.GroupApi
+import com.safehill.kclient.network.api.group.GroupApiImpl
 import com.safehill.kclient.network.api.postForResponseObject
+import com.safehill.kclient.network.api.reaction.ReactionApi
+import com.safehill.kclient.network.api.reaction.ReactionApiImpl
 import com.safehill.kclient.network.exceptions.SafehillError
+import com.safehill.kcrypto.models.ShareablePayload
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -79,7 +82,9 @@ import java.util.Base64
 class RemoteServer(
     override val requestor: LocalUser
 ) : SafehillApi,
-    AuthorizationApi by AuthorizationApiImpl(requestor) {
+    AuthorizationApi by AuthorizationApiImpl(requestor),
+    GroupApi by GroupApiImpl(requestor),
+    ReactionApi by ReactionApiImpl(requestor) {
 
     @OptIn(ExperimentalSerializationApi::class)
     private val ignorantJson = Json {
@@ -510,7 +515,8 @@ class RemoteServer(
                         )
                     } catch (exception: Exception) {
                         SafehillClient.logger.error(
-                            exception.message ?: "Error while marking asset ${asset.globalIdentifier} ${encryptedVersion.quality}"
+                            exception.message
+                                ?: "Error while marking asset ${asset.globalIdentifier} ${encryptedVersion.quality}"
                         )
                     }
                 }
@@ -560,77 +566,46 @@ class RemoteServer(
         TODO("Not yet implemented")
     }
 
-    override suspend fun deleteGroup(groupId: GroupId) {
-        TODO("Not yet implemented")
-    }
 
-    override suspend fun retrieveGroupUserEncryptionDetails(groupId: GroupId): List<RecipientEncryptionDetailsDTO> {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun addReactions(
-        reactions: List<ReactionInputDTO>,
-        toGroupId: GroupId
-    ): List<ReactionOutputDTO> {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun removeReaction(reaction: ReactionOutputDTO, fromGroupId: GroupId) {
-        TODO("Not yet implemented")
-    }
-
-    @OptIn(ExperimentalSerializationApi::class)
     override suspend fun retrieveInteractions(
-        inGroupId: GroupId,
+        anchorId: String,
+        interactionAnchor: InteractionAnchor,
         per: Int,
         page: Int,
         before: String?
     ): InteractionsGroupDTO {
-        val bearerToken =
-            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
-
         val requestBody = GetInteractionDTO(
             per = per,
             page = page,
             referencedInteractionId = null,
             before = before
         )
-
-        return "interactions/user-threads/$inGroupId".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Json.encodeToString(requestBody))
-            .responseObject<InteractionsGroupDTO>(
-                Json {
-                    ignoreUnknownKeys = true
-                    explicitNulls = false
-                }
-            )
-            .getOrThrow()
-
+        return postForResponseObject(
+            endPoint = when (interactionAnchor) {
+                InteractionAnchor.THREAD -> "interactions/user-threads/$anchorId"
+                InteractionAnchor.GROUP -> "interactions/assets-groups/$anchorId"
+            },
+            request = requestBody,
+            authenticationRequired = true
+        )
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     override suspend fun addMessages(
         messages: List<MessageInputDTO>,
-        groupId: GroupId
+        anchorId: String,
+        interactionAnchor: InteractionAnchor
     ): List<MessageOutputDTO> {
         require(messages.size == 1) {
             "Can only add one message at a time."
         }
-        val bearerToken =
-            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
 
-        return "interactions/user-threads/$groupId/messages".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Json.encodeToString(messages.first()))
-            .responseObject<MessageOutputDTO>(
-                Json {
-                    ignoreUnknownKeys = true
-                    explicitNulls = false
-                }
-            )
-            .getOrThrow()
-            .run(::listOf)
+        return postForResponseObject<MessageInputDTO, MessageOutputDTO>(
+            endPoint = when (interactionAnchor) {
+                InteractionAnchor.THREAD -> "interactions/user-threads/$anchorId/messages"
+                InteractionAnchor.GROUP -> "interactions/assets-groups/$anchorId/messages"
+            },
+            request = messages.first(),
+            authenticationRequired = true
+        ).run(::listOf)
     }
-
 }
