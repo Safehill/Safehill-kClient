@@ -2,7 +2,6 @@ package com.safehill.kclient.models.assets
 
 import com.safehill.kclient.models.users.UserIdentifier
 import java.time.Instant
-import java.util.Date
 
 data class AssetDescriptorImpl(
     override val globalIdentifier: AssetGlobalIdentifier,
@@ -19,7 +18,7 @@ data class AssetDescriptorImpl(
     ) : SharingInfo {
 
         data class GroupInfoImpl(
-            override val name: String?, override val createdAt: Date?
+            override val name: String?, override val createdAt: Instant
         ) : GroupInfo
     }
 }

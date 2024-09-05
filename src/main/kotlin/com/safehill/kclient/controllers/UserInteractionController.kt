@@ -3,14 +3,21 @@ package com.safehill.kclient.controllers
 import com.safehill.kclient.base64.base64EncodedString
 import com.safehill.kclient.models.EncryptedData
 import com.safehill.kclient.models.SymmetricKey
+import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.InteractionsGroupDTO
 import com.safehill.kclient.models.dtos.MessageInputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
+import com.safehill.kclient.models.dtos.ReactionInputDTO
+import com.safehill.kclient.models.dtos.ReactionOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
+import com.safehill.kclient.models.dtos.RemoveReactionInputDTO
+import com.safehill.kclient.models.interactions.InteractionAnchor
+import com.safehill.kclient.models.interactions.ReactionType
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.ServerProxy
+import com.safehill.kclient.util.runCatchingPreservingCancellationException
 import com.safehill.kclient.util.safeApiCall
 import java.util.Base64
 
@@ -28,19 +35,23 @@ class UserInteractionController internal constructor(
     }
 
     suspend fun retrieveLastMessage(
-        threadId: String
+        anchorId: String
     ): MessageOutputDTO? {
-        return serverProxy.localServer.retrieveLastMessage(threadId)
+        return serverProxy.localServer.retrieveLastMessage(anchorId)
     }
 
     suspend fun sendMessage(
         message: String,
-        threadId: String
+        anchorId: String,
+        interactionAnchor: InteractionAnchor
     ): Result<MessageOutputDTO> {
         return runCatching {
-            val symmetricKey = getSymmetricKey(threadId) ?: return Result.failure(
-                InteractionErrors.MissingE2EEDetails(threadId)
-            )
+            val symmetricKey =
+                getSymmetricKey(anchorId = anchorId, interactionAnchor = interactionAnchor)
+                    ?: throw InteractionErrors.MissingE2EEDetails(
+                        anchorId = anchorId,
+                        anchor = interactionAnchor
+                    )
             val encryptedMessage =
                 EncryptedData(data = message.toByteArray(), symmetricKey).encryptedData
             val messageDTO = MessageInputDTO(
@@ -49,19 +60,25 @@ class UserInteractionController internal constructor(
                 inReplyToAssetGlobalIdentifier = null,
                 inReplyToInteractionId = null
             )
-            serverProxy.addMessages(listOf(messageDTO), threadId).first()
+            serverProxy.addMessages(
+                messages = listOf(messageDTO),
+                anchorId = anchorId,
+                interactionAnchor = interactionAnchor
+            ).first()
         }
     }
 
 
     suspend fun retrieveInteractions(
         before: String?,
-        threadId: String,
+        anchorId: String,
+        interactionAnchor: InteractionAnchor,
         limit: Int
     ): Result<InteractionsGroupDTO> {
         return safeApiCall {
             serverProxy.retrieveInteractions(
-                inGroupId = threadId,
+                anchorId = anchorId,
+                interactionAnchor = interactionAnchor,
                 per = limit,
                 page = 1,
                 before = before
@@ -113,8 +130,53 @@ class UserInteractionController internal constructor(
         }
     }
 
-    private suspend fun getSymmetricKey(threadId: String): SymmetricKey? {
-        val encryptionDetails = serverProxy.retrieveThread(threadId = threadId)
+    suspend fun addReaction(
+        reactionType: ReactionType,
+        groupId: GroupId
+    ): Result<ReactionOutputDTO> {
+        return runCatchingPreservingCancellationException {
+            serverProxy.addReactions(
+                reactions = listOf(
+                    ReactionInputDTO(
+                        inReplyToInteractionId = null,
+                        inReplyToAssetGlobalIdentifier = null,
+                        reactionType = reactionType.toServerValue()
+                    )
+                ),
+                toGroupId = groupId
+            ).first()
+        }
+    }
+
+    suspend fun removeReaction(
+        reactionType: ReactionType,
+        groupId: GroupId
+    ): Result<Unit> {
+        return runCatchingPreservingCancellationException {
+            serverProxy.removeReaction(
+                reaction = RemoveReactionInputDTO(
+                    reactionType = reactionType.toServerValue(),
+                    inReplyToInteractionId = null,
+                    inReplyToAssetGlobalIdentifier = null
+                ),
+                fromGroupId = groupId
+            )
+        }
+    }
+
+    suspend fun getSymmetricKey(
+        anchorId: String,
+        interactionAnchor: InteractionAnchor
+    ): SymmetricKey? {
+        val encryptionDetails: RecipientEncryptionDetailsDTO? = when (interactionAnchor) {
+            InteractionAnchor.THREAD -> {
+                serverProxy.retrieveThread(threadId = anchorId)?.encryptionDetails
+            }
+
+            InteractionAnchor.GROUP -> {
+                serverProxy.retrieveGroupUserEncryptionDetails(groupId = anchorId)
+            }
+        }
         return encryptionDetails?.getSymmetricKey(currentUser)
     }
 
@@ -123,8 +185,8 @@ class UserInteractionController internal constructor(
         msg: String
     ) : Exception(msg) {
 
-        class MissingE2EEDetails(val threadId: String) :
-            InteractionErrors("The E2EE details for thread with id $threadId is not found.")
+        class MissingE2EEDetails(val anchorId: String, anchor: InteractionAnchor) :
+            InteractionErrors("The E2EE details for anchor = $anchor with id $anchor is not found.")
 
     }
 }

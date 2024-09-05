@@ -1,5 +1,6 @@
 package com.safehill.kclient.network
 
+import com.safehill.kclient.controllers.UserInteractionController
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
@@ -12,6 +13,7 @@ import com.safehill.kclient.models.dtos.InteractionsSummaryDTO
 import com.safehill.kclient.models.dtos.MessageInputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
+import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.UserIdentifier
@@ -99,7 +101,7 @@ class ServerProxyImpl(
                     val message = threadInteractionSummary.lastEncryptedMessage
                     if (message != null) {
                         localServer.insertMessages(
-                            threadId = threadId,
+                            anchorId = threadId,
                             messages = listOf(message)
                         )
                     }
@@ -145,27 +147,30 @@ class ServerProxyImpl(
      * This function will try to fetch interactions from remote server and if it fails, retrieves locally.
      */
     override suspend fun retrieveInteractions(
-        inGroupId: GroupId,
+        anchorId: String,
+        interactionAnchor: InteractionAnchor,
         per: Int,
         page: Int,
         before: String?
     ): InteractionsGroupDTO {
         return try {
             remoteServer.retrieveInteractions(
-                inGroupId = inGroupId,
+                anchorId = anchorId,
                 per = per,
                 page = page,
-                before = before
+                before = before,
+                interactionAnchor = interactionAnchor
             ).also {
                 localServer.insertMessages(
                     messages = it.messages,
-                    threadId = inGroupId
+                    anchorId = anchorId
                 )
             }
         } catch (e: Exception) {
             println("failed to fetch interactions from server. Returning local version. $e ${e.message}")
             localServer.retrieveInteractions(
-                inGroupId = inGroupId,
+                interactionAnchor = interactionAnchor,
+                anchorId = anchorId,
                 per = per,
                 page = page,
                 before = before
@@ -276,10 +281,11 @@ class ServerProxyImpl(
 
     override suspend fun addMessages(
         messages: List<MessageInputDTO>,
-        groupId: GroupId
+        anchorId: String,
+        interactionAnchor: InteractionAnchor
     ): List<MessageOutputDTO> {
-        return remoteServer.addMessages(messages, groupId).also {
-            localServer.insertMessages(it, groupId)
+        return remoteServer.addMessages(messages, anchorId, interactionAnchor).also {
+            localServer.insertMessages(it, anchorId)
         }
     }
 
@@ -465,6 +471,26 @@ class ServerProxyImpl(
         }
         return map
 
+    }
+
+    override suspend fun setGroupEncryptionDetails(
+        groupId: GroupId,
+        recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun retrieveGroupUserEncryptionDetails(groupId: GroupId): RecipientEncryptionDetailsDTO {
+        return try {
+            localServer.retrieveGroupUserEncryptionDetails(groupId = groupId)
+        } catch (e: UserInteractionController.InteractionErrors.MissingE2EEDetails) {
+            remoteServer.retrieveGroupUserEncryptionDetails(groupId = groupId).also {
+                localServer.setGroupEncryptionDetails(
+                    groupId = groupId,
+                    recipientsEncryptionDetails = listOf(it)
+                )
+            }
+        }
     }
 
     private fun cacheAssets(globalIdentifiers: List<String>, quality: AssetQuality) {

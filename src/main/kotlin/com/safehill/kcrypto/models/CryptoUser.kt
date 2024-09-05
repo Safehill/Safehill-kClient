@@ -1,6 +1,7 @@
 package com.safehill.kclient.models
 
 import com.safehill.kclient.SafehillCypher
+import com.safehill.kcrypto.models.ShareablePayload
 import java.security.KeyPair
 import java.security.PublicKey
 

@@ -1,5 +1,6 @@
 package com.safehill.kclient.network.local
 
+import com.safehill.kclient.models.LocalCryptoUser
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetDescriptorUploadState
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
@@ -19,15 +20,15 @@ import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.dtos.ReactionInputDTO
 import com.safehill.kclient.models.dtos.ReactionOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
+import com.safehill.kclient.models.dtos.RemoveReactionInputDTO
 import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
 import com.safehill.kclient.models.dtos.authorization.UserAuthorizationStatusDTO
+import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
-import com.safehill.kclient.network.GlobalIdentifier
 import com.safehill.kclient.network.exceptions.SafehillError
-import com.safehill.kclient.models.LocalCryptoUser
 import java.time.Instant
 
 class LocalServerInterfaceImpl : LocalServerInterface {
@@ -67,16 +68,25 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         TODO("Not yet implemented")
     }
 
-    override suspend fun getAssetDescriptors(
-        globalIdentifiers: List<GlobalIdentifier>?,
-        filteringGroups: List<String>?
-    ): List<AssetDescriptor> {
-        TODO("Not yet implemented")
-    }
 
     override var requestor: LocalUser
         get() = LocalUser(LocalCryptoUser())
         set(value) {}
+
+    override suspend fun storeAssetDescriptor(assetDescriptor: AssetDescriptor) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun storeAssetsWithDescriptor(encryptedAssetsWithDescriptor: Map<AssetDescriptor, EncryptedAsset>) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun storeThreadAssets(
+        threadId: String,
+        conversationThreadAssetsDTO: ConversationThreadAssetsDTO
+    ) {
+        TODO("Not yet implemented")
+    }
 
     override suspend fun createUser(name: String): ServerUser {
         throw SafehillError.ServerError.UnSupportedOperation
@@ -127,14 +137,14 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         TODO("Not yet implemented")
     }
 
-    override suspend fun addThreadAssets(
-        threadId: String,
-        conversationThreadAssetsDTO: ConversationThreadAssetsDTO
-    ) {
+    override suspend fun getAssets(threadId: String): ConversationThreadAssetsDTO {
         TODO("Not yet implemented")
     }
 
-    override suspend fun getAssets(threadId: String): ConversationThreadAssetsDTO {
+    override suspend fun getAssets(
+        globalIdentifiers: List<AssetGlobalIdentifier>,
+        versions: List<AssetQuality>
+    ): Map<AssetGlobalIdentifier, EncryptedAsset> {
         TODO("Not yet implemented")
     }
 
@@ -146,12 +156,6 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         TODO("Not yet implemented")
     }
 
-    override suspend fun getAssets(
-        globalIdentifiers: List<AssetGlobalIdentifier>,
-        versions: List<AssetQuality>?,
-    ): Map<AssetGlobalIdentifier, EncryptedAsset> {
-        TODO("Not yet implemented")
-    }
 
     override suspend fun create(
         assets: List<EncryptedAsset>,
@@ -175,9 +179,13 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         TODO("Not yet implemented")
     }
 
-    override suspend fun retrieveThread(usersIdentifiers: List<UserIdentifier>): ConversationThreadOutputDTO? {
+    override suspend fun retrieveThread(
+        usersIdentifiers: List<UserIdentifier>,
+        phoneNumbers: List<HashedPhoneNumber>
+    ): ConversationThreadOutputDTO? {
         TODO("Not yet implemented")
     }
+
 
     override suspend fun retrieveThread(threadId: String): ConversationThreadOutputDTO? {
         TODO("Not yet implemented")
@@ -211,11 +219,11 @@ class LocalServerInterfaceImpl : LocalServerInterface {
     }
 
     override suspend fun deleteGroup(groupId: GroupId) {
-        TODO("Not yet implemented")
+        throw SafehillError.ServerError.NotImplemented
     }
 
-    override suspend fun retrieveGroupUserEncryptionDetails(groupId: GroupId): List<RecipientEncryptionDetailsDTO> {
-        TODO("Not yet implemented")
+    override suspend fun retrieveGroupUserEncryptionDetails(groupId: GroupId): RecipientEncryptionDetailsDTO {
+        throw SafehillError.ServerError.NotImplemented
     }
 
     override suspend fun addReactions(
@@ -225,12 +233,13 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         TODO("Not yet implemented")
     }
 
-    override suspend fun removeReaction(reaction: ReactionOutputDTO, fromGroupId: GroupId) {
+    override suspend fun removeReaction(reaction: RemoveReactionInputDTO, fromGroupId: GroupId) {
         TODO("Not yet implemented")
     }
 
     override suspend fun retrieveInteractions(
-        inGroupId: GroupId,
+        anchorId: String,
+        interactionAnchor: InteractionAnchor,
         per: Int,
         page: Int,
         before: String?
@@ -240,7 +249,8 @@ class LocalServerInterfaceImpl : LocalServerInterface {
 
     override suspend fun addMessages(
         messages: List<MessageInputDTO>,
-        groupId: GroupId
+        anchorId: String,
+        interactionAnchor: InteractionAnchor
     ): List<MessageOutputDTO> {
         TODO("Not yet implemented")
     }

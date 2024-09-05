@@ -1,11 +1,9 @@
 package com.safehill.kclient.network.local
 
-import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.network.SafehillApi
-import com.safehill.kclient.models.SymmetricKey
 
 interface LocalServerInterface : SafehillApi, LocalAssetApi {
     suspend fun createOrUpdateUser(
@@ -17,9 +15,9 @@ interface LocalServerInterface : SafehillApi, LocalAssetApi {
 
     suspend fun createOrUpdateThread(threads: List<ConversationThreadOutputDTO>)
 
-    suspend fun insertMessages(messages: List<MessageOutputDTO>, threadId: String)
+    suspend fun insertMessages(messages: List<MessageOutputDTO>, anchorId: String)
 
-    suspend fun retrieveLastMessage(threadId: String): MessageOutputDTO?
+    suspend fun retrieveLastMessage(anchorId: String): MessageOutputDTO?
 
     suspend fun upsertUsers(remoteUsers: List<RemoteUser>)
 
