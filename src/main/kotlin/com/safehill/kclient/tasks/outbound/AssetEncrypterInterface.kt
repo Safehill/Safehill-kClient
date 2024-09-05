@@ -1,6 +1,6 @@
 package com.safehill.kclient.tasks.outbound
 
-import com.safehill.kclient.models.ShareablePayload
+import com.safehill.kcrypto.models.ShareablePayload
 import com.safehill.kclient.models.SymmetricKey
 import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.users.LocalUser

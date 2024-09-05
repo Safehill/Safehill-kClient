@@ -7,7 +7,7 @@ import com.safehill.kclient.models.assets.EncryptedAssetVersion
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.utils.ImageResizerInterface
 import com.safehill.kclient.SafehillCypher
-import com.safehill.kclient.models.ShareablePayload
+import com.safehill.kcrypto.models.ShareablePayload
 import com.safehill.kclient.models.SymmetricKey
 import com.safehill.kclient.models.bytes
 import com.safehill.kclient.models.users.ServerUser

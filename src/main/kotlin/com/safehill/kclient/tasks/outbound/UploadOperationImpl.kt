@@ -1,6 +1,6 @@
 package com.safehill.kclient.tasks.outbound
 
-import com.safehill.kclient.models.ShareablePayload
+import com.safehill.kcrypto.models.ShareablePayload
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAsset
