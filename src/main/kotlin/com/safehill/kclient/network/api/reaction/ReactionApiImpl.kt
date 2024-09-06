@@ -8,7 +8,7 @@ import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.network.api.BaseApi
 import com.safehill.kclient.network.api.RequestMethod
 import com.safehill.kclient.network.api.fireRequestForStringResponse
-import com.safehill.kclient.network.api.postForResponseObject
+import com.safehill.kclient.network.api.postRequestForObjectResponse
 import com.safehill.kclient.network.exceptions.SafehillError
 
 class ReactionApiImpl(
@@ -20,7 +20,7 @@ class ReactionApiImpl(
         toGroupId: GroupId
     ): List<ReactionOutputDTO> {
         require(reactions.size == 1) { throw SafehillError.ServerError.UnSupportedOperation }
-        return postForResponseObject<ReactionInputDTO, ReactionOutputDTO>(
+        return postRequestForObjectResponse<ReactionInputDTO, ReactionOutputDTO>(
             endPoint = "interactions/assets-groups/$toGroupId/reactions",
             request = reactions.first(),
             authenticationRequired = true

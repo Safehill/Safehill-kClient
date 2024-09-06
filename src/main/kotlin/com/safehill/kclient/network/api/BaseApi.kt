@@ -25,7 +25,7 @@ interface BaseApi {
     val requestor: LocalUser
 }
 
-inline fun <reified Request : Any> BaseApi.postForResponseString(
+inline fun <reified Request : Any> BaseApi.postRequestForStringResponse(
     endPoint: String,
     request: Request? = null,
     authenticationRequired: Boolean = true
@@ -54,7 +54,7 @@ inline fun <reified Request : Any> BaseApi.fireRequestForStringResponse(
         .getOrThrow()
 }
 
-suspend inline fun <reified Request : Any, reified Response : Any> BaseApi.postForResponseObject(
+suspend inline fun <reified Request : Any, reified Response : Any> BaseApi.postRequestForObjectResponse(
     endPoint: String,
     request: Request? = null,
     authenticationRequired: Boolean = true

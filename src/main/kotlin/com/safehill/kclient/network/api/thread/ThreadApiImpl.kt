@@ -12,7 +12,7 @@ import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.api.BaseApi
 import com.safehill.kclient.network.api.getOrElseOnSafehillError
 import com.safehill.kclient.network.api.getOrThrow
-import com.safehill.kclient.network.api.postForResponseObject
+import com.safehill.kclient.network.api.postRequestForObjectResponse
 import com.safehill.kclient.network.exceptions.SafehillError
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
@@ -23,7 +23,7 @@ class ThreadApiImpl(override val requestor: LocalUser) : ThreadApi, BaseApi {
     }
 
     private suspend fun listThreads(retrieveThreadDTO: RetrieveThreadDTO?): List<ConversationThreadOutputDTO> {
-        return postForResponseObject<RetrieveThreadDTO, List<ConversationThreadOutputDTO>>(
+        return postRequestForObjectResponse<RetrieveThreadDTO, List<ConversationThreadOutputDTO>>(
             endPoint = "/threads/retrieve",
             request = retrieveThreadDTO,
             authenticationRequired = true

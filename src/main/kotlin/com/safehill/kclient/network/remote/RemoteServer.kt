@@ -54,7 +54,7 @@ import com.safehill.kclient.network.api.getMappingOrThrow
 import com.safehill.kclient.network.api.getOrThrow
 import com.safehill.kclient.network.api.group.GroupApi
 import com.safehill.kclient.network.api.group.GroupApiImpl
-import com.safehill.kclient.network.api.postForResponseObject
+import com.safehill.kclient.network.api.postRequestForObjectResponse
 import com.safehill.kclient.network.api.reaction.ReactionApi
 import com.safehill.kclient.network.api.reaction.ReactionApiImpl
 import com.safehill.kclient.network.api.thread.ThreadApi
@@ -312,7 +312,7 @@ class RemoteServer(
             globalIdentifiers = assetGlobalIdentifiers,
             groupIds = groupIds
         )
-        return postForResponseObject<AssetDescriptorFilterCriteriaDTO, List<AssetDescriptorDTO>>(
+        return postRequestForObjectResponse<AssetDescriptorFilterCriteriaDTO, List<AssetDescriptorDTO>>(
             endPoint = "/assets/descriptors/retrieve",
             request = descriptorFilterCriteriaDTO,
             authenticationRequired = true
@@ -339,7 +339,7 @@ class RemoteServer(
             versionNames = versions.map { it.value }
         )
 
-        val assetOutputDTOs = postForResponseObject<AssetSearchCriteriaDTO, List<AssetOutputDTO>>(
+        val assetOutputDTOs = postRequestForObjectResponse<AssetSearchCriteriaDTO, List<AssetOutputDTO>>(
             endPoint = "/assets/retrieve",
             request = assetFilterCriteriaDTO,
             authenticationRequired = true
@@ -507,7 +507,7 @@ class RemoteServer(
             referencedInteractionId = null,
             before = before
         )
-        return postForResponseObject(
+        return postRequestForObjectResponse(
             endPoint = when (interactionAnchor) {
                 InteractionAnchor.THREAD -> "interactions/user-threads/$anchorId"
                 InteractionAnchor.GROUP -> "interactions/assets-groups/$anchorId"
@@ -526,7 +526,7 @@ class RemoteServer(
             "Can only add one message at a time."
         }
 
-        return postForResponseObject<MessageInputDTO, MessageOutputDTO>(
+        return postRequestForObjectResponse<MessageInputDTO, MessageOutputDTO>(
             endPoint = when (interactionAnchor) {
                 InteractionAnchor.THREAD -> "interactions/user-threads/$anchorId/messages"
                 InteractionAnchor.GROUP -> "interactions/assets-groups/$anchorId/messages"
