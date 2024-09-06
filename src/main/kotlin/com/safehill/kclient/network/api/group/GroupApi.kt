@@ -2,9 +2,8 @@ package com.safehill.kclient.network.api.group
 
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
-import com.safehill.kclient.network.api.BaseApi
 
-interface GroupApi : BaseApi {
+interface GroupApi {
 
 
     /// Delete a group, related messages and reactions, given its id

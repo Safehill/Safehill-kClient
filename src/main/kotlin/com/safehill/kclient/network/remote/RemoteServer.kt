@@ -25,8 +25,6 @@ import com.safehill.kclient.models.dtos.AuthChallengeResponseDTO
 import com.safehill.kclient.models.dtos.AuthResolvedChallengeDTO
 import com.safehill.kclient.models.dtos.AuthResponseDTO
 import com.safehill.kclient.models.dtos.ConversationThreadAssetsDTO
-import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
-import com.safehill.kclient.models.dtos.CreateOrUpdateThreadDTO
 import com.safehill.kclient.models.dtos.FCM_TOKEN_TYPE
 import com.safehill.kclient.models.dtos.GetInteractionDTO
 import com.safehill.kclient.models.dtos.HashedPhoneNumber
@@ -37,7 +35,6 @@ import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.dtos.RemoteUserPhoneNumberMatchDto
 import com.safehill.kclient.models.dtos.RemoteUserSearchDTO
-import com.safehill.kclient.models.dtos.RetrieveThreadDTO
 import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
 import com.safehill.kclient.models.dtos.UserDeviceTokenDTO
 import com.safehill.kclient.models.dtos.UserIdentifiersDTO
@@ -54,13 +51,14 @@ import com.safehill.kclient.network.SafehillApi
 import com.safehill.kclient.network.api.authorization.AuthorizationApi
 import com.safehill.kclient.network.api.authorization.AuthorizationApiImpl
 import com.safehill.kclient.network.api.getMappingOrThrow
-import com.safehill.kclient.network.api.getOrElseOnSafehillError
 import com.safehill.kclient.network.api.getOrThrow
 import com.safehill.kclient.network.api.group.GroupApi
 import com.safehill.kclient.network.api.group.GroupApiImpl
 import com.safehill.kclient.network.api.postForResponseObject
 import com.safehill.kclient.network.api.reaction.ReactionApi
 import com.safehill.kclient.network.api.reaction.ReactionApiImpl
+import com.safehill.kclient.network.api.thread.ThreadApi
+import com.safehill.kclient.network.api.thread.ThreadApiImpl
 import com.safehill.kclient.network.exceptions.SafehillError
 import com.safehill.kcrypto.models.ShareablePayload
 import kotlinx.coroutines.coroutineScope
@@ -84,7 +82,8 @@ class RemoteServer(
 ) : SafehillApi,
     AuthorizationApi by AuthorizationApiImpl(requestor),
     GroupApi by GroupApiImpl(requestor),
-    ReactionApi by ReactionApiImpl(requestor) {
+    ReactionApi by ReactionApiImpl(requestor),
+    ThreadApi by ThreadApiImpl(requestor) {
 
     @OptIn(ExperimentalSerializationApi::class)
     private val ignorantJson = Json {
@@ -407,78 +406,6 @@ class RemoteServer(
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .responseObject<InteractionsSummaryDTO>(json = ignorantJson)
             .getOrThrow()
-    }
-
-    override suspend fun retrieveThread(
-        usersIdentifiers: List<UserIdentifier>,
-        phoneNumbers: List<HashedPhoneNumber>
-    ): ConversationThreadOutputDTO? {
-        return listThreads(
-            RetrieveThreadDTO(
-                byUsersPublicIdentifiers = usersIdentifiers,
-                byInvitedPhoneNumbers = phoneNumbers
-            )
-        ).firstOrNull()
-    }
-
-    @OptIn(ExperimentalSerializationApi::class)
-    override suspend fun retrieveThread(threadId: String): ConversationThreadOutputDTO? {
-        val bearerToken = this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
-
-        return "/threads/retrieve/$threadId".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .responseObject(
-                ConversationThreadOutputDTO.serializer(),
-                Json {
-                    explicitNulls = false
-                    ignoreUnknownKeys = true
-                }
-            )
-            .getOrElseOnSafehillError {
-                if (it is SafehillError.ClientError.NotFound) {
-                    null
-                } else {
-                    throw it
-                }
-            }
-    }
-
-
-    override suspend fun listThreads(): List<ConversationThreadOutputDTO> {
-        return listThreads(null)
-    }
-
-    private suspend fun listThreads(retrieveThreadDTO: RetrieveThreadDTO?): List<ConversationThreadOutputDTO> {
-        return postForResponseObject<RetrieveThreadDTO, List<ConversationThreadOutputDTO>>(
-            endPoint = "/threads/retrieve",
-            request = retrieveThreadDTO,
-            authenticationRequired = true
-        )
-    }
-
-    @OptIn(ExperimentalSerializationApi::class)
-    override suspend fun createOrUpdateThread(
-        name: String?,
-        recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>
-    ): ConversationThreadOutputDTO {
-        val bearerToken = this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
-
-        val request = CreateOrUpdateThreadDTO(
-            name = name,
-            recipients = recipientsEncryptionDetails
-        )
-        val json = Json {
-            explicitNulls = false
-            ignoreUnknownKeys = true
-        }
-
-
-        return "/threads/upsert".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(json.encodeToString(CreateOrUpdateThreadDTO.serializer(), request))
-            .responseObject<ConversationThreadOutputDTO>(json)
-            .getOrThrow()
-
     }
 
     override suspend fun upload(

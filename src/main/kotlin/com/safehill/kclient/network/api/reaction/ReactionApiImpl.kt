@@ -5,6 +5,7 @@ import com.safehill.kclient.models.dtos.ReactionInputDTO
 import com.safehill.kclient.models.dtos.ReactionOutputDTO
 import com.safehill.kclient.models.dtos.RemoveReactionInputDTO
 import com.safehill.kclient.models.users.LocalUser
+import com.safehill.kclient.network.api.BaseApi
 import com.safehill.kclient.network.api.RequestMethod
 import com.safehill.kclient.network.api.fireRequestForStringResponse
 import com.safehill.kclient.network.api.postForResponseObject
@@ -12,7 +13,7 @@ import com.safehill.kclient.network.exceptions.SafehillError
 
 class ReactionApiImpl(
     override val requestor: LocalUser
-) : ReactionApi {
+) : ReactionApi, BaseApi {
 
     override suspend fun addReactions(
         reactions: List<ReactionInputDTO>,

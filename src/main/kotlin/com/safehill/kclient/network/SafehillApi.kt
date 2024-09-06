@@ -10,7 +10,6 @@ import com.safehill.kclient.models.assets.ShareableEncryptedAsset
 import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.dtos.AuthResponseDTO
 import com.safehill.kclient.models.dtos.ConversationThreadAssetsDTO
-import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.HashedPhoneNumber
 import com.safehill.kclient.models.dtos.InteractionsGroupDTO
 import com.safehill.kclient.models.dtos.InteractionsSummaryDTO
@@ -22,12 +21,14 @@ import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
+import com.safehill.kclient.network.api.BaseApi
 import com.safehill.kclient.network.api.authorization.AuthorizationApi
 import com.safehill.kclient.network.api.group.GroupApi
 import com.safehill.kclient.network.api.reaction.ReactionApi
+import com.safehill.kclient.network.api.thread.ThreadApi
 import java.time.Instant
 
-interface SafehillApi : AuthorizationApi, GroupApi, ReactionApi {
+interface SafehillApi : BaseApi, AuthorizationApi, GroupApi, ReactionApi, ThreadApi {
 
     /// Creates a new user given their credentials, their public key and public signature (store in the `requestor` object)
     /// - Parameters:
@@ -165,20 +166,6 @@ interface SafehillApi : AuthorizationApi, GroupApi, ReactionApi {
 
     suspend fun topLevelInteractionsSummary(): InteractionsSummaryDTO
 
-    suspend fun retrieveThread(
-        usersIdentifiers: List<UserIdentifier>,
-        phoneNumbers: List<HashedPhoneNumber>
-    ): ConversationThreadOutputDTO?
-
-    suspend fun retrieveThread(
-        threadId: String
-    ): ConversationThreadOutputDTO?
-
-    suspend fun createOrUpdateThread(
-        name: String?,
-        recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>
-    ): ConversationThreadOutputDTO
-
     /// Upload encrypted asset versions data to the CDN.
     suspend fun upload(
         serverAsset: AssetOutputDTO,
@@ -244,5 +231,4 @@ interface SafehillApi : AuthorizationApi, GroupApi, ReactionApi {
         interactionAnchor: InteractionAnchor
     ): List<MessageOutputDTO>
 
-    suspend fun listThreads(): List<ConversationThreadOutputDTO>
 }

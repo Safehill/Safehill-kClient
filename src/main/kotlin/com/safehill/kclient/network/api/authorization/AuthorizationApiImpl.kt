@@ -4,12 +4,13 @@ import com.safehill.kclient.models.dtos.authorization.UserAuthorizationRequestDT
 import com.safehill.kclient.models.dtos.authorization.UserAuthorizationStatusDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.UserIdentifier
+import com.safehill.kclient.network.api.BaseApi
 import com.safehill.kclient.network.api.postForResponseObject
 import com.safehill.kclient.network.api.postForResponseString
 
 class AuthorizationApiImpl(
     override val requestor: LocalUser
-) : AuthorizationApi {
+) : AuthorizationApi, BaseApi {
 
     override suspend fun getAuthorizationStatus(): UserAuthorizationStatusDTO {
         return postForResponseObject<Unit, UserAuthorizationStatusDTO>(
