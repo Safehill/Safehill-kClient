@@ -54,11 +54,13 @@ class ThreadApiImpl(override val requestor: LocalUser) : ThreadApi, BaseApi {
 
     override suspend fun createOrUpdateThread(
         name: String?,
-        recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>
+        recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>,
+        phoneNumbers: List<HashedPhoneNumber>
     ): ConversationThreadOutputDTO {
         val request = CreateOrUpdateThreadDTO(
             name = name,
-            recipients = recipientsEncryptionDetails
+            recipients = recipientsEncryptionDetails,
+            phoneNumbers = phoneNumbers
         )
         return postRequestForObjectResponse(
             endPoint = "/threads/upsert",

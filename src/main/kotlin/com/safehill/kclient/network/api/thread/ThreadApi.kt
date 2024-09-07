@@ -21,6 +21,7 @@ interface ThreadApi {
 
     suspend fun createOrUpdateThread(
         name: String?,
-        recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>
+        recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>,
+        phoneNumbers: List<HashedPhoneNumber>
     ): ConversationThreadOutputDTO
 }

@@ -8,6 +8,7 @@ import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.dtos.ConversationThreadAssetsDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
+import com.safehill.kclient.models.dtos.HashedPhoneNumber
 import com.safehill.kclient.models.dtos.InteractionsGroupDTO
 import com.safehill.kclient.models.dtos.InteractionsSummaryDTO
 import com.safehill.kclient.models.dtos.MessageInputDTO
@@ -133,11 +134,13 @@ class ServerProxyImpl(
 
     override suspend fun createOrUpdateThread(
         name: String?,
-        recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>
+        recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>,
+        phoneNumbers: List<HashedPhoneNumber>
     ): ConversationThreadOutputDTO {
         return remoteServer.createOrUpdateThread(
             name = name,
-            recipientsEncryptionDetails = recipientsEncryptionDetails
+            recipientsEncryptionDetails = recipientsEncryptionDetails,
+            phoneNumbers = phoneNumbers
         ).also {
             localServer.createOrUpdateThread(listOf(it))
         }
