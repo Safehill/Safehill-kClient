@@ -339,11 +339,12 @@ class RemoteServer(
             versionNames = versions.map { it.value }
         )
 
-        val assetOutputDTOs = postRequestForObjectResponse<AssetSearchCriteriaDTO, List<AssetOutputDTO>>(
-            endPoint = "/assets/retrieve",
-            request = assetFilterCriteriaDTO,
-            authenticationRequired = true
-        )
+        val assetOutputDTOs =
+            postRequestForObjectResponse<AssetSearchCriteriaDTO, List<AssetOutputDTO>>(
+                endPoint = "/assets/retrieve",
+                request = assetFilterCriteriaDTO,
+                authenticationRequired = true
+            )
         return S3Proxy.fetchAssets(assetOutputDTOs)
 
     }

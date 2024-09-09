@@ -6,5 +6,5 @@ import kotlinx.serialization.Serializable
 data class CreateOrUpdateThreadDTO(
     val name: String?,
     val recipients: List<RecipientEncryptionDetailsDTO>,
-    val phoneNumbers: List<HashedPhoneNumber>
+    val phoneNumbers: List<String>
 )

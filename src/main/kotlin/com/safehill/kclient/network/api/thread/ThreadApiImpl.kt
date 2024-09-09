@@ -2,7 +2,6 @@ package com.safehill.kclient.network.api.thread
 
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.CreateOrUpdateThreadDTO
-import com.safehill.kclient.models.dtos.HashedPhoneNumber
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.dtos.RetrieveThreadDTO
 import com.safehill.kclient.models.users.LocalUser
@@ -26,7 +25,7 @@ class ThreadApiImpl(override val requestor: LocalUser) : ThreadApi, BaseApi {
 
     override suspend fun retrieveThread(
         usersIdentifiers: List<UserIdentifier>,
-        phoneNumbers: List<HashedPhoneNumber>
+        phoneNumbers: List<String>
     ): ConversationThreadOutputDTO? {
         return listThreads(
             RetrieveThreadDTO(
@@ -55,7 +54,7 @@ class ThreadApiImpl(override val requestor: LocalUser) : ThreadApi, BaseApi {
     override suspend fun createOrUpdateThread(
         name: String?,
         recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>,
-        phoneNumbers: List<HashedPhoneNumber>
+        phoneNumbers: List<String>
     ): ConversationThreadOutputDTO {
         val request = CreateOrUpdateThreadDTO(
             name = name,

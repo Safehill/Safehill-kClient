@@ -5,7 +5,6 @@ import com.safehill.kclient.models.EncryptedData
 import com.safehill.kclient.models.SymmetricKey
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
-import com.safehill.kclient.models.dtos.HashedPhoneNumber
 import com.safehill.kclient.models.dtos.InteractionsGroupDTO
 import com.safehill.kclient.models.dtos.MessageInputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
@@ -89,7 +88,7 @@ class UserInteractionController internal constructor(
 
     suspend fun setUpThread(
         withUsers: List<ServerUser>,
-        withPhoneNumbers: List<HashedPhoneNumber>
+        withPhoneNumbers: List<String>
     ): ConversationThreadOutputDTO {
         val usersAndSelf = (withUsers + currentUser).distinctBy { it.identifier }
 
