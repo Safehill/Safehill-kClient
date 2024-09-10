@@ -6,7 +6,7 @@ import com.safehill.kclient.models.dtos.ReactionOutputDTO
 import com.safehill.kclient.models.dtos.RemoveReactionInputDTO
 import com.safehill.kclient.network.api.BaseApi
 
-interface ReactionApi : BaseApi {
+interface ReactionApi  {
 
 
     /// Adds reactions to a share (group)
