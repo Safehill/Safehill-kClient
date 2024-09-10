@@ -36,6 +36,8 @@ import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.dtos.RemoteUserPhoneNumberMatchDto
 import com.safehill.kclient.models.dtos.RemoteUserSearchDTO
 import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
+import com.safehill.kclient.models.dtos.ShareRequestBody
+import com.safehill.kclient.models.dtos.ShareVersionDetails
 import com.safehill.kclient.models.dtos.UserDeviceTokenDTO
 import com.safehill.kclient.models.dtos.UserIdentifiersDTO
 import com.safehill.kclient.models.dtos.UserInputDTO
@@ -390,7 +392,35 @@ class RemoteServer(
     }
 
     override suspend fun share(asset: ShareableEncryptedAsset) {
-        TODO("Not yet implemented")
+        if (asset.sharedVersions.isEmpty() || asset.sharedVersions.size > 1) {
+            throw NotImplementedError("Current API only supports share one asset per request")
+        }
+
+        val bearerToken =
+            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
+
+        val versions = mutableListOf<ShareVersionDetails>()
+        for (version in asset.sharedVersions) {
+            val versionDetails = ShareVersionDetails(
+                versionName = version.quality.value,
+                recipientUserIdentifier = version.userPublicIdentifier,
+                recipientEncryptedSecret = Base64.getEncoder().encodeToString(version.encryptedSecret),
+                ephemeralPublicKey = Base64.getEncoder().encodeToString(version.ephemeralPublicKey),
+                publicSignature = Base64.getEncoder().encodeToString(version.publicSignature)
+            )
+            versions.add(versionDetails)
+        }
+
+        val requestBody = ShareRequestBody(
+            globalAssetIdentifier = asset.globalIdentifier,
+            versionSharingDetails = versions,  // Puoi avere più versioni in una lista
+            groupId = asset.groupId
+        )
+        "/assets/share".httpPost()
+            .header(mapOf("Authorization" to "Bearer $bearerToken"))
+            .body(Json.encodeToString(ShareRequestBody.serializer(), requestBody))
+            .responseString()
+            .getOrThrow()
     }
 
     override suspend fun unshare(
@@ -446,6 +476,7 @@ class RemoteServer(
                             exception.message
                                 ?: "Error while marking asset ${asset.globalIdentifier} ${encryptedVersion.quality}"
                         )
+                        throw exception
                     }
                 }
             }

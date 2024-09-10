@@ -46,21 +46,21 @@ public interface UploadOperationListener {
     )
 
     fun startedSharing(
-        localIdentifier: AssetLocalIdentifier,
+        localIdentifier: AssetLocalIdentifier?,
         globalIdentifier: AssetGlobalIdentifier,
         groupId: GroupId,
         users: List<ServerUser>
     )
 
     fun finishedSharing(
-        localIdentifier: AssetLocalIdentifier,
+        localIdentifier: AssetLocalIdentifier?,
         globalIdentifier: AssetGlobalIdentifier,
         groupId: GroupId,
         users: List<ServerUser>
     )
 
     fun failedSharing(
-        localIdentifier: AssetLocalIdentifier,
+        localIdentifier: AssetLocalIdentifier?,
         globalIdentifier: AssetGlobalIdentifier,
         groupId: GroupId,
         users: List<ServerUser>
@@ -107,21 +107,21 @@ public abstract class UploadOperationListenerAbstract: UploadOperationListener {
     ) {}
 
     override fun startedSharing(
-        localIdentifier: AssetLocalIdentifier,
+        localIdentifier: AssetLocalIdentifier?,
         globalIdentifier: AssetGlobalIdentifier,
         groupId: GroupId,
         users: List<ServerUser>
     ) {}
 
     override fun finishedSharing(
-        localIdentifier: AssetLocalIdentifier,
+        localIdentifier: AssetLocalIdentifier?,
         globalIdentifier: AssetGlobalIdentifier,
         groupId: GroupId,
         users: List<ServerUser>
     ) {}
 
     override fun failedSharing(
-        localIdentifier: AssetLocalIdentifier,
+        localIdentifier: AssetLocalIdentifier?,
         globalIdentifier: AssetGlobalIdentifier,
         groupId: GroupId,
         users: List<ServerUser>
