@@ -153,7 +153,7 @@ private fun FuelError.getSafehillError(): SafehillError {
         501 -> SafehillError.ServerError.NotImplemented
         503 -> SafehillError.ServerError.BadGateway
         else -> {
-            val responseMessage = this.response.responseMessage
+            val responseMessage = this.response.data.toString(Charsets.UTF_8)
             val message = try {
                 val failure = Json.decodeFromString<GenericFailureResponse>(responseMessage)
                 failure.reason
