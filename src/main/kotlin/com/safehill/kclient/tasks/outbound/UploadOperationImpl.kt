@@ -1,5 +1,6 @@
 package com.safehill.kclient.tasks.outbound
 
+import com.safehill.kclient.controllers.UserInteractionController
 import com.safehill.kcrypto.models.ShareablePayload
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
@@ -9,6 +10,7 @@ import com.safehill.kclient.models.assets.LocalAsset
 import com.safehill.kclient.models.assets.ShareableEncryptedAssetImpl
 import com.safehill.kclient.models.assets.ShareableEncryptedAssetVersionImpl
 import com.safehill.kclient.models.dtos.AssetOutputDTO
+import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.ServerProxy
@@ -20,11 +22,17 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import java.util.UUID
 
+interface ThreadInteractorRegistryInterface {
+    suspend fun upsertThreadInteractors(threadDtos: List<ConversationThreadOutputDTO>)
+}
+
 class UploadOperationImpl(
     val serverProxy: ServerProxy,
     override val listeners: MutableList<UploadOperationListener>,
     private val encrypter: AssetEncrypterInterface,
-    private val outboundQueueItemManager: OutboundQueueItemManagerInterface
+    private val outboundQueueItemManager: OutboundQueueItemManagerInterface,
+    private val userInteractionController: UserInteractionController,
+    private val threadInteractorRegistry: ThreadInteractorRegistryInterface
 ) : UploadOperation {
 
     private val outboundQueueItems: Channel<OutboundQueueItem> = Channel(Channel.UNLIMITED)
@@ -257,6 +265,8 @@ class UploadOperationImpl(
             for (recipient in outboundQueueItem.recipients) {
                 val (_, sharablePayload) = encrypter.getSharablePayload(outboundQueueItem, user, recipient)
                 serverShare(outboundQueueItem, recipient, sharablePayload)
+                userInteractionController.setUpThread(outboundQueueItem.recipients)
+                    .also { threadInteractorRegistry.upsertThreadInteractors(listOf(it)) }
             }
         } catch (e: Exception) {
             //TODO better exception handling
