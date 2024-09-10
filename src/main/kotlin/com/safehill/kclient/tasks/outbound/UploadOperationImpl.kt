@@ -265,7 +265,7 @@ class UploadOperationImpl(
             for (recipient in outboundQueueItem.recipients) {
                 val (_, sharablePayload) = encrypter.getSharablePayload(outboundQueueItem, user, recipient)
                 serverShare(outboundQueueItem, recipient, sharablePayload)
-                userInteractionController.setUpThread(outboundQueueItem.recipients)
+                userInteractionController.setUpThread(outboundQueueItem.recipients, listOf())
                     .also { threadInteractorRegistry.upsertThreadInteractors(listOf(it)) }
             }
         } catch (e: Exception) {
