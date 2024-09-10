@@ -86,12 +86,15 @@ class UserInteractionController internal constructor(
         }
     }
 
-    suspend fun setUpThread(withUsers: List<ServerUser>): ConversationThreadOutputDTO {
+    suspend fun setUpThread(
+        withUsers: List<ServerUser>,
+        withPhoneNumbers: List<String>
+    ): ConversationThreadOutputDTO {
         val usersAndSelf = (withUsers + currentUser).distinctBy { it.identifier }
 
         val existingThread = serverProxy.retrieveThread(
             usersIdentifiers = usersAndSelf.map { it.identifier },
-            phoneNumbers = listOf()
+            phoneNumbers = withPhoneNumbers
         )
 
         return if (existingThread != null) {
@@ -102,7 +105,8 @@ class UserInteractionController internal constructor(
             )
             serverProxy.createOrUpdateThread(
                 name = null,
-                recipientsEncryptionDetails = encryptionDetails
+                recipientsEncryptionDetails = encryptionDetails,
+                phoneNumbers = withPhoneNumbers
             )
         }
     }

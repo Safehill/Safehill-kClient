@@ -133,11 +133,13 @@ class ServerProxyImpl(
 
     override suspend fun createOrUpdateThread(
         name: String?,
-        recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>
+        recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>,
+        phoneNumbers: List<String>
     ): ConversationThreadOutputDTO {
         return remoteServer.createOrUpdateThread(
             name = name,
-            recipientsEncryptionDetails = recipientsEncryptionDetails
+            recipientsEncryptionDetails = recipientsEncryptionDetails,
+            phoneNumbers = phoneNumbers
         ).also {
             localServer.createOrUpdateThread(listOf(it))
         }

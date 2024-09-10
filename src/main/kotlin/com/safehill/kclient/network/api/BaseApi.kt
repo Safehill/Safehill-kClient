@@ -1,14 +1,17 @@
 package com.safehill.kclient.network.api
 
+import com.github.kittinunf.fuel.core.Deserializable
 import com.github.kittinunf.fuel.core.FuelError
 import com.github.kittinunf.fuel.core.HttpException
 import com.github.kittinunf.fuel.core.Request
 import com.github.kittinunf.fuel.core.ResponseResultOf
+import com.github.kittinunf.fuel.core.deserializers.StringDeserializer
 import com.github.kittinunf.fuel.core.extensions.AuthenticatedRequest
 import com.github.kittinunf.fuel.core.extensions.authentication
+import com.github.kittinunf.fuel.core.response
 import com.github.kittinunf.fuel.httpDelete
 import com.github.kittinunf.fuel.httpPost
-import com.github.kittinunf.fuel.serialization.responseObject
+import com.github.kittinunf.fuel.serialization.kotlinxDeserializerOf
 import com.github.kittinunf.result.Result
 import com.safehill.kclient.models.GenericFailureResponse
 import com.safehill.kclient.models.users.LocalUser
@@ -25,7 +28,7 @@ interface BaseApi {
     val requestor: LocalUser
 }
 
-inline fun <reified Request : Any> BaseApi.postForResponseString(
+suspend inline fun <reified Request : Any> BaseApi.postRequestForStringResponse(
     endPoint: String,
     request: Request? = null,
     authenticationRequired: Boolean = true
@@ -39,22 +42,24 @@ inline fun <reified Request : Any> BaseApi.postForResponseString(
 }
 
 
-inline fun <reified Request : Any> BaseApi.fireRequestForStringResponse(
+suspend inline fun <reified Request : Any> BaseApi.fireRequestForStringResponse(
     requestMethod: RequestMethod,
     endPoint: String,
     request: Request? = null,
     authenticationRequired: Boolean = true
 ): String {
-    return createRequest(
+    return fireRequest(
         requestMethod = requestMethod,
         endPoint = endPoint,
         request = request,
-        authenticationRequired = authenticationRequired
-    ).responseString()
-        .getOrThrow()
+        authenticationRequired = authenticationRequired,
+        // Cannot use kotlinx.serialization's String.serializer() because it expects quoted strings.
+        // String.serializer() is not able to decode empty body to empty strings.
+        serializer = StringDeserializer()
+    )
 }
 
-suspend inline fun <reified Request : Any, reified Response : Any> BaseApi.postForResponseObject(
+suspend inline fun <reified Request : Any, reified Response : Any> BaseApi.postRequestForObjectResponse(
     endPoint: String,
     request: Request? = null,
     authenticationRequired: Boolean = true
@@ -78,16 +83,30 @@ suspend inline fun <reified Request : Any, reified Response : Any> BaseApi.fireR
         ignoreUnknownKeys = true
         explicitNulls = false
     }
+    return fireRequest(
+        requestMethod = requestMethod,
+        endPoint = endPoint,
+        request = request,
+        authenticationRequired = authenticationRequired,
+        serializer = kotlinxDeserializerOf(serializer<Response>(), json = ignorantJson)
+    )
+}
+
+suspend inline fun <reified Request : Any, reified Response : Any> BaseApi.fireRequest(
+    requestMethod: RequestMethod,
+    endPoint: String,
+    request: Request? = null,
+    serializer: Deserializable<Response>,
+    authenticationRequired: Boolean = true
+): Response {
     return withContext(Dispatchers.IO) {
         createRequest<Request>(
             requestMethod = requestMethod,
             endPoint = endPoint,
             request = request,
             authenticationRequired = authenticationRequired
-        ).responseObject(
-            loader = serializer<Response>(),
-            json = ignorantJson
-        ).getOrThrow()
+        ).response(serializer)
+            .getOrThrow()
     }
 }
 
