@@ -9,7 +9,7 @@ data class ConversationThreadOutputDTO(
     val threadId: String,
     val name: String?,
     val membersPublicIdentifier: List<String>,
-    val invitedUsersPhoneNumbers: List<String>,
+    val invitedUsersPhoneNumbers: Map<String, @Serializable(with = InstantSerializer::class) Instant>,
     @Serializable(with = InstantSerializer::class) val lastUpdatedAt: Instant,
     val creatorPublicIdentifier: String,
     val createdAt: String,
