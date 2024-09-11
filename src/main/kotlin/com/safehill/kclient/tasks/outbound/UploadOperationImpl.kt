@@ -265,10 +265,10 @@ class UploadOperationImpl(
         try {
             for (recipient in outboundQueueItem.recipients) {
                 val (_, sharablePayload) = encrypter.getSharablePayload(outboundQueueItem, user, recipient)
-                serverShare(outboundQueueItem, recipient, sharablePayload)
-                //todo use listeners to create a thread instead of upload operation creating it.
-                userInteractionController.setUpThread(outboundQueueItem.recipients, listOf())
+
+                val threadOutputDTO = userInteractionController.setUpThread(outboundQueueItem.recipients, listOf())
                     .also { threadStateRegistry.upsertThreadStates(listOf(it)) }
+                serverShare(outboundQueueItem, recipient, sharablePayload, threadOutputDTO.threadId)
             }
         } catch (e: Exception) {
             //TODO better exception handling
@@ -283,7 +283,8 @@ class UploadOperationImpl(
     private suspend fun serverShare(
         outboundQueueItem: OutboundQueueItem,
         recipient: ServerUser,
-        sharablePayload: ShareablePayload
+        sharablePayload: ShareablePayload,
+        threadId: String
     ) {
         serverProxy.share(
             ShareableEncryptedAssetImpl(
@@ -298,7 +299,8 @@ class UploadOperationImpl(
                     )
                 ),
                 outboundQueueItem.groupId
-            )
+            ),
+            threadId
         )
     }
 
