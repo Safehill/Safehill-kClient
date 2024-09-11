@@ -1,7 +1,6 @@
 package com.safehill.kclient.tasks.outbound
 
 import com.safehill.kclient.controllers.UserInteractionController
-import com.safehill.kcrypto.models.ShareablePayload
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAsset
@@ -15,6 +14,7 @@ import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.exceptions.SafehillError
+import com.safehill.kcrypto.models.ShareablePayload
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -22,8 +22,9 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import java.util.UUID
 
-interface ThreadInteractorRegistryInterface {
-    suspend fun upsertThreadInteractors(threadDtos: List<ConversationThreadOutputDTO>)
+//todo remove this coupling from android and client.
+interface ThreadStateRegistryInterface {
+    suspend fun upsertThreadStates(threadDtos: List<ConversationThreadOutputDTO>)
 }
 
 class UploadOperationImpl(
@@ -32,7 +33,7 @@ class UploadOperationImpl(
     private val encrypter: AssetEncrypterInterface,
     private val outboundQueueItemManager: OutboundQueueItemManagerInterface,
     private val userInteractionController: UserInteractionController,
-    private val threadInteractorRegistry: ThreadInteractorRegistryInterface
+    private val threadStateRegistry: ThreadStateRegistryInterface
 ) : UploadOperation {
 
     private val outboundQueueItems: Channel<OutboundQueueItem> = Channel(Channel.UNLIMITED)
@@ -265,8 +266,9 @@ class UploadOperationImpl(
             for (recipient in outboundQueueItem.recipients) {
                 val (_, sharablePayload) = encrypter.getSharablePayload(outboundQueueItem, user, recipient)
                 serverShare(outboundQueueItem, recipient, sharablePayload)
+                //todo use listeners to create a thread instead of upload operation creating it.
                 userInteractionController.setUpThread(outboundQueueItem.recipients, listOf())
-                    .also { threadInteractorRegistry.upsertThreadInteractors(listOf(it)) }
+                    .also { threadStateRegistry.upsertThreadStates(listOf(it)) }
             }
         } catch (e: Exception) {
             //TODO better exception handling
