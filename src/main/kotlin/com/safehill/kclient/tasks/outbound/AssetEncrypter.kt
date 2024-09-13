@@ -33,19 +33,19 @@ class AssetEncrypter(
         val encryptedData = SafehillCypher.encrypt(resizedBytes, privateSecret)
 
         val encryptedAssetVersion = EncryptedAssetVersion(
-            quality,
-            encryptedData,
-            encryptedAssetSecret.ciphertext,
-            encryptedAssetSecret.ephemeralPublicKeyData,
-            encryptedAssetSecret.signature
+            quality = quality,
+            encryptedData = encryptedData,
+            encryptedSecret = encryptedAssetSecret.ciphertext,
+            publicKeyData = encryptedAssetSecret.ephemeralPublicKeyData,
+            publicSignatureData = encryptedAssetSecret.signature
         )
         val encryptedVersions = mapOf(quality to encryptedAssetVersion)
 
         return EncryptedAsset(
-            outboundQueueItem.globalIdentifier,
-            outboundQueueItem.localAsset.localIdentifier,
-            outboundQueueItem.localAsset.createdAt,
-            encryptedVersions
+            globalIdentifier = outboundQueueItem.globalIdentifier,
+            localIdentifier = outboundQueueItem.localAsset.localIdentifier,
+            creationDate = outboundQueueItem.localAsset.createdAt,
+            encryptedVersions = encryptedVersions
         )
     }
 

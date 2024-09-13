@@ -32,8 +32,6 @@ class UploadOperationImpl(
     override val listeners: MutableList<UploadOperationListener>,
     private val encrypter: AssetEncrypterInterface,
     private val outboundQueueItemManager: OutboundQueueItemManagerInterface,
-    private val userInteractionController: UserInteractionController,
-    private val threadStateRegistry: ThreadStateRegistryInterface
 ) : UploadOperation {
 
     private val outboundQueueItems: Channel<OutboundQueueItem> = Channel(Channel.UNLIMITED)
@@ -56,19 +54,21 @@ class UploadOperationImpl(
         assetQualities: Array<AssetQuality>,
         groupId: GroupId,
         recipients: List<ServerUser>,
-        uri: String?
+        uri: String?,
+        threadId: String?
     ) {
         scope.launch {
             val globalIdentifier = UUID.randomUUID().toString()
             assetQualities.forEach {
                 val item = OutboundQueueItem(
-                    OutboundQueueItem.OperationType.Upload,
-                    it,
-                    localAsset,
-                    globalIdentifier,
-                    groupId,
-                    recipients,
-                    uri
+                    operationType = OutboundQueueItem.OperationType.Upload,
+                    assetQuality = it,
+                    localAsset = localAsset,
+                    globalIdentifier = globalIdentifier,
+                    groupId = groupId,
+                    recipients = recipients,
+                    uri = uri,
+                    threadId = threadId
                 )
                 outboundQueueItems.send(item)
                 outboundQueueItemManager.addOutboundQueueItem(item)
@@ -81,23 +81,58 @@ class UploadOperationImpl(
         assetQualities: Array<AssetQuality>,
         globalIdentifier: AssetGlobalIdentifier,
         groupId: GroupId,
-        recipients: List<ServerUser>
+        recipients: List<ServerUser>,
+        threadId: String?
     ) {
         scope.launch {
             assetQualities.forEach {
-                val item = OutboundQueueItem(
-                    OutboundQueueItem.OperationType.Share,
-                    it,
-                    localAsset,
-                    globalIdentifier,
-                    groupId,
-                    recipients,
-                    null
+                enqueueShareItem(
+                    assetQuality = it,
+                    localAsset = localAsset,
+                    globalIdentifier = globalIdentifier,
+                    groupId = groupId,
+                    recipients = recipients,
+                    threadId = threadId
                 )
-                outboundQueueItems.send(item)
-                outboundQueueItemManager.addOutboundQueueItem(item)
             }
         }
+    }
+
+    private suspend fun shareIfRecipientsExist(outboundQueueItem: OutboundQueueItem, globalIdentifier: String) {
+        if (outboundQueueItem.recipients.isNotEmpty()) {
+            scope.launch {
+                enqueueShareItem(
+                    assetQuality = outboundQueueItem.assetQuality,
+                    localAsset = outboundQueueItem.localAsset,
+                    globalIdentifier = globalIdentifier,
+                    groupId = outboundQueueItem.groupId,
+                    recipients = outboundQueueItem.recipients,
+                    threadId = outboundQueueItem.threadId
+                )
+            }
+        }
+    }
+
+    private suspend fun enqueueShareItem(
+        assetQuality: AssetQuality,
+        localAsset: LocalAsset?,
+        globalIdentifier: AssetGlobalIdentifier,
+        groupId: GroupId,
+        recipients: List<ServerUser>,
+        threadId: String?
+    ) {
+        val item = OutboundQueueItem(
+            operationType = OutboundQueueItem.OperationType.Share,
+            assetQuality = assetQuality,
+            localAsset = localAsset,
+            globalIdentifier = globalIdentifier,
+            groupId = groupId,
+            recipients = recipients,
+            uri = null,
+            threadId = threadId
+        )
+        outboundQueueItems.send(item)
+        outboundQueueItemManager.addOutboundQueueItem(item)
     }
 
     private suspend fun upload(outboundQueueItem: OutboundQueueItem) {
@@ -215,24 +250,6 @@ class UploadOperationImpl(
         }
     }
 
-    private suspend fun shareIfRecipientsExist(outboundQueueItem: OutboundQueueItem, globalIdentifier: String) {
-        scope.launch {
-            if (outboundQueueItem.recipients.isNotEmpty()) {
-                val shareQueueItem = OutboundQueueItem(
-                    OutboundQueueItem.OperationType.Share,
-                    outboundQueueItem.assetQuality,
-                    outboundQueueItem.localAsset,
-                    globalIdentifier,
-                    outboundQueueItem.groupId,
-                    outboundQueueItem.recipients,
-                    outboundQueueItem.uri
-                )
-                outboundQueueItems.send(shareQueueItem)
-                outboundQueueItemManager.addOutboundQueueItem(shareQueueItem)
-            }
-        }
-    }
-
     private suspend fun handleUploadException(outboundQueueItem: OutboundQueueItem, exception: Exception) {
         println(exception.localizedMessage)
         when (exception) {
@@ -266,9 +283,7 @@ class UploadOperationImpl(
             for (recipient in outboundQueueItem.recipients) {
                 val (_, sharablePayload) = encrypter.getSharablePayload(outboundQueueItem, user, recipient)
 
-                val threadOutputDTO = userInteractionController.setUpThread(outboundQueueItem.recipients, listOf())
-                    .also { threadStateRegistry.upsertThreadStates(listOf(it)) }
-                serverShare(outboundQueueItem, recipient, sharablePayload, threadOutputDTO.threadId)
+                serverShare(outboundQueueItem, recipient, sharablePayload, outboundQueueItem.threadId!!)
             }
         } catch (e: Exception) {
             //TODO better exception handling

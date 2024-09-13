@@ -14,7 +14,8 @@ class OutboundQueueItem(
     val groupId: GroupId,
     val recipients: List<ServerUser>,
     val uri: String?,
-    var force: Boolean = false
+    var force: Boolean = false,
+    var threadId: String?
 ) {
 
     enum class OperationType {
