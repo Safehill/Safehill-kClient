@@ -153,7 +153,7 @@ interface SafehillApi : BaseApi, AuthorizationApi, GroupApi, ReactionApi, Thread
     /// Shares one or more assets with a set of users
     /// - Parameters:
     ///   - asset: the asset to share, with references to asset id, version and user id to share with
-    suspend fun share(asset: ShareableEncryptedAsset)
+    suspend fun share(asset: ShareableEncryptedAsset, threadId: String)
 
     /// Unshares one asset (all of its versions) with a user. If the asset or the user don't exist, or the asset is not shared with the user, it's a no-op
     /// - Parameters:

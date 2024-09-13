@@ -37,7 +37,7 @@ import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.dtos.RemoteUserPhoneNumberMatchDto
 import com.safehill.kclient.models.dtos.RemoteUserSearchDTO
 import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
-import com.safehill.kclient.models.dtos.ShareRequestBody
+import com.safehill.kclient.models.dtos.AssetShareDTO
 import com.safehill.kclient.models.dtos.ShareVersionDetails
 import com.safehill.kclient.models.dtos.UserDeviceTokenDTO
 import com.safehill.kclient.models.dtos.UserIdentifiersDTO
@@ -392,7 +392,7 @@ class RemoteServer(
         return listOf(shOutput)
     }
 
-    override suspend fun share(asset: ShareableEncryptedAsset) {
+    override suspend fun share(asset: ShareableEncryptedAsset, threadId: String) {
         if (asset.sharedVersions.isEmpty() || asset.sharedVersions.size > 1) {
             throw NotImplementedError("Current API only supports share one asset per request")
         }
@@ -413,14 +413,15 @@ class RemoteServer(
             versions.add(versionDetails)
         }
 
-        val requestBody = ShareRequestBody(
+        val requestBody = AssetShareDTO(
             globalAssetIdentifier = asset.globalIdentifier,
             versionSharingDetails = versions,  // Puoi avere più versioni in una lista
-            groupId = asset.groupId
+            groupId = asset.groupId,
+            asPhotoMessageInThreadId = threadId
         )
         "/assets/share".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Json.encodeToString(ShareRequestBody.serializer(), requestBody))
+            .body(Json.encodeToString(AssetShareDTO.serializer(), requestBody))
             .responseString()
             .getOrThrow()
     }
