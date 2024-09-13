@@ -172,16 +172,18 @@ class UserInteractionController internal constructor(
         anchorId: String,
         interactionAnchor: InteractionAnchor
     ): SymmetricKey? {
-        val encryptionDetails: RecipientEncryptionDetailsDTO? = when (interactionAnchor) {
-            InteractionAnchor.THREAD -> {
-                serverProxy.retrieveThread(threadId = anchorId)?.encryptionDetails
-            }
+        return runCatchingPreservingCancellationException {
+            val encryptionDetails: RecipientEncryptionDetailsDTO? = when (interactionAnchor) {
+                InteractionAnchor.THREAD -> {
+                    serverProxy.retrieveThread(threadId = anchorId)?.encryptionDetails
+                }
 
-            InteractionAnchor.GROUP -> {
-                serverProxy.retrieveGroupUserEncryptionDetails(groupId = anchorId)
+                InteractionAnchor.GROUP -> {
+                    serverProxy.retrieveGroupUserEncryptionDetails(groupId = anchorId)
+                }
             }
-        }
-        return encryptionDetails?.getSymmetricKey(currentUser)
+            encryptionDetails?.getSymmetricKey(currentUser)
+        }.getOrNull()
     }
 
 
