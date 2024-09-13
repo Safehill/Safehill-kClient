@@ -7,6 +7,7 @@ import com.github.kittinunf.fuel.serialization.responseObject
 import com.google.gson.Gson
 import com.safehill.SafehillClient
 import com.safehill.kclient.SafehillCypher
+import com.safehill.kclient.base64.base64EncodedString
 import com.safehill.kclient.models.RemoteCryptoUser
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetDescriptorUploadState
@@ -375,10 +376,10 @@ class RemoteServer(
             groupId,
             asset.encryptedVersions.map {
                 com.safehill.kclient.models.dtos.AssetVersionInputDTO(
-                    it.key.value,
-                    Base64.getEncoder().encodeToString(it.value.publicKeyData),
-                    Base64.getEncoder().encodeToString(it.value.publicSignatureData),
-                    Base64.getEncoder().encodeToString(it.value.encryptedSecret),
+                    versionName = it.key.value,
+                    senderEncryptedSecret = it.value.encryptedSecret.base64EncodedString(),
+                    ephemeralPublicKey = it.value.publicKeyData.base64EncodedString(),
+                    publicSignature = it.value.publicSignatureData.base64EncodedString(),
                 )
             },
             forceUpdateVersions = true
@@ -404,7 +405,8 @@ class RemoteServer(
             val versionDetails = ShareVersionDetails(
                 versionName = version.quality.value,
                 recipientUserIdentifier = version.userPublicIdentifier,
-                recipientEncryptedSecret = Base64.getEncoder().encodeToString(version.encryptedSecret),
+                recipientEncryptedSecret = Base64.getEncoder()
+                    .encodeToString(version.encryptedSecret),
                 ephemeralPublicKey = Base64.getEncoder().encodeToString(version.ephemeralPublicKey),
                 publicSignature = Base64.getEncoder().encodeToString(version.publicSignature)
             )
