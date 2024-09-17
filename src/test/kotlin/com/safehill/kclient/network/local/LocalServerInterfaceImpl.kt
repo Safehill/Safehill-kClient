@@ -48,6 +48,7 @@ class LocalServerInterfaceImpl : LocalServerInterface {
     override suspend fun createOrUpdateThread(
         name: String?,
         recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>,
+        phoneNumbers: List<String>
     ): ConversationThreadOutputDTO {
         TODO("Not yet implemented")
     }
@@ -165,7 +166,7 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         TODO("Not yet implemented")
     }
 
-    override suspend fun share(asset: ShareableEncryptedAsset) {
+    override suspend fun share(asset: ShareableEncryptedAsset, threadId: String) {
         TODO("Not yet implemented")
     }
 
