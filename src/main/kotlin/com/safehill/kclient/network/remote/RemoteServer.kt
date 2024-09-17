@@ -205,18 +205,21 @@ class RemoteServer(
         val authRequestBody = AuthChallengeRequestDTO(
             identifier = requestor.identifier,
         )
-        val authChallenge = "/signin/challenge/start".httpPost()
-            .body(Json.encodeToString(authRequestBody))
-            .responseObject<AuthChallengeResponseDTO>()
-            .getOrThrow()
+
+        val authChallenge: AuthChallengeResponseDTO = postRequestForObjectResponse(
+            endPoint = "/signin/challenge/start",
+            request = authRequestBody,
+            authenticationRequired = false
+        )
 
 
         val solvedChallenge = this.solveChallenge(authChallenge)
 
-        return "/signin/challenge/verify".httpPost()
-            .body(Json.encodeToString(solvedChallenge))
-            .responseObject<AuthResponseDTO>()
-            .getOrThrow()
+        return postRequestForObjectResponse(
+            endPoint = "/signin/challenge/verify",
+            request = solvedChallenge,
+            authenticationRequired = false
+        )
 
     }
 
