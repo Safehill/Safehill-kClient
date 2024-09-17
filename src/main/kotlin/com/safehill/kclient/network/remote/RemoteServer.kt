@@ -4,7 +4,6 @@ import com.github.kittinunf.fuel.core.HttpException
 import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.responseObject
-import com.google.gson.Gson
 import com.safehill.SafehillClient
 import com.safehill.kclient.SafehillCypher
 import com.safehill.kclient.base64.base64EncodedString
@@ -21,6 +20,7 @@ import com.safehill.kclient.models.dtos.AssetDescriptorDTO
 import com.safehill.kclient.models.dtos.AssetDescriptorFilterCriteriaDTO
 import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.dtos.AssetSearchCriteriaDTO
+import com.safehill.kclient.models.dtos.AssetShareDTO
 import com.safehill.kclient.models.dtos.AuthChallengeRequestDTO
 import com.safehill.kclient.models.dtos.AuthChallengeResponseDTO
 import com.safehill.kclient.models.dtos.AuthResolvedChallengeDTO
@@ -37,7 +37,6 @@ import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.dtos.RemoteUserPhoneNumberMatchDto
 import com.safehill.kclient.models.dtos.RemoteUserSearchDTO
 import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
-import com.safehill.kclient.models.dtos.AssetShareDTO
 import com.safehill.kclient.models.dtos.ShareVersionDetails
 import com.safehill.kclient.models.dtos.UserDeviceTokenDTO
 import com.safehill.kclient.models.dtos.UserIdentifiersDTO
@@ -206,18 +205,21 @@ class RemoteServer(
         val authRequestBody = AuthChallengeRequestDTO(
             identifier = requestor.identifier,
         )
-        val authChallenge = "/signin/challenge/start".httpPost()
-            .body(Gson().toJson(authRequestBody))
-            .responseObject(AuthChallengeResponseDTO.Deserializer())
-            .getOrThrow()
+
+        val authChallenge: AuthChallengeResponseDTO = postRequestForObjectResponse(
+            endPoint = "/signin/challenge/start",
+            request = authRequestBody,
+            authenticationRequired = false
+        )
 
 
         val solvedChallenge = this.solveChallenge(authChallenge)
 
-        return "/signin/challenge/verify".httpPost()
-            .body(Gson().toJson(solvedChallenge))
-            .responseObject(AuthResponseDTO.Deserializer())
-            .getOrThrow()
+        return postRequestForObjectResponse(
+            endPoint = "/signin/challenge/verify",
+            request = solvedChallenge,
+            authenticationRequired = false
+        )
 
     }
 
@@ -384,11 +386,11 @@ class RemoteServer(
             },
             forceUpdateVersions = true
         )
-        val shOutput = "/assets/create".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Gson().toJson(requestBody))
-            .responseObject(AssetOutputDTO.serializer())
-            .getOrThrow()
+        val shOutput: AssetOutputDTO = postRequestForObjectResponse(
+            endPoint = "/assets/create",
+            request = requestBody,
+            authenticationRequired = true
+        )
         return listOf(shOutput)
     }
 
@@ -511,7 +513,7 @@ class RemoteServer(
         val responseResult = "/assets/delete".httpPost()
             .header(mapOf("Authorization" to "Bearer $bearerToken"))
             .body(
-                Gson().toJson(
+                Json.encodeToString(
                     AssetDeleteCriteriaDTO(
                         globalIdentifiers
                     )
