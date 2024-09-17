@@ -386,11 +386,11 @@ class RemoteServer(
             },
             forceUpdateVersions = true
         )
-        val shOutput = "/assets/create".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Json.encodeToString(requestBody))
-            .responseObject(AssetOutputDTO.serializer())
-            .getOrThrow()
+        val shOutput: AssetOutputDTO = postRequestForObjectResponse(
+            endPoint = "/assets/create",
+            request = requestBody,
+            authenticationRequired = true
+        )
         return listOf(shOutput)
     }
 
