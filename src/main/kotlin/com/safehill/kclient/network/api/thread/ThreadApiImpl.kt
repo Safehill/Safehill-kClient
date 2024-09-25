@@ -8,6 +8,7 @@ import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.api.BaseApi
 import com.safehill.kclient.network.api.postRequestForObjectResponse
+import com.safehill.kclient.network.api.postRequestForStringResponse
 import com.safehill.kclient.network.exceptions.SafehillError
 
 class ThreadApiImpl(override val requestor: LocalUser) : ThreadApi, BaseApi {
@@ -72,7 +73,7 @@ class ThreadApiImpl(override val requestor: LocalUser) : ThreadApi, BaseApi {
         threadIdWithEncryptionDetails: Map<String, List<RecipientEncryptionDetailsDTO>>
     ) {
         val request = mapOf("newRecipientsByThreadId" to threadIdWithEncryptionDetails)
-        return postRequestForObjectResponse(
+        postRequestForStringResponse(
             endPoint = "/threads/convert-invitees",
             request = request,
             authenticationRequired = true
