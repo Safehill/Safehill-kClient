@@ -88,7 +88,7 @@ class ThreadApiImpl(override val requestor: LocalUser) : ThreadApi, BaseApi {
         threadIdWithEncryptionDetails: Map<String, List<RecipientEncryptionDetailsDTO>>
     ) {
         val request = mapOf("newRecipientsByThreadId" to threadIdWithEncryptionDetails)
-        return postRequestForObjectResponse(
+        postRequestForStringResponse(
             endPoint = "/threads/convert-invitees",
             request = request,
             authenticationRequired = true

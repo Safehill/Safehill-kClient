@@ -7,5 +7,11 @@ enum class InteractionAnchor(val value: String) {
     THREAD("user-threads"),
 
     @SerialName("assets-groups")
-    GROUP("assets-groups")
+    GROUP("assets-groups");
+
+    companion object {
+        fun from(value: String): InteractionAnchor {
+            return entries.first { it.value == value }
+        }
+    }
 }

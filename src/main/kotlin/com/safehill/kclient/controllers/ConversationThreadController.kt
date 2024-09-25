@@ -25,7 +25,6 @@ class ConversationThreadController(
                     anchorId = threadId,
                     anchor = InteractionAnchor.THREAD
                 )
-
             } else {
                 serverProxy.provideEncryptionDetails(
                     threadIdWithEncryptionDetails = mapOf(
