@@ -1,5 +1,6 @@
 package com.safehill.kclient.network
 
+import com.safehill.SafehillClient
 import com.safehill.kclient.controllers.UserInteractionController
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
@@ -215,6 +216,22 @@ class ServerProxyImpl(
                 .filterNotNull()
                 .associateBy { it.globalIdentifier }
         }
+    }
+
+    override suspend fun updateThreadName(
+        name: String?,
+        threadId: String
+    ): ConversationThreadOutputDTO {
+        val updatedThread = remoteServer
+            .updateThreadName(name = name, threadId = threadId)
+            .also {
+                try {
+                    localServer.updateThreadName(name = name, threadId = threadId)
+                } catch (_: SafehillError.ClientError.NotFound) {
+                    SafehillClient.logger.info("Thread not found in the local server to update.")
+                }
+            }
+        return updatedThread
     }
 
     private suspend fun getAssetsFromRemoteAndStore(
