@@ -11,7 +11,7 @@ interface ThreadApi {
     suspend fun updateThreadName(
         name: String?,
         threadId: String
-    ): ConversationThreadOutputDTO
+    )
 
     suspend fun retrieveThread(
         threadId: String
