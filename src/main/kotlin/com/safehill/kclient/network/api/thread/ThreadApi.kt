@@ -8,6 +8,11 @@ interface ThreadApi {
 
     suspend fun listThreads(): List<ConversationThreadOutputDTO>
 
+    suspend fun updateThreadName(
+        name: String?,
+        threadId: String
+    ): ConversationThreadOutputDTO
+
     suspend fun retrieveThread(
         threadId: String
     ): ConversationThreadOutputDTO?

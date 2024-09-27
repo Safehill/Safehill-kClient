@@ -4,6 +4,7 @@ import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.CreateOrUpdateThreadDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.dtos.RetrieveThreadDTO
+import com.safehill.kclient.models.dtos.thread.ConversationThreadNameUpdateDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.api.BaseApi
@@ -13,6 +14,20 @@ import com.safehill.kclient.network.exceptions.SafehillError
 class ThreadApiImpl(override val requestor: LocalUser) : ThreadApi, BaseApi {
     override suspend fun listThreads(): List<ConversationThreadOutputDTO> {
         return listThreads(null)
+    }
+
+    override suspend fun updateThreadName(
+        name: String?,
+        threadId: String
+    ): ConversationThreadOutputDTO {
+        val request = ConversationThreadNameUpdateDTO(
+            name = name
+        )
+        return postRequestForObjectResponse(
+            endPoint = "/threads/update/$threadId",
+            request = request,
+            authenticationRequired = true
+        )
     }
 
     private suspend fun listThreads(retrieveThreadDTO: RetrieveThreadDTO?): List<ConversationThreadOutputDTO> {
