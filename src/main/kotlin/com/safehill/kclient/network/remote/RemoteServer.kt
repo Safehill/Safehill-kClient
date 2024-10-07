@@ -223,7 +223,7 @@ class RemoteServer(
 
     }
 
-    override suspend fun registerDevice(deviceId: String, token: String) {
+    override suspend fun registerDevice(deviceId: String, token: String?) {
         val bearerToken =
             this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
 
