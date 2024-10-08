@@ -6,6 +6,7 @@ import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.InteractionsGroupSummaryDTO
 import com.safehill.kclient.models.dtos.InteractionsThreadSummaryDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
+import com.safehill.kclient.models.dtos.websockets.ThreadUpdatedDTO
 import com.safehill.kclient.models.interactions.InteractionAnchor
 
 interface InteractionSyncListener {
@@ -19,6 +20,8 @@ interface InteractionSyncListener {
         anchor: InteractionAnchor
     ) {
     }
+
+    suspend fun didUpdateThread(threadUpdatedDTO: ThreadUpdatedDTO) {}
 
     suspend fun didReceivePhotoMessages(
         threadId: String,
@@ -48,6 +51,12 @@ class InteractionSyncListenerListDelegate(
         anchor: InteractionAnchor
     ) {
         interactionListeners.forEach { it.didReceiveTextMessages(messageDtos, anchorId, anchor) }
+    }
+
+    override suspend fun didUpdateThread(threadUpdatedDTO: ThreadUpdatedDTO) {
+        interactionListeners.forEach {
+            it.didUpdateThread(threadUpdatedDTO)
+        }
     }
 
     override suspend fun didReceivePhotoMessages(
