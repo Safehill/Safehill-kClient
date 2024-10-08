@@ -44,6 +44,16 @@ data class ThreadCreated(
     val thread: ConversationThreadOutputDTO
 ) : InteractionSocketMessage
 
+
+@Serializable
+data class ThreadUpdatedDTO(
+    val invitedUsersPhoneNumbers: Map<String, @Serializable(with = InstantSerializer::class) Instant>,
+    val lastUpdatedAt: String,
+    val membersPublicIdentifier: List<String>,
+    val name: String,
+    val threadId: String
+) : InteractionSocketMessage
+
 @Serializable
 data class ThreadAssets(
     val threadId: String,
