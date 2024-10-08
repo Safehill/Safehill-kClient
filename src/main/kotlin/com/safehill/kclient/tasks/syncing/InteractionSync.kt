@@ -1,6 +1,5 @@
 package com.safehill.kclient.tasks.syncing
 
-import com.safehill.SafehillClient
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.dtos.websockets.InteractionSocketMessage
@@ -57,13 +56,18 @@ class InteractionSync(
                     }
 
                     is ThreadUpdatedDTO -> {
-                        SafehillClient.logger.debug(this.toString())
+                        this.handleThreadUpdate()
                     }
                 }
             }
 
             else -> {}
         }
+    }
+
+    private suspend fun ThreadUpdatedDTO.handleThreadUpdate() {
+        serverProxy.localServer.updateThread(this)
+        interactionSyncListener.didUpdateThread(this)
     }
 
     private suspend fun ThreadCreated.notifyCreationOfThread() {

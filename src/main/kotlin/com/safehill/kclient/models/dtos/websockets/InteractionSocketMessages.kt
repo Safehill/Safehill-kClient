@@ -48,7 +48,7 @@ data class ThreadCreated(
 @Serializable
 data class ThreadUpdatedDTO(
     val invitedUsersPhoneNumbers: Map<String, @Serializable(with = InstantSerializer::class) Instant>,
-    val lastUpdatedAt: String,
+    @Serializable(with = InstantSerializer::class) val lastUpdatedAt: Instant,
     val membersPublicIdentifier: List<String>,
     val name: String,
     val threadId: String
