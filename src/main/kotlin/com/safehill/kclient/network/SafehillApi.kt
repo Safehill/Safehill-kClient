@@ -76,7 +76,7 @@ interface SafehillApi : BaseApi, AuthorizationApi, GroupApi, ReactionApi, Thread
      */
     suspend fun registerDevice(
         deviceId: String,
-        token: String,
+        token: String?,
     )
 
     /// Get a User's public key and public signature
