@@ -23,4 +23,8 @@ interface ThreadApi {
         recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>,
         phoneNumbers: List<String>
     ): ConversationThreadOutputDTO
+
+    suspend fun provideEncryptionDetails(
+        threadIdWithEncryptionDetails: Map<String, List<RecipientEncryptionDetailsDTO>>,
+    )
 }
