@@ -28,4 +28,8 @@ interface ThreadApi {
         recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>,
         phoneNumbers: List<String>
     ): ConversationThreadOutputDTO
+
+    suspend fun deleteThread(
+        threadId: String
+    )
 }

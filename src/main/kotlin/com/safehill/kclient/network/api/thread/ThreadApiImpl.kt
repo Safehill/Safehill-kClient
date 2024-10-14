@@ -8,6 +8,8 @@ import com.safehill.kclient.models.dtos.thread.ConversationThreadNameUpdateDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.api.BaseApi
+import com.safehill.kclient.network.api.RequestMethod
+import com.safehill.kclient.network.api.fireRequestForStringResponse
 import com.safehill.kclient.network.api.postRequestForObjectResponse
 import com.safehill.kclient.network.api.postRequestForStringResponse
 import com.safehill.kclient.network.exceptions.SafehillError
@@ -24,7 +26,7 @@ class ThreadApiImpl(override val requestor: LocalUser) : ThreadApi, BaseApi {
         val request = ConversationThreadNameUpdateDTO(
             name = name
         )
-         postRequestForStringResponse(
+        postRequestForStringResponse(
             endPoint = "/threads/update/$threadId",
             request = request,
             authenticationRequired = true
@@ -80,6 +82,15 @@ class ThreadApiImpl(override val requestor: LocalUser) : ThreadApi, BaseApi {
         return postRequestForObjectResponse(
             endPoint = "/threads/upsert",
             request = request,
+            authenticationRequired = true
+        )
+    }
+
+    override suspend fun deleteThread(threadId: String) {
+        fireRequestForStringResponse<Unit>(
+            requestMethod = RequestMethod.Delete,
+            endPoint = "/threads/$threadId",
+            request = null,
             authenticationRequired = true
         )
     }
