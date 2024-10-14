@@ -145,7 +145,9 @@ class InteractionSync(
             localThread.threadId !in allThreads.map { it.threadId }
         }.map { it.threadId }
         if (threadIdsToRemoveLocally.isNotEmpty()) {
-            serverProxy.localServer.deleteThreads(threadIdsToRemoveLocally)
+            threadIdsToRemoveLocally.forEach { threadId ->
+                serverProxy.localServer.deleteThread(threadId)
+            }
         }
     }
 }
