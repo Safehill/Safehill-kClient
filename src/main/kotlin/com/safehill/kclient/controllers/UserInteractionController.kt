@@ -192,6 +192,17 @@ class UserInteractionController internal constructor(
         }
     }
 
+    suspend fun leaveThread(threadId: String): Result<Unit> {
+        return runCatchingPreservingCancellationException {
+            serverProxy.updateThreadMembers(
+                threadId = threadId,
+                membersPublicIdentifierToRemove = listOf(currentUser.identifier)
+            )
+        }.onSuccess {
+            serverProxy.localServer.deleteThread(threadId = threadId)
+        }
+    }
+
     sealed class InteractionErrors(
         msg: String
     ) : Exception(msg) {

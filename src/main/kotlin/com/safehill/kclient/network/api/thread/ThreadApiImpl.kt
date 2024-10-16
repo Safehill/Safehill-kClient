@@ -4,6 +4,7 @@ import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.CreateOrUpdateThreadDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.dtos.RetrieveThreadDTO
+import com.safehill.kclient.models.dtos.thread.ConversationThreadMembersUpdateDTO
 import com.safehill.kclient.models.dtos.thread.ConversationThreadNameUpdateDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.UserIdentifier
@@ -85,6 +86,27 @@ class ThreadApiImpl(override val requestor: LocalUser) : ThreadApi, BaseApi {
             authenticationRequired = true
         )
     }
+
+    override suspend fun updateThreadMembers(
+        threadId: String,
+        recipientsToAdd: List<RecipientEncryptionDetailsDTO>,
+        membersPublicIdentifierToRemove: List<UserIdentifier>,
+        phoneNumbersToAdd: List<String>,
+        phoneNumbersToRemove: List<String>
+    ) {
+        val request = ConversationThreadMembersUpdateDTO(
+            recipientsToAdd = recipientsToAdd,
+            membersPublicIdentifierToRemove = membersPublicIdentifierToRemove,
+            phoneNumbersToAdd = phoneNumbersToAdd,
+            phoneNumbersToRemove = phoneNumbersToRemove
+        )
+        postRequestForStringResponse(
+            endPoint = "/threads/update/$threadId/members",
+            request = request,
+            authenticationRequired = true
+        )
+    }
+
 
     override suspend fun deleteThread(threadId: String) {
         fireRequestForStringResponse<Unit>(

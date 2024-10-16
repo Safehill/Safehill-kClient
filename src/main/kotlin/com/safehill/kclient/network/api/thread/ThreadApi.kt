@@ -29,6 +29,14 @@ interface ThreadApi {
         phoneNumbers: List<String>
     ): ConversationThreadOutputDTO
 
+    suspend fun updateThreadMembers(
+        threadId: String,
+        recipientsToAdd: List<RecipientEncryptionDetailsDTO> = listOf(),
+        membersPublicIdentifierToRemove: List<UserIdentifier> = listOf(),
+        phoneNumbersToAdd: List<String> = listOf(),
+        phoneNumbersToRemove: List<String> = listOf()
+    )
+
     suspend fun deleteThread(
         threadId: String
     )
