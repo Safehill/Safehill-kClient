@@ -3,6 +3,8 @@ package com.safehill
 import com.github.kittinunf.fuel.core.FuelManager
 import com.github.kittinunf.fuel.core.interceptors.LogRequestInterceptor
 import com.github.kittinunf.fuel.core.interceptors.LogResponseInterceptor
+import com.safehill.kclient.controllers.ConversationThreadController
+import com.safehill.kclient.controllers.EncryptionDetailsController
 import com.safehill.kclient.controllers.UserController
 import com.safehill.kclient.controllers.UserInteractionController
 import com.safehill.kclient.logging.DefaultSafehillLogger
@@ -25,11 +27,26 @@ class SafehillClient private constructor(
     val webSocketApi: WebSocketApi,
     val currentUser: LocalUser
 ) {
+    val encryptionDetailsController by lazy {
+        EncryptionDetailsController(
+            currentUser = currentUser,
+            serverProxy = serverProxy
+        )
+    }
 
     val interactionController by lazy {
         UserInteractionController(
             serverProxy = serverProxy,
-            currentUser = currentUser
+            currentUser = currentUser,
+            encryptionDetailsController = encryptionDetailsController
+        )
+    }
+
+    val conversationThreadController by lazy {
+        ConversationThreadController(
+            serverProxy = serverProxy,
+            userInteractionController = interactionController,
+            encryptionDetailsController = encryptionDetailsController
         )
     }
 
