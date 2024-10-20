@@ -101,7 +101,7 @@ class UserInteractionController internal constructor(
             existingThread
         } else {
             val encryptionDetails = getRecipientEncryptionDetails(
-                usersAndSelf = usersAndSelf
+                users = usersAndSelf
             )
             serverProxy.createOrUpdateThread(
                 name = null,
@@ -112,10 +112,10 @@ class UserInteractionController internal constructor(
     }
 
     private fun getRecipientEncryptionDetails(
-        usersAndSelf: List<ServerUser>
+        users: List<ServerUser>
     ): List<RecipientEncryptionDetailsDTO> {
         val secretKey = SymmetricKey()
-        return usersAndSelf.map { user ->
+        return users.map { user ->
             val shareable = currentUser.shareable(
                 data = secretKey.secretKeySpec.encoded,
                 with = user,
@@ -200,6 +200,21 @@ class UserInteractionController internal constructor(
             )
         }.onSuccess {
             serverProxy.localServer.deleteThread(threadId = threadId)
+        }
+    }
+
+    suspend fun addMembers(
+        threadId: String,
+        users: List<ServerUser>,
+        phoneNumbers: List<String>
+    ): Result<Unit> {
+        return runCatchingPreservingCancellationException {
+            val encryptionDetails = getRecipientEncryptionDetails(users = users)
+            serverProxy.updateThreadMembers(
+                threadId = threadId,
+                recipientsToAdd = encryptionDetails,
+                phoneNumbersToAdd = phoneNumbers
+            )
         }
     }
 
