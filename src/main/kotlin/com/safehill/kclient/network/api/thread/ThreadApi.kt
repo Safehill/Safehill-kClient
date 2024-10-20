@@ -31,10 +31,10 @@ interface ThreadApi {
 
     suspend fun updateThreadMembers(
         threadId: String,
-        recipientsToAdd: List<RecipientEncryptionDetailsDTO> = listOf(),
-        membersPublicIdentifierToRemove: List<UserIdentifier> = listOf(),
-        phoneNumbersToAdd: List<String> = listOf(),
-        phoneNumbersToRemove: List<String> = listOf()
+        recipientsToAdd: List<RecipientEncryptionDetailsDTO>,
+        membersPublicIdentifierToRemove: List<UserIdentifier>,
+        phoneNumbersToAdd: List<String>,
+        phoneNumbersToRemove: List<String>
     )
 
     suspend fun deleteThread(
