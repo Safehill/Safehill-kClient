@@ -26,16 +26,23 @@ import com.safehill.kclient.network.api.authorization.AuthorizationApi
 import com.safehill.kclient.network.api.group.GroupApi
 import com.safehill.kclient.network.api.reaction.ReactionApi
 import com.safehill.kclient.network.api.thread.ThreadApi
+import java.security.PublicKey
 import java.time.Instant
 
 interface SafehillApi : BaseApi, AuthorizationApi, GroupApi, ReactionApi, ThreadApi {
 
-    /// Creates a new user given their credentials, their public key and public signature (store in the `requestor` object)
-    /// - Parameters:
-    ///   - name: the username
-    /// - Returns:
-    ///   - the user just created
-    suspend fun createUser(name: String): ServerUser
+    /** Creates a new user given their credentials, their public key and public signature.
+     * @param name: the username.
+     * @param identifier: the unique identifier for user.
+     * @param publicKey: the public key of the user.
+     * @param signature: the signature of the user.
+     * @return the user just created*/
+    suspend fun createUser(
+        name: String,
+        identifier: String,
+        publicKey: PublicKey,
+        signature: PublicKey
+    ): ServerUser
 
     /// Send a code to a user to verify identity, via either phone or SMS
     /// - Parameters:

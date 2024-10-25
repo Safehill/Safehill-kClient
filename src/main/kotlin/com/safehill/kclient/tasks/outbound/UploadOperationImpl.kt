@@ -1,6 +1,5 @@
 package com.safehill.kclient.tasks.outbound
 
-import com.safehill.kclient.controllers.UserInteractionController
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAsset
@@ -10,7 +9,6 @@ import com.safehill.kclient.models.assets.ShareableEncryptedAssetImpl
 import com.safehill.kclient.models.assets.ShareableEncryptedAssetVersionImpl
 import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
-import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.exceptions.SafehillError
@@ -37,9 +35,6 @@ class UploadOperationImpl(
     private val outboundQueueItems: Channel<OutboundQueueItem> = Channel(Channel.UNLIMITED)
     private val job = Job()
     private val scope = CoroutineScope(Dispatchers.Default + job)
-
-    override val user: LocalUser
-        get() = serverProxy.requestor
 
     init {
         scope.launch {
@@ -98,7 +93,10 @@ class UploadOperationImpl(
         }
     }
 
-    private suspend fun shareIfRecipientsExist(outboundQueueItem: OutboundQueueItem, globalIdentifier: String) {
+    private suspend fun shareIfRecipientsExist(
+        outboundQueueItem: OutboundQueueItem,
+        globalIdentifier: String
+    ) {
         if (outboundQueueItem.recipients.isNotEmpty()) {
             scope.launch {
                 enqueueShareItem(
@@ -138,6 +136,7 @@ class UploadOperationImpl(
     private suspend fun upload(outboundQueueItem: OutboundQueueItem) {
         try {
             val globalIdentifier = outboundQueueItem.globalIdentifier ?: return
+            val user = serverProxy.getRequester() ?: return
 
             // *******encrypting*******
             notifyListenersStartedEncrypting(outboundQueueItem)
@@ -200,7 +199,10 @@ class UploadOperationImpl(
         }
     }
 
-    private fun notifyListenersFinishedUploading(outboundQueueItem: OutboundQueueItem, globalIdentifier: String) {
+    private fun notifyListenersFinishedUploading(
+        outboundQueueItem: OutboundQueueItem,
+        globalIdentifier: String
+    ) {
         listeners.forEach {
             outboundQueueItem.localAsset?.let { localAsset ->
                 it.finishedUploading(
@@ -250,7 +252,10 @@ class UploadOperationImpl(
         }
     }
 
-    private suspend fun handleUploadException(outboundQueueItem: OutboundQueueItem, exception: Exception) {
+    private suspend fun handleUploadException(
+        outboundQueueItem: OutboundQueueItem,
+        exception: Exception
+    ) {
         println(exception.localizedMessage)
         when (exception) {
             is SafehillError.ClientError.Conflict -> {
@@ -261,6 +266,7 @@ class UploadOperationImpl(
                     return
                 }
             }
+
             is SafehillError.ClientError.BadRequest,
             SafehillError.ClientError.Unauthorized,
             SafehillError.ClientError.PaymentRequired -> {
@@ -277,13 +283,23 @@ class UploadOperationImpl(
 
     private suspend fun share(outboundQueueItem: OutboundQueueItem) {
         if (outboundQueueItem.globalIdentifier == null) return
+        val user = serverProxy.getRequester() ?: return
 
         notifyListenersStartedSharing(outboundQueueItem)
         try {
             for (recipient in outboundQueueItem.recipients) {
-                val (_, sharablePayload) = encrypter.getSharablePayload(outboundQueueItem, user, recipient)
+                val (_, sharablePayload) = encrypter.getSharablePayload(
+                    outboundQueueItem,
+                    user,
+                    recipient
+                )
 
-                serverShare(outboundQueueItem, recipient, sharablePayload, outboundQueueItem.threadId!!)
+                serverShare(
+                    outboundQueueItem,
+                    recipient,
+                    sharablePayload,
+                    outboundQueueItem.threadId!!
+                )
             }
         } catch (e: Exception) {
             //TODO better exception handling
@@ -355,7 +371,7 @@ class UploadOperationImpl(
     override fun stop() {}
 
     override suspend fun run() {
-        for(queueItem in outboundQueueItems) {
+        for (queueItem in outboundQueueItems) {
             when (queueItem.operationType) {
                 OutboundQueueItem.OperationType.Upload -> {
                     this.upload(queueItem)

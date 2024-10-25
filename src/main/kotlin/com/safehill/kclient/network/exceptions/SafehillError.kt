@@ -20,9 +20,7 @@ sealed class SafehillError(
             private fun readResolve(): Any = PaymentRequired
         }
 
-        data object NotFound : ClientError(404, "404 Not Found") {
-            private fun readResolve(): Any = NotFound
-        }
+        data class NotFound(val error: String? = null) : ClientError(404, error ?: "404 Not Found")
 
         data object MethodNotAllowed : ClientError(405, "405 Method Not Allowed") {
             private fun readResolve(): Any = MethodNotAllowed

@@ -10,6 +10,7 @@ import com.github.kittinunf.fuel.core.extensions.AuthenticatedRequest
 import com.github.kittinunf.fuel.core.extensions.authentication
 import com.github.kittinunf.fuel.core.response
 import com.github.kittinunf.fuel.httpDelete
+import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.fuel.serialization.kotlinxDeserializerOf
 import com.github.kittinunf.result.Result
@@ -24,8 +25,8 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 
-interface BaseApi {
-    val requestor: LocalUser
+fun interface BaseApi {
+    fun getRequester(): LocalUser?
 }
 
 suspend inline fun <reified Request : Any> BaseApi.postRequestForStringResponse(
@@ -110,8 +111,10 @@ suspend inline fun <reified Request : Any, reified Response : Any> BaseApi.fireR
     }
 }
 
-enum class RequestMethod {
-    Post, Delete
+sealed class RequestMethod {
+    data object Post : RequestMethod()
+    data object Delete : RequestMethod()
+    data class Get(val query: List<Pair<String, Any>>) : RequestMethod()
 }
 
 inline fun <reified Req> BaseApi.createRequest(
@@ -125,12 +128,13 @@ inline fun <reified Req> BaseApi.createRequest(
             when (requestMethod) {
                 RequestMethod.Post -> httpPost()
                 RequestMethod.Delete -> httpDelete()
+                is RequestMethod.Get -> httpGet(requestMethod.query)
             }
         }
         .apply {
             if (authenticationRequired) {
                 authentication()
-                    .bearer(token = requestor.authToken)
+                    .bearer(token = getRequester()?.authToken)
             }
             if (request != null) {
                 body(Json.encodeToString(request))
@@ -147,7 +151,7 @@ private fun FuelError.getSafehillError(): SafehillError {
     return when (this.response.statusCode) {
         401 -> SafehillError.ClientError.Unauthorized
         402 -> SafehillError.ClientError.PaymentRequired
-        404 -> SafehillError.ClientError.NotFound
+        404 -> SafehillError.ClientError.NotFound()
         405 -> SafehillError.ClientError.MethodNotAllowed
         409 -> SafehillError.ClientError.Conflict
         501 -> SafehillError.ServerError.NotImplemented

@@ -14,7 +14,6 @@ import com.safehill.kclient.models.dtos.MessageInputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.interactions.InteractionAnchor
-import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.exceptions.SafehillError
@@ -32,7 +31,6 @@ import java.time.Instant
 class ServerProxyImpl(
     override val localServer: LocalServerInterface,
     override val remoteServer: SafehillApi,
-    override val requestor: LocalUser,
 ) : ServerProxy,
     // Delegates most of the functions to RemoteServer.
     // Override if different implementation is necessary.
@@ -368,7 +366,7 @@ class ServerProxyImpl(
             val remoteAsset = remoteServer.getAssets(
                 globalIdentifiers = listOf(globalIdentifier),
                 versions = listOf(quality)
-            )[globalIdentifier] ?: throw SafehillError.ClientError.NotFound
+            )[globalIdentifier] ?: throw SafehillError.ClientError.NotFound()
             if (cacheAfterFetch) {
                 val remoteDescriptor = getAssetDescriptors(
                     assetGlobalIdentifiers = listOf(globalIdentifier),

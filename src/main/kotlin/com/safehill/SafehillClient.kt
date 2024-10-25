@@ -121,9 +121,8 @@ class SafehillClient private constructor(
                 serverProxy = ServerProxyImpl(
                     localServer = localServer,
                     remoteServer = RemoteServer(
-                        requestor = currentUser
-                    ),
-                    requestor = currentUser
+                        getLocalUser = { currentUser }
+                    )
                 ),
                 webSocketApi = WebSocketApi(
                     socketUrl = buildWsURL()
