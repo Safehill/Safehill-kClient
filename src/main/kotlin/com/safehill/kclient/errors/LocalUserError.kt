@@ -19,6 +19,12 @@ sealed class LocalUserError : Exception() {
 
     data object NotAuthenticated : LocalUserError() {
         private fun readResolve(): Any = NotAuthenticated
-        override fun getLocalizedMessage() = "you need to be authenticated to perform this operation"
+        override fun getLocalizedMessage() =
+            "you need to be authenticated to perform this operation"
+    }
+
+    data object UserNotFound : LocalUserError() {
+        private fun readResolve(): Any = UserNotFound
+        override val message: String = "User Not Found."
     }
 }

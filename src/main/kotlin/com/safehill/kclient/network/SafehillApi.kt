@@ -18,6 +18,7 @@ import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
 import com.safehill.kclient.models.interactions.InteractionAnchor
+import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
@@ -69,12 +70,11 @@ interface SafehillApi : BaseApi, AuthorizationApi, GroupApi, ReactionApi, Thread
     /// Delete the user making the request and all related assets, metadata and sharing information
     suspend fun deleteAccount()
 
-    /// Logs the current user, aka the requestor
-    /// - Parameters:
-    ///   - name: the username
-    /// - Returns:
-    ///   - the response with the auth token if credentials are valid
-    suspend fun signIn(): AuthResponseDTO
+    /** Sign in the user.
+     * @param user: the user to login.
+     * @return
+     * the response with the auth token if credentials are valid*/
+    suspend fun signIn(user: LocalUser): AuthResponseDTO
 
     /**
      * Register a device with the server for push notifications and sockets.

@@ -48,6 +48,7 @@ import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.SafehillApi
 import com.safehill.kclient.network.api.BaseApi
 import com.safehill.kclient.network.api.RequestMethod
+import com.safehill.kclient.network.api.UserFlow
 import com.safehill.kclient.network.api.authorization.AuthorizationApi
 import com.safehill.kclient.network.api.authorization.AuthorizationApiImpl
 import com.safehill.kclient.network.api.fireRequestForObjectResponse
@@ -59,7 +60,6 @@ import com.safehill.kclient.network.api.reaction.ReactionApi
 import com.safehill.kclient.network.api.reaction.ReactionApiImpl
 import com.safehill.kclient.network.api.thread.ThreadApi
 import com.safehill.kclient.network.api.thread.ThreadApiImpl
-import com.safehill.kclient.network.exceptions.SafehillError
 import com.safehill.kcrypto.models.ShareablePayload
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -84,9 +84,11 @@ class RemoteServer private constructor(
     ThreadApi by ThreadApiImpl(baseApi) {
 
     constructor(
-        getLocalUser: () -> LocalUser?
+        userFlow: UserFlow
     ) : this(
-        BaseApi { getLocalUser() }
+        object : BaseApi {
+            override val userFlow: UserFlow = userFlow
+        }
     )
 
     @Throws
@@ -196,12 +198,10 @@ class RemoteServer private constructor(
     }
 
     @Throws
-    override suspend fun signIn(): AuthResponseDTO {
-        val requestor = getRequester()
-            ?: throw SafehillError.ClientError.NotFound("User not found for signing in.")
+    override suspend fun signIn(user: LocalUser): AuthResponseDTO {
 
         val authRequestBody = AuthChallengeRequestDTO(
-            identifier = requestor.identifier,
+            identifier = user.identifier,
         )
 
         val authChallenge: AuthChallengeResponseDTO = postRequestForObjectResponse(
@@ -210,7 +210,7 @@ class RemoteServer private constructor(
             authenticationRequired = false
         )
 
-        val solvedChallenge = this.solveChallenge(authChallenge, requestor)
+        val solvedChallenge = this.solveChallenge(authChallenge, user)
 
         return postRequestForObjectResponse(
             endPoint = "/signin/challenge/verify",

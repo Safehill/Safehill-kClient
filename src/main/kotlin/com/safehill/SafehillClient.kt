@@ -14,30 +14,31 @@ import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.ServerProxyImpl
 import com.safehill.kclient.network.WebSocketApi
+import com.safehill.kclient.network.api.UserFlow
 import com.safehill.kclient.network.local.LocalServerInterface
 import com.safehill.kclient.network.remote.RemoteServer
 import com.safehill.kclient.network.remote.RemoteServerEnvironment
 import io.ktor.http.URLBuilder
 import io.ktor.http.URLProtocol
+import kotlinx.coroutines.flow.StateFlow
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.security.Security
 
 class SafehillClient private constructor(
     val serverProxy: ServerProxy,
     val webSocketApi: WebSocketApi,
-    val currentUser: LocalUser
+    val userFlow: UserFlow
 ) {
-    val encryptionDetailsController by lazy {
+    private val encryptionDetailsController by lazy {
         EncryptionDetailsController(
-            currentUser = currentUser,
-            serverProxy = serverProxy
+            userFlow = userFlow
         )
     }
 
     val interactionController by lazy {
         UserInteractionController(
             serverProxy = serverProxy,
-            currentUser = currentUser,
+            userFlow = userFlow,
             encryptionDetailsController = encryptionDetailsController
         )
     }
@@ -58,17 +59,22 @@ class SafehillClient private constructor(
 
     val assetDescriptorCache by lazy {
         AssetDescriptorsCache(
-            currentUser = currentUser
+            userFlow = userFlow
         )
     }
 
-    suspend fun connectToSocket(deviceId: String) {
-        webSocketApi.connectToSocket(deviceId = deviceId, currentUser = currentUser)
+    suspend fun connectToSocket(
+        deviceId: String,
+        currentUser: LocalUser
+    ) {
+        webSocketApi.connectToSocket(
+            deviceId = deviceId, currentUser = currentUser
+        )
     }
 
     class Builder(
         private val localServer: LocalServerInterface,
-        private val currentUser: LocalUser,
+        private val userFlow: UserFlow,
         private val remoteServerEnvironment: RemoteServerEnvironment,
         private val safehillLogger: SafehillLogger = DefaultSafehillLogger()
     ) {
@@ -121,13 +127,13 @@ class SafehillClient private constructor(
                 serverProxy = ServerProxyImpl(
                     localServer = localServer,
                     remoteServer = RemoteServer(
-                        getLocalUser = { currentUser }
+                        userFlow = userFlow
                     )
                 ),
                 webSocketApi = WebSocketApi(
                     socketUrl = buildWsURL()
                 ),
-                currentUser = currentUser
+                userFlow = userFlow
             )
         }
     }

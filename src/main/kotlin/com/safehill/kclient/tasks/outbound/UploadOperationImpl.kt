@@ -136,7 +136,7 @@ class UploadOperationImpl(
     private suspend fun upload(outboundQueueItem: OutboundQueueItem) {
         try {
             val globalIdentifier = outboundQueueItem.globalIdentifier ?: return
-            val user = serverProxy.getRequester() ?: return
+            val user = serverProxy.userFlow.value ?: return
 
             // *******encrypting*******
             notifyListenersStartedEncrypting(outboundQueueItem)
@@ -283,7 +283,7 @@ class UploadOperationImpl(
 
     private suspend fun share(outboundQueueItem: OutboundQueueItem) {
         if (outboundQueueItem.globalIdentifier == null) return
-        val user = serverProxy.getRequester() ?: return
+        val user = serverProxy.userFlow.value ?: return
 
         notifyListenersStartedSharing(outboundQueueItem)
         try {
@@ -376,6 +376,7 @@ class UploadOperationImpl(
                 OutboundQueueItem.OperationType.Upload -> {
                     this.upload(queueItem)
                 }
+
                 OutboundQueueItem.OperationType.Share -> {
                     this.share(queueItem)
                 }

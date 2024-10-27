@@ -18,6 +18,7 @@ import com.safehill.kclient.models.GenericFailureResponse
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.network.exceptions.SafehillError
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerializationException
@@ -25,8 +26,10 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 
-fun interface BaseApi {
-    fun getRequester(): LocalUser?
+typealias UserFlow = StateFlow<LocalUser?>
+
+interface BaseApi {
+    val userFlow: UserFlow
 }
 
 suspend inline fun <reified Request : Any> BaseApi.postRequestForStringResponse(
@@ -134,7 +137,7 @@ inline fun <reified Req> BaseApi.createRequest(
         .apply {
             if (authenticationRequired) {
                 authentication()
-                    .bearer(token = getRequester()?.authToken)
+                    .bearer(token = userFlow.value?.authToken)
             }
             if (request != null) {
                 body(Json.encodeToString(request))

@@ -3,6 +3,7 @@ package com.safehill.kclient.controllers
 import com.safehill.SafehillClient
 import com.safehill.kclient.errors.CipherError
 import com.safehill.kclient.errors.DownloadError
+import com.safehill.kclient.errors.LocalUserError
 import com.safehill.kclient.models.SymmetricKey
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetDescriptorsCache
@@ -21,7 +22,6 @@ class LocalAssetsStoreController(
     private val assetDescriptorsCache: AssetDescriptorsCache
 ) {
     private val serverProxy = safehillClient.serverProxy
-    private val currentUser = safehillClient.currentUser
     private val userController = safehillClient.userController
 
     suspend fun getAsset(
@@ -31,6 +31,7 @@ class LocalAssetsStoreController(
         cacheAfterFetch: Boolean
     ): Result<DecryptedAsset> {
         return runCatchingPreservingCancellationException {
+            val currentUser = serverProxy.userFlow.value ?: throw LocalUserError.UserNotFound
             val assetDescriptor =
                 descriptor ?: assetDescriptorsCache.getDescriptor(globalIdentifier) ?: run {
                     val descriptors = serverProxy.getAssetDescriptors(
@@ -74,7 +75,8 @@ class LocalAssetsStoreController(
         descriptor: AssetDescriptor,
     ): ServerUser {
         val senderUserIdentifier = descriptor.sharingInfo.sharedByUserIdentifier
-        return if (senderUserIdentifier == currentUser.identifier) {
+        val currentUser = serverProxy.userFlow.value
+        return if (senderUserIdentifier == currentUser?.identifier) {
             currentUser
         } else {
             val usersDict = userController.getUsers(

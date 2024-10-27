@@ -1,6 +1,7 @@
 package com.safehill.kclient.controllers
 
 import com.safehill.kclient.base64.base64EncodedString
+import com.safehill.kclient.errors.LocalUserError
 import com.safehill.kclient.models.EncryptedData
 import com.safehill.kclient.models.SymmetricKey
 import com.safehill.kclient.models.assets.GroupId
@@ -14,9 +15,9 @@ import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.dtos.RemoveReactionInputDTO
 import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.models.interactions.ReactionType
-import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.ServerProxy
+import com.safehill.kclient.network.api.UserFlow
 import com.safehill.kclient.util.runCatchingPreservingCancellationException
 import com.safehill.kclient.util.safeApiCall
 
@@ -26,7 +27,7 @@ import com.safehill.kclient.util.safeApiCall
 
 class UserInteractionController internal constructor(
     private val serverProxy: ServerProxy,
-    private val currentUser: LocalUser,
+    private val userFlow: UserFlow,
     private val encryptionDetailsController: EncryptionDetailsController
 ) {
 
@@ -46,12 +47,14 @@ class UserInteractionController internal constructor(
         interactionAnchor: InteractionAnchor
     ): Result<MessageOutputDTO> {
         return runCatching {
-            val symmetricKey =
-                getSymmetricKey(anchorId = anchorId, interactionAnchor = interactionAnchor)
-                    ?: throw InteractionErrors.MissingE2EEDetails(
-                        anchorId = anchorId,
-                        anchor = interactionAnchor
-                    )
+            val currentUser = userFlow.value ?: throw LocalUserError.UserNotFound
+            val symmetricKey = getSymmetricKey(
+                anchorId = anchorId,
+                interactionAnchor = interactionAnchor
+            ) ?: throw InteractionErrors.MissingE2EEDetails(
+                anchorId = anchorId,
+                anchor = interactionAnchor
+            )
             val encryptedMessage =
                 EncryptedData(data = message.toByteArray(), symmetricKey).encryptedData
             val messageDTO = MessageInputDTO(
@@ -90,6 +93,8 @@ class UserInteractionController internal constructor(
         withUsers: List<ServerUser>,
         withPhoneNumbers: List<String>
     ): ConversationThreadOutputDTO {
+        val currentUser = userFlow.value ?: throw LocalUserError.UserNotFound
+
         val usersAndSelf = (withUsers + currentUser).distinctBy { it.identifier }
 
         val existingThread = serverProxy.retrieveThread(
@@ -151,6 +156,7 @@ class UserInteractionController internal constructor(
         anchorId: String,
         interactionAnchor: InteractionAnchor
     ): SymmetricKey? {
+        val currentUser = userFlow.value ?: return null
         return runCatchingPreservingCancellationException {
             val encryptionDetails: RecipientEncryptionDetailsDTO? = when (interactionAnchor) {
                 InteractionAnchor.THREAD -> {

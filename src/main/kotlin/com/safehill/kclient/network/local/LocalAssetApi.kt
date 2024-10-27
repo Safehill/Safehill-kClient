@@ -6,12 +6,9 @@ import com.safehill.kclient.models.dtos.ConversationThreadAssetsDTO
 
 interface LocalAssetApi {
 
-    suspend fun storeAssetDescriptor(assetDescriptor: AssetDescriptor)
-
     suspend fun storeAssetsWithDescriptor(encryptedAssetsWithDescriptor: Map<AssetDescriptor, EncryptedAsset>)
 
     suspend fun storeThreadAssets(
-        threadId: String,
-        conversationThreadAssetsDTO: ConversationThreadAssetsDTO
+        threadId: String, conversationThreadAssetsDTO: ConversationThreadAssetsDTO
     )
 }
