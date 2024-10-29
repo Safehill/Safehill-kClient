@@ -144,7 +144,7 @@ class RemoteServer private constructor(
             publicKey = null,
             publicSignature = null
         )
-        return postRequestForObjectResponse(
+        return postRequestForObjectResponse<UserUpdateDTO, RemoteUser>(
             endPoint = "/users/update",
             request = requestBody,
             authenticationRequired = true
