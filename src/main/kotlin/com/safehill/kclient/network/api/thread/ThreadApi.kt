@@ -29,7 +29,19 @@ interface ThreadApi {
         phoneNumbers: List<String>
     ): ConversationThreadOutputDTO
 
-    suspend fun provideEncryptionDetails(
+    suspend fun updateThreadMembers(
+        threadId: String,
+        recipientsToAdd: List<RecipientEncryptionDetailsDTO>,
+        membersPublicIdentifierToRemove: List<UserIdentifier>,
+        phoneNumbersToAdd: List<String>,
+        phoneNumbersToRemove: List<String>
+    )
+
+    suspend fun deleteThread(
+        threadId: String
+    )
+
+    suspend fun convertInvitees(
         threadIdWithEncryptionDetails: Map<String, List<RecipientEncryptionDetailsDTO>>,
     )
 }

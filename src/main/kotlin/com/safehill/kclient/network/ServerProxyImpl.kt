@@ -509,4 +509,9 @@ class ServerProxyImpl(
         //TODO("Not yet implemented")
     }
 
+    override suspend fun deleteThread(threadId: String) {
+        remoteServer.deleteThread(threadId = threadId).also {
+            localServer.deleteThread(threadId = threadId)
+        }
+    }
 }

@@ -6,6 +6,7 @@ import com.safehill.kclient.models.dtos.websockets.ReactionChange
 import com.safehill.kclient.models.dtos.websockets.TextMessage
 import com.safehill.kclient.models.dtos.websockets.ThreadAssets
 import com.safehill.kclient.models.dtos.websockets.ThreadCreated
+import com.safehill.kclient.models.dtos.websockets.ThreadUpdatedDTO
 import com.safehill.kclient.models.dtos.websockets.UnknownMessage
 import com.safehill.kclient.models.dtos.websockets.UserConversionManifestDTO
 import com.safehill.kclient.models.dtos.websockets.WebSocketMessage
@@ -50,6 +51,7 @@ object WebSocketMessageDeserializer : DeserializationStrategy<WebSocketMessage> 
             MessageType.MESSAGE,
             MessageType.ASSETS_SHARE,
             MessageType.CONNECTION_REQUEST,
+            MessageType.THREAD_UPDATE,
             MessageType.USER_CONVERSION_MANIFEST -> {
                 this.content
             }
@@ -96,6 +98,7 @@ enum class MessageType(
     ASSETS_SHARE("thread-assets-share", ThreadAssets.serializer()),
     CONNECTION_REQUEST("connection-request", NewConnectionRequest.serializer()),
     USER_CONVERSION_MANIFEST("user-conversion-manifest", UserConversionManifestDTO.serializer()),
+    THREAD_UPDATE("thread-update", ThreadUpdatedDTO.serializer())
 }
 
 @Serializable

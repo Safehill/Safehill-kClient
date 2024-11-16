@@ -16,8 +16,10 @@ import com.safehill.kclient.models.dtos.RemoveReactionInputDTO
 import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.models.interactions.ReactionType
 import com.safehill.kclient.models.users.ServerUser
+import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.api.UserFlow
+import com.safehill.kclient.network.exceptions.SafehillError
 import com.safehill.kclient.util.runCatchingPreservingCancellationException
 import com.safehill.kclient.util.safeApiCall
 
@@ -171,6 +173,84 @@ class UserInteractionController internal constructor(
         }.getOrNull()
     }
 
+    suspend fun deleteThread(threadId: String): Result<Unit> {
+        return runCatchingPreservingCancellationException {
+            serverProxy.deleteThread(threadId = threadId)
+        }
+    }
+
+    suspend fun leaveThread(threadId: String): Result<Unit> {
+        return updateThreadMembers(
+            threadId = threadId,
+            membersPublicIdentifierToRemove = listOf(currentUser.identifier)
+        ).onSuccess {
+            serverProxy.localServer.deleteThread(threadId = threadId)
+        }
+    }
+
+    suspend fun updateThreadMembers(
+        threadId: String,
+        usersToAdd: List<ServerUser> = listOf(),
+        membersPublicIdentifierToRemove: List<UserIdentifier> = listOf(),
+        phoneNumbersToAdd: List<String> = listOf(),
+        phoneNumbersToRemove: List<String> = listOf()
+    ): Result<Unit> {
+        return runCatchingPreservingCancellationException {
+            val encryptionDetails = usersToAdd
+                .takeIf { it.isNotEmpty() }
+                ?.getEncryptionDetailsForThread(threadId = threadId) ?: listOf()
+            serverProxy.updateThreadMembers(
+                threadId = threadId,
+                recipientsToAdd = encryptionDetails,
+                membersPublicIdentifierToRemove = membersPublicIdentifierToRemove,
+                phoneNumbersToAdd = phoneNumbersToAdd,
+                phoneNumbersToRemove = phoneNumbersToRemove
+            )
+        }.recoverCatching { exception ->
+            if (exception is SafehillError.ClientError.Conflict) {
+                val currentThread = serverProxy.retrieveThread(threadId = threadId)
+                    ?: throw InteractionErrors.ThreadNotFound(threadId)
+                with(currentThread) {
+                    val newUserIdentifiers = membersPublicIdentifier.toSet()
+                        .plus(usersToAdd.map { it.identifier })
+                        .minus(membersPublicIdentifierToRemove.toSet())
+
+                    val newPhoneNumbers = invitedUsersPhoneNumbers.keys
+                        .plus(phoneNumbersToAdd)
+                        .minus(phoneNumbersToRemove.toSet())
+
+                    val conflictingThread = serverProxy.retrieveThread(
+                        usersIdentifiers = newUserIdentifiers.toList(),
+                        phoneNumbers = newPhoneNumbers.toList()
+                    )
+                    throw if (conflictingThread != null) {
+                        InteractionErrors.ThreadConflict(conflictingThread = conflictingThread)
+                    } else {
+                        exception
+                    }
+                }
+            } else {
+                throw exception
+            }
+        }
+    }
+
+    private suspend fun List<ServerUser>.getEncryptionDetailsForThread(
+        threadId: String,
+    ): List<RecipientEncryptionDetailsDTO> {
+        val symmetricKey = getSymmetricKey(
+            anchorId = threadId,
+            interactionAnchor = InteractionAnchor.THREAD
+        ) ?: throw InteractionErrors.MissingE2EEDetails(
+            anchorId = threadId,
+            anchor = InteractionAnchor.THREAD
+        )
+        return encryptionDetailsController.getRecipientEncryptionDetails(
+            users = this,
+            secretKey = symmetricKey
+        )
+    }
+
     sealed class InteractionErrors(
         msg: String
     ) : Exception(msg) {
@@ -178,5 +258,10 @@ class UserInteractionController internal constructor(
         class MissingE2EEDetails(val anchorId: String, anchor: InteractionAnchor) :
             InteractionErrors("The E2EE details for anchor = $anchor with id $anchor is not found.")
 
+        class ThreadConflict(val conflictingThread: ConversationThreadOutputDTO) :
+            InteractionErrors("The thread with the given members already exists.")
+
+        class ThreadNotFound(val threadId: String) :
+            InteractionErrors("The given thread does not exist.")
     }
 }

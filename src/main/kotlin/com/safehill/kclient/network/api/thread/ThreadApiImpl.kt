@@ -4,9 +4,12 @@ import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.CreateOrUpdateThreadDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.dtos.RetrieveThreadDTO
+import com.safehill.kclient.models.dtos.thread.ConversationThreadMembersUpdateDTO
 import com.safehill.kclient.models.dtos.thread.ConversationThreadNameUpdateDTO
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.api.BaseApi
+import com.safehill.kclient.network.api.RequestMethod
+import com.safehill.kclient.network.api.fireRequestForStringResponse
 import com.safehill.kclient.network.api.postRequestForObjectResponse
 import com.safehill.kclient.network.api.postRequestForStringResponse
 import com.safehill.kclient.network.exceptions.SafehillError
@@ -86,7 +89,7 @@ class ThreadApiImpl(
         )
     }
 
-    override suspend fun provideEncryptionDetails(
+    override suspend fun convertInvitees(
         threadIdWithEncryptionDetails: Map<String, List<RecipientEncryptionDetailsDTO>>
     ) {
         val request = mapOf("newRecipientsByThreadId" to threadIdWithEncryptionDetails)
@@ -96,4 +99,36 @@ class ThreadApiImpl(
             authenticationRequired = true
         )
     }
+
+    override suspend fun updateThreadMembers(
+        threadId: String,
+        recipientsToAdd: List<RecipientEncryptionDetailsDTO>,
+        membersPublicIdentifierToRemove: List<UserIdentifier>,
+        phoneNumbersToAdd: List<String>,
+        phoneNumbersToRemove: List<String>
+    ) {
+        val request = ConversationThreadMembersUpdateDTO(
+            recipientsToAdd = recipientsToAdd,
+            membersPublicIdentifierToRemove = membersPublicIdentifierToRemove,
+            phoneNumbersToAdd = phoneNumbersToAdd,
+            phoneNumbersToRemove = phoneNumbersToRemove
+        )
+        postRequestForStringResponse(
+            endPoint = "/threads/update/$threadId/members",
+            request = request,
+            authenticationRequired = true
+        )
+    }
+
+
+    override suspend fun deleteThread(threadId: String) {
+        fireRequestForStringResponse<Unit>(
+            requestMethod = RequestMethod.Delete,
+            endPoint = "/threads/$threadId",
+            request = null,
+            authenticationRequired = true
+        )
+    }
+
+
 }

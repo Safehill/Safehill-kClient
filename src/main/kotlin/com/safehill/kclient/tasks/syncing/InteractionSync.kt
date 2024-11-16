@@ -6,6 +6,7 @@ import com.safehill.kclient.models.dtos.websockets.InteractionSocketMessage
 import com.safehill.kclient.models.dtos.websockets.TextMessage
 import com.safehill.kclient.models.dtos.websockets.ThreadAssets
 import com.safehill.kclient.models.dtos.websockets.ThreadCreated
+import com.safehill.kclient.models.dtos.websockets.ThreadUpdatedDTO
 import com.safehill.kclient.models.dtos.websockets.WebSocketMessage
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.WebSocketApi
@@ -53,11 +54,20 @@ class InteractionSync(
                     is ThreadCreated -> {
                         this.notifyCreationOfThread()
                     }
+
+                    is ThreadUpdatedDTO -> {
+                        this.handleThreadUpdate()
+                    }
                 }
             }
 
             else -> {}
         }
+    }
+
+    private suspend fun ThreadUpdatedDTO.handleThreadUpdate() {
+        serverProxy.localServer.updateThread(this)
+        interactionSyncListener.didUpdateThread(this)
     }
 
     private suspend fun ThreadCreated.notifyCreationOfThread() {
@@ -135,7 +145,9 @@ class InteractionSync(
             localThread.threadId !in allThreads.map { it.threadId }
         }.map { it.threadId }
         if (threadIdsToRemoveLocally.isNotEmpty()) {
-            serverProxy.localServer.deleteThreads(threadIdsToRemoveLocally)
+            threadIdsToRemoveLocally.forEach { threadId ->
+                serverProxy.localServer.deleteThread(threadId)
+            }
         }
     }
 }
