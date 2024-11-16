@@ -8,6 +8,11 @@ interface ThreadApi {
 
     suspend fun listThreads(): List<ConversationThreadOutputDTO>
 
+    suspend fun updateThreadName(
+        name: String?,
+        threadId: String
+    )
+
     suspend fun retrieveThread(
         threadId: String
     ): ConversationThreadOutputDTO?
@@ -23,6 +28,18 @@ interface ThreadApi {
         recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>,
         phoneNumbers: List<String>
     ): ConversationThreadOutputDTO
+
+    suspend fun updateThreadMembers(
+        threadId: String,
+        recipientsToAdd: List<RecipientEncryptionDetailsDTO>,
+        membersPublicIdentifierToRemove: List<UserIdentifier>,
+        phoneNumbersToAdd: List<String>,
+        phoneNumbersToRemove: List<String>
+    )
+
+    suspend fun deleteThread(
+        threadId: String
+    )
 
     suspend fun provideEncryptionDetails(
         threadIdWithEncryptionDetails: Map<String, List<RecipientEncryptionDetailsDTO>>,
