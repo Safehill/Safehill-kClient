@@ -217,6 +217,14 @@ class ServerProxyImpl(
         }
     }
 
+    override suspend fun updateThreadName(
+        name: String?,
+        threadId: String
+    ) {
+        remoteServer.updateThreadName(name = name, threadId = threadId)
+            .also { localServer.updateThreadName(name = name, threadId = threadId) }
+    }
+
     private suspend fun getAssetsFromRemoteAndStore(
         globalIdentifiersAndQualities: Map<AssetGlobalIdentifier, List<AssetQuality>>,
     ): Map<AssetGlobalIdentifier, EncryptedAsset> {
@@ -499,4 +507,9 @@ class ServerProxyImpl(
         //TODO("Not yet implemented")
     }
 
+    override suspend fun deleteThread(threadId: String) {
+        remoteServer.deleteThread(threadId = threadId).also {
+            localServer.deleteThread(threadId = threadId)
+        }
+    }
 }

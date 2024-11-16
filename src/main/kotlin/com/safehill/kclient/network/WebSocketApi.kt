@@ -78,7 +78,7 @@ class WebSocketApi internal constructor(
                                 deserializer = WebSocketMessageDeserializer,
                                 string = frame.readText()
                             )
-                            SafehillClient.logger.verbose("Socket message $socketData")
+                            SafehillClient.logger.verbose("Socket message ${frame.readText()} parsed to $socketData")
                             _socketMessage.emit(socketData)
                         }
                     }
@@ -128,6 +128,7 @@ class WebSocketApi internal constructor(
             } catch (e: Exception) {
                 delay(1.seconds * retryDelay)
                 retryDelay = minOf(MAX_RETRY_DELAY, retryDelay * 2)
+                SafehillClient.logger.error("Socket Connection error = $e")
             }
         }
     }
