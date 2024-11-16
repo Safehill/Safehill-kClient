@@ -180,6 +180,7 @@ class UserInteractionController internal constructor(
     }
 
     suspend fun leaveThread(threadId: String): Result<Unit> {
+        val currentUser = userFlow.value ?: return Result.failure(LocalUserError.UserNotFound)
         return updateThreadMembers(
             threadId = threadId,
             membersPublicIdentifierToRemove = listOf(currentUser.identifier)
