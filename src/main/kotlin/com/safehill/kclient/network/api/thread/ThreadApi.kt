@@ -41,7 +41,7 @@ interface ThreadApi {
         threadId: String
     )
 
-    suspend fun provideEncryptionDetails(
+    suspend fun convertInvitees(
         threadIdWithEncryptionDetails: Map<String, List<RecipientEncryptionDetailsDTO>>,
     )
 }

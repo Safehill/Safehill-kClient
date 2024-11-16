@@ -87,7 +87,7 @@ class ThreadApiImpl(override val requestor: LocalUser) : ThreadApi, BaseApi {
         )
     }
 
-    override suspend fun provideEncryptionDetails(
+    override suspend fun convertInvitees(
         threadIdWithEncryptionDetails: Map<String, List<RecipientEncryptionDetailsDTO>>
     ) {
         val request = mapOf("newRecipientsByThreadId" to threadIdWithEncryptionDetails)

@@ -11,9 +11,9 @@ class ConversationThreadController(
     val encryptionDetailsController: EncryptionDetailsController
 ) {
 
-    suspend fun provideEncryptionDetailToUsers(
-        users: List<ServerUser>,
-        threadId: String
+    suspend fun convertInvitees(
+        threadId: String,
+        invitees: List<ServerUser>
     ): Result<Unit> {
         return runCatchingPreservingCancellationException {
             val symmetricKey = userInteractionController.getSymmetricKey(
@@ -26,10 +26,10 @@ class ConversationThreadController(
                     anchor = InteractionAnchor.THREAD
                 )
             } else {
-                serverProxy.provideEncryptionDetails(
+                serverProxy.convertInvitees(
                     threadIdWithEncryptionDetails = mapOf(
                         threadId to encryptionDetailsController.getRecipientEncryptionDetails(
-                            users = users,
+                            users = invitees,
                             secretKey = symmetricKey
                         )
                     )
