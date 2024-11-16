@@ -7,6 +7,6 @@ const val FCM_TOKEN_TYPE = 1
 @Serializable
 data class UserDeviceTokenDTO(
     val deviceId: String,
-    val token: String,
+    val token: String?,
     val tokenType: Int
 )
