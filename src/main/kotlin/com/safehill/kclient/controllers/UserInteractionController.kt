@@ -190,11 +190,9 @@ class UserInteractionController internal constructor(
         phoneNumbersToRemove: List<String> = listOf()
     ): Result<Unit> {
         return runCatchingPreservingCancellationException {
-            val encryptionDetails = encryptionDetailsController.getRecipientEncryptionDetails(
-                users = usersToAdd,
-                //todo fix get symmetric key of thread.
-                secretKey = SymmetricKey()
-            )
+            val encryptionDetails = usersToAdd
+                .takeIf { it.isNotEmpty() }
+                ?.getEncryptionDetailsForThread(threadId = threadId) ?: listOf()
             serverProxy.updateThreadMembers(
                 threadId = threadId,
                 recipientsToAdd = encryptionDetails,
@@ -229,6 +227,22 @@ class UserInteractionController internal constructor(
                 throw exception
             }
         }
+    }
+
+    private suspend fun List<ServerUser>.getEncryptionDetailsForThread(
+        threadId: String,
+    ): List<RecipientEncryptionDetailsDTO> {
+        val symmetricKey = getSymmetricKey(
+            anchorId = threadId,
+            interactionAnchor = InteractionAnchor.THREAD
+        ) ?: throw InteractionErrors.MissingE2EEDetails(
+            anchorId = threadId,
+            anchor = InteractionAnchor.THREAD
+        )
+        return encryptionDetailsController.getRecipientEncryptionDetails(
+            users = this,
+            secretKey = symmetricKey
+        )
     }
 
     sealed class InteractionErrors(
