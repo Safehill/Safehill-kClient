@@ -21,7 +21,6 @@ import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.exceptions.SafehillError
 import com.safehill.kclient.util.runCatchingPreservingCancellationException
 import com.safehill.kclient.util.safeApiCall
-import java.util.Base64
 
 /**
  * Obtain [UserInteractionController]'s instance from configured [com.safehill.SafehillClient]
@@ -30,6 +29,7 @@ import java.util.Base64
 class UserInteractionController internal constructor(
     private val serverProxy: ServerProxy,
     private val currentUser: LocalUser,
+    private val encryptionDetailsController: EncryptionDetailsController
 ) {
 
     suspend fun listThreads(): List<ConversationThreadOutputDTO> {
@@ -102,8 +102,9 @@ class UserInteractionController internal constructor(
         return if (existingThread != null) {
             existingThread
         } else {
-            val encryptionDetails = getRecipientEncryptionDetails(
-                users = usersAndSelf
+            val encryptionDetails = encryptionDetailsController.getRecipientEncryptionDetails(
+                users = usersAndSelf,
+                secretKey = SymmetricKey()
             )
             serverProxy.createOrUpdateThread(
                 name = null,
@@ -113,28 +114,6 @@ class UserInteractionController internal constructor(
         }
     }
 
-    private fun getRecipientEncryptionDetails(
-        users: List<ServerUser>
-    ): List<RecipientEncryptionDetailsDTO> {
-        val secretKey = SymmetricKey()
-        return users.map { user ->
-            val shareable = currentUser.shareable(
-                data = secretKey.secretKeySpec.encoded,
-                with = user,
-                protocolSalt = currentUser.encryptionSalt
-            )
-
-            RecipientEncryptionDetailsDTO(
-                recipientUserIdentifier = user.identifier,
-                ephemeralPublicKey = Base64.getEncoder()
-                    .encodeToString(shareable.ephemeralPublicKeyData),
-                encryptedSecret = Base64.getEncoder().encodeToString(shareable.ciphertext),
-                secretPublicSignature = Base64.getEncoder().encodeToString(shareable.signature),
-                senderPublicSignature = Base64.getEncoder()
-                    .encodeToString(currentUser.publicSignatureData)
-            )
-        }
-    }
 
     suspend fun addReaction(
         reactionType: ReactionType,
@@ -211,7 +190,11 @@ class UserInteractionController internal constructor(
         phoneNumbersToRemove: List<String> = listOf()
     ): Result<Unit> {
         return runCatchingPreservingCancellationException {
-            val encryptionDetails = getRecipientEncryptionDetails(users = usersToAdd)
+            val encryptionDetails = encryptionDetailsController.getRecipientEncryptionDetails(
+                users = usersToAdd,
+                //todo fix get symmetric key of thread.
+                secretKey = SymmetricKey()
+            )
             serverProxy.updateThreadMembers(
                 threadId = threadId,
                 recipientsToAdd = encryptionDetails,

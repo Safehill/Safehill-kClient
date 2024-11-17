@@ -114,14 +114,18 @@ class ServerProxyImpl(
         usersIdentifiers: List<UserIdentifier>,
         phoneNumbers: List<String>
     ): ConversationThreadOutputDTO? {
-        return localServer.retrieveThread(
-            usersIdentifiers = usersIdentifiers,
-            phoneNumbers = phoneNumbers
-        ) ?: remoteServer.retrieveThread(
-            usersIdentifiers = usersIdentifiers,
-            phoneNumbers = phoneNumbers
-        )?.also {
-            localServer.createOrUpdateThread(listOf(it))
+        return runCatchingPreservingCancellationException {
+            remoteServer.retrieveThread(
+                usersIdentifiers = usersIdentifiers,
+                phoneNumbers = phoneNumbers
+            )?.also {
+                localServer.createOrUpdateThread(listOf(it))
+            }
+        }.getOrElse {
+            localServer.retrieveThread(
+                usersIdentifiers = usersIdentifiers,
+                phoneNumbers = phoneNumbers
+            )
         }
     }
 

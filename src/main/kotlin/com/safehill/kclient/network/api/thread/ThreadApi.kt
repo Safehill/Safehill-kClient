@@ -40,4 +40,8 @@ interface ThreadApi {
     suspend fun deleteThread(
         threadId: String
     )
+
+    suspend fun convertInvitees(
+        threadIdWithEncryptionDetails: Map<String, List<RecipientEncryptionDetailsDTO>>,
+    )
 }
