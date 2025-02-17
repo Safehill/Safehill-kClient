@@ -25,4 +25,3 @@ interface ServerProxy : SafehillApi {
     ): Map<String, EncryptedAsset>
 
 }
-
