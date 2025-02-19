@@ -1,8 +1,5 @@
 package com.safehill
 
-import com.github.kittinunf.fuel.core.FuelManager
-import com.github.kittinunf.fuel.core.interceptors.LogRequestInterceptor
-import com.github.kittinunf.fuel.core.interceptors.LogResponseInterceptor
 import com.safehill.kclient.controllers.ConversationThreadController
 import com.safehill.kclient.controllers.EncryptionDetailsController
 import com.safehill.kclient.controllers.UserController
@@ -17,8 +14,20 @@ import com.safehill.kclient.network.WebSocketApi
 import com.safehill.kclient.network.local.LocalServerInterface
 import com.safehill.kclient.network.remote.RemoteServer
 import com.safehill.kclient.network.remote.RemoteServerEnvironment
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logger
+import io.ktor.client.plugins.logging.Logging
+import io.ktor.http.ContentType
 import io.ktor.http.URLBuilder
 import io.ktor.http.URLProtocol
+import io.ktor.http.contentType
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.json.Json
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.security.Security
 
@@ -92,16 +101,32 @@ class SafehillClient private constructor(
             this.port = remoteServerEnvironment.port
         }
 
-        private fun setUpFuelConfiguration() {
-            FuelManager.instance.basePath = buildRestApiUrl().toString()
-            FuelManager.instance.baseHeaders = mapOf("Content-type" to "application/json")
-            FuelManager.instance.timeoutInMillisecond = 10000
-            FuelManager.instance.timeoutReadInMillisecond = 30000
-
-            // The client should control whether they want logging or not
-            // Printing for now
-            FuelManager.instance.addRequestInterceptor(LogRequestInterceptor)
-            FuelManager.instance.addResponseInterceptor(LogResponseInterceptor)
+        private fun getHttpClient(safehillLogger: SafehillLogger): HttpClient {
+            return HttpClient(CIO) {
+                defaultRequest {
+                    url(buildRestApiUrl().buildString())
+                    contentType(ContentType.Application.Json)
+                }
+                install(HttpTimeout) {
+                    this.connectTimeoutMillis = 10000
+                    this.requestTimeoutMillis = 30000
+                }
+                install(ContentNegotiation) {
+                    val ignorantJson = Json {
+                        ignoreUnknownKeys = true
+                        explicitNulls = false
+                    }
+                    json(ignorantJson)
+                }
+                install(Logging) {
+                    level = LogLevel.ALL
+                    this.logger = object : Logger {
+                        override fun log(message: String) {
+                            safehillLogger.info(message)
+                        }
+                    }
+                }
+            }
         }
 
         private fun setupBouncyCastle() {
@@ -115,13 +140,13 @@ class SafehillClient private constructor(
 
         fun build(): SafehillClient {
             setupBouncyCastle()
-            setUpFuelConfiguration()
             logger = safehillLogger
             return SafehillClient(
                 serverProxy = ServerProxyImpl(
                     localServer = localServer,
                     remoteServer = RemoteServer(
-                        requestor = currentUser
+                        requestor = currentUser,
+                        client = getHttpClient(safehillLogger)
                     ),
                     requestor = currentUser
                 ),

@@ -16,8 +16,7 @@ dependencies {
     implementation(libs.hkdf)
     implementation(libs.bcprov.jdk15on)
 
-    implementation(libs.fuel)
-    implementation(libs.fuel.kotlinx.serialization)
+
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlin.onetimepassword)
@@ -26,6 +25,8 @@ dependencies {
     implementation(libs.ktor.client.cio)
     implementation(libs.ktor.client.logging)
     implementation(libs.ktor.client.websockets)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.ktor.client.content.negotiation)
 
     implementation(kotlin("stdlib"))
 

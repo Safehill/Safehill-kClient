@@ -18,17 +18,19 @@ import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
 import com.safehill.kclient.models.interactions.InteractionAnchor
+import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
-import com.safehill.kclient.network.api.BaseApi
 import com.safehill.kclient.network.api.authorization.AuthorizationApi
 import com.safehill.kclient.network.api.group.GroupApi
 import com.safehill.kclient.network.api.reaction.ReactionApi
 import com.safehill.kclient.network.api.thread.ThreadApi
 import java.time.Instant
 
-interface SafehillApi : BaseApi, AuthorizationApi, GroupApi, ReactionApi, ThreadApi {
+interface SafehillApi : AuthorizationApi, GroupApi, ReactionApi, ThreadApi {
+
+    val requestor: LocalUser
 
     /// Creates a new user given their credentials, their public key and public signature (store in the `requestor` object)
     /// - Parameters:

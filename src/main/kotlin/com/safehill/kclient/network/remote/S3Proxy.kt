@@ -1,48 +1,40 @@
 package com.safehill.kclient.network.remote
 
-import com.github.kittinunf.fuel.httpGet
-import com.github.kittinunf.fuel.httpPut
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.assets.EncryptedAssetVersion
 import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.dtos.AssetVersionOutputDTO
+import com.safehill.kclient.network.api.BaseApi
 import com.safehill.kclient.network.api.getOrThrow
-import kotlinx.coroutines.CoroutineScope
+import io.ktor.client.request.get
+import io.ktor.client.request.put
+import io.ktor.client.request.setBody
+import io.ktor.client.request.url
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class S3Proxy {
 
     companion object {
 
-        suspend fun uploadData(dataByPresignedURL: Map<String, ByteArray>) {
-            coroutineScope {
-                dataByPresignedURL.map { kv ->
-                    launch {
-                        upload(kv.value, kv.key)
-                    }
-                }
-            }
-        }
-
-        suspend fun upload(
+        suspend fun BaseApi.upload(
             data: ByteArray,
             url: String
         ) {
-            url.httpPut()
-                .body(data)
-                .response()
-                .getOrThrow()
+            client
+                .put {
+                    url(urlString = url)
+                    setBody(data)
+                }
+                .getOrThrow<ByteArray>()
         }
 
-        suspend fun fetchAssets(serverAssets: List<AssetOutputDTO>): Map<AssetGlobalIdentifier, EncryptedAsset> {
+        suspend fun BaseApi.fetchAssets(serverAssets: List<AssetOutputDTO>): Map<AssetGlobalIdentifier, EncryptedAsset> {
             return withContext(Dispatchers.IO) {
                 val deferredResults = coroutineScope {
                     serverAssets.map { serverAsset ->
@@ -58,7 +50,7 @@ class S3Proxy {
             }
         }
 
-        private suspend fun fetchAsset(
+        private suspend fun BaseApi.fetchAsset(
             asset: AssetOutputDTO
         ): EncryptedAsset {
             val deferredResults = coroutineScope {
@@ -81,7 +73,7 @@ class S3Proxy {
             )
         }
 
-        private fun fetchAssetVersion(assetVersion: AssetVersionOutputDTO): EncryptedAssetVersion {
+        private suspend fun BaseApi.fetchAssetVersion(assetVersion: AssetVersionOutputDTO): EncryptedAssetVersion {
             return EncryptedAssetVersion(
                 quality = AssetQuality.entries.first { it.value == assetVersion.versionName },
                 encryptedData = fetchData(assetVersion.presignedURL),
@@ -92,8 +84,8 @@ class S3Proxy {
 
         }
 
-        private fun fetchData(preSignedURL: String): ByteArray {
-            return preSignedURL.httpGet().response().getOrThrow()
+        private suspend fun BaseApi.fetchData(preSignedURL: String): ByteArray {
+            return client.get(preSignedURL).getOrThrow<ByteArray>()
         }
 
     }
