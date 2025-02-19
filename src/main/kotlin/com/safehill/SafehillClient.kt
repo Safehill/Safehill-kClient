@@ -79,8 +79,10 @@ class SafehillClient private constructor(
         private val localServer: LocalServerInterface,
         private val currentUser: LocalUser,
         private val remoteServerEnvironment: RemoteServerEnvironment,
-        private val safehillLogger: SafehillLogger = DefaultSafehillLogger()
+        private val safehillLogger: SafehillLogger = DefaultSafehillLogger(),
+        private val configureHttpClient: HttpClient.() -> Unit = { }
     ) {
+
         private fun buildWsURL() = URLBuilder().apply {
             this.host = remoteServerEnvironment.hostName
             this.protocol = when (remoteServerEnvironment) {
@@ -126,7 +128,7 @@ class SafehillClient private constructor(
                         }
                     }
                 }
-            }
+            }.apply { configureHttpClient() }
         }
 
         private fun setupBouncyCastle() {
