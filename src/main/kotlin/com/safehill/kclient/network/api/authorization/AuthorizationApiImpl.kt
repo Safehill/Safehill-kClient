@@ -14,8 +14,7 @@ class AuthorizationApiImpl(
     override suspend fun getAuthorizationStatus(): UserAuthorizationStatusDTO {
         return postRequestForObjectResponse<Unit, UserAuthorizationStatusDTO>(
             endPoint = "/users/authorization-status",
-            request = null,
-            authenticationRequired = true
+            request = null
         )
     }
 
@@ -24,8 +23,7 @@ class AuthorizationApiImpl(
             endPoint = "/users/authorize",
             request = UserAuthorizationRequestDTO(
                 userPublicIdentifiers = userIdentifiers
-            ),
-            authenticationRequired = true
+            )
         )
     }
 
@@ -34,8 +32,7 @@ class AuthorizationApiImpl(
             endPoint = "/users/block",
             request = UserAuthorizationRequestDTO(
                 userPublicIdentifiers = userIdentifiers
-            ),
-            authenticationRequired = true
+            )
         )
     }
 }

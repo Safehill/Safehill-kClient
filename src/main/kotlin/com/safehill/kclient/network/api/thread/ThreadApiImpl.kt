@@ -30,16 +30,14 @@ class ThreadApiImpl(
         )
         postRequestForStringResponse(
             endPoint = "/threads/update/$threadId",
-            request = request,
-            authenticationRequired = true
+            request = request
         )
     }
 
     private suspend fun listThreads(retrieveThreadDTO: RetrieveThreadDTO?): List<ConversationThreadOutputDTO> {
         return postRequestForObjectResponse<RetrieveThreadDTO, List<ConversationThreadOutputDTO>>(
             endPoint = "/threads/retrieve",
-            request = retrieveThreadDTO,
-            authenticationRequired = true
+            request = retrieveThreadDTO
         )
     }
 
@@ -59,7 +57,6 @@ class ThreadApiImpl(
         return runCatching {
             postRequestForObjectResponse<Unit, ConversationThreadOutputDTO>(
                 endPoint = "/threads/retrieve/$threadId",
-                authenticationRequired = true,
                 request = null
             )
         }.recoverCatching {
@@ -83,8 +80,7 @@ class ThreadApiImpl(
         )
         return postRequestForObjectResponse(
             endPoint = "/threads/upsert",
-            request = request,
-            authenticationRequired = true
+            request = request
         )
     }
 
@@ -94,8 +90,7 @@ class ThreadApiImpl(
         val request = mapOf("newRecipientsByThreadId" to threadIdWithEncryptionDetails)
         postRequestForStringResponse(
             endPoint = "/threads/convert-invitees",
-            request = request,
-            authenticationRequired = true
+            request = request
         )
     }
 
@@ -114,8 +109,7 @@ class ThreadApiImpl(
         )
         postRequestForStringResponse(
             endPoint = "/threads/update/$threadId/members",
-            request = request,
-            authenticationRequired = true
+            request = request
         )
     }
 
@@ -123,8 +117,7 @@ class ThreadApiImpl(
         fireRequestForStringResponse<Unit>(
             requestMethod = RequestMethod.Delete,
             endPoint = "/threads/$threadId",
-            request = null,
-            authenticationRequired = true
+            request = null
         )
     }
 }

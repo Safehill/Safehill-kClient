@@ -32,7 +32,7 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * Obtain [WebSocketApi]'s instance from configured [com.safehill.SafehillClient]
  */
-class WebSocketApi internal constructor(
+class WebSocketApi(
     private val socketUrl: Url
 ) {
 
