@@ -1,22 +1,21 @@
 package com.safehill.kclient.models.users
 
-import com.safehill.kclient.models.dtos.AuthResponseDTO
-import com.safehill.kclient.models.dtos.BearerToken
 import com.safehill.kclient.models.CryptoUser
 import com.safehill.kclient.models.LocalCryptoUser
 import com.safehill.kclient.models.SHUserContext
+import com.safehill.kclient.models.dtos.AuthResponseDTO
+import com.safehill.kclient.models.dtos.BearerToken
 import com.safehill.kcrypto.models.ShareablePayload
 import java.security.PublicKey
 import java.util.Base64
 
 class LocalUser(
-    var shUser: LocalCryptoUser
+    val shUser: LocalCryptoUser,
+    override val name: String
 ) : ServerUser {
 
     override val identifier: UserIdentifier
         get() = this.shUser.identifier
-
-    override var name: String = ""
 
     override val publicKey: PublicKey
         get() = this.shUser.publicKey
@@ -33,16 +32,7 @@ class LocalUser(
     var authToken: BearerToken? = null
     var encryptionSalt: ByteArray = byteArrayOf()
 
-    private fun updateUserDetails(given: ServerUser?) {
-        given?.let {
-            this.name = it.name
-        } ?: run {
-            this.name = ""
-        }
-    }
-
-    fun authenticate(user: ServerUser, authResponseDTO: AuthResponseDTO) {
-        this.updateUserDetails(user)
+    fun authenticate(authResponseDTO: AuthResponseDTO) {
         this.authToken = authResponseDTO.bearerToken
         this.encryptionSalt = Base64.getDecoder().decode(authResponseDTO.encryptionProtocolSalt)
     }
@@ -72,9 +62,5 @@ class LocalUser(
             receivedFrom
         )
     }
-
-    fun regenerateKeys() {
-        this.deauthenticate()
-        this.shUser = LocalCryptoUser()
-    }
+    
 }
