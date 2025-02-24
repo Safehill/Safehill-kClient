@@ -1,31 +1,28 @@
 package com.safehill.kclient.network.api
 
-import com.github.kittinunf.fuel.core.Deserializable
-import com.github.kittinunf.fuel.core.FuelError
-import com.github.kittinunf.fuel.core.HttpException
-import com.github.kittinunf.fuel.core.Request
-import com.github.kittinunf.fuel.core.ResponseResultOf
-import com.github.kittinunf.fuel.core.deserializers.StringDeserializer
-import com.github.kittinunf.fuel.core.extensions.AuthenticatedRequest
-import com.github.kittinunf.fuel.core.extensions.authentication
-import com.github.kittinunf.fuel.core.response
-import com.github.kittinunf.fuel.httpDelete
-import com.github.kittinunf.fuel.httpPost
-import com.github.kittinunf.fuel.serialization.kotlinxDeserializerOf
-import com.github.kittinunf.result.Result
 import com.safehill.kclient.models.GenericFailureResponse
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.network.exceptions.SafehillError
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.delete
+import io.ktor.client.request.get
+import io.ktor.client.request.headers
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsBytes
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.path
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.serializer
 
 interface BaseApi {
     val requestor: LocalUser
+    val client: HttpClient
 }
 
 suspend inline fun <reified Request : Any> BaseApi.postRequestForStringResponse(
@@ -52,10 +49,7 @@ suspend inline fun <reified Request : Any> BaseApi.fireRequestForStringResponse(
         requestMethod = requestMethod,
         endPoint = endPoint,
         request = request,
-        authenticationRequired = authenticationRequired,
-        // Cannot use kotlinx.serialization's String.serializer() because it expects quoted strings.
-        // String.serializer() is not able to decode empty body to empty strings.
-        serializer = StringDeserializer()
+        authenticationRequired = authenticationRequired
     )
 }
 
@@ -78,17 +72,11 @@ suspend inline fun <reified Request : Any, reified Response : Any> BaseApi.fireR
     request: Request? = null,
     authenticationRequired: Boolean = true
 ): Response {
-    @OptIn(ExperimentalSerializationApi::class)
-    val ignorantJson = Json {
-        ignoreUnknownKeys = true
-        explicitNulls = false
-    }
     return fireRequest(
         requestMethod = requestMethod,
         endPoint = endPoint,
         request = request,
-        authenticationRequired = authenticationRequired,
-        serializer = kotlinxDeserializerOf(serializer<Response>(), json = ignorantJson)
+        authenticationRequired = authenticationRequired
     )
 }
 
@@ -96,55 +84,69 @@ suspend inline fun <reified Request : Any, reified Response : Any> BaseApi.fireR
     requestMethod: RequestMethod,
     endPoint: String,
     request: Request? = null,
-    serializer: Deserializable<Response>,
     authenticationRequired: Boolean = true
 ): Response {
     return withContext(Dispatchers.IO) {
-        createRequest<Request>(
-            requestMethod = requestMethod,
+        val requestBuilder = getRequestBuilder(
             endPoint = endPoint,
             request = request,
-            authenticationRequired = authenticationRequired
-        ).response(serializer)
-            .getOrThrow()
+            authenticationRequired = authenticationRequired,
+            requestMethod = requestMethod
+        )
+        when (requestMethod) {
+            RequestMethod.Post -> {
+                client.post(requestBuilder)
+            }
+
+            RequestMethod.Delete -> {
+                client.delete(requestBuilder)
+            }
+
+            is RequestMethod.Get -> {
+                client.get(requestBuilder)
+            }
+        }.getOrThrow<Response>()
     }
 }
 
-enum class RequestMethod {
-    Post, Delete
+sealed class RequestMethod {
+    data object Post : RequestMethod()
+    data object Delete : RequestMethod()
+    data class Get(val query: List<Pair<String, String>>) : RequestMethod()
 }
 
-inline fun <reified Req> BaseApi.createRequest(
+inline fun <reified Req> BaseApi.getRequestBuilder(
     endPoint: String,
     request: Req? = null,
     requestMethod: RequestMethod,
     authenticationRequired: Boolean = true
-): Request {
-    return endPoint
-        .run {
-            when (requestMethod) {
-                RequestMethod.Post -> httpPost()
-                RequestMethod.Delete -> httpDelete()
-            }
-        }
+): HttpRequestBuilder {
+    return HttpRequestBuilder()
         .apply {
-            if (authenticationRequired) {
-                authentication()
-                    .bearer(token = requestor.authToken)
+            url {
+                path(endPoint)
+                if (requestMethod is RequestMethod.Get) {
+                    requestMethod.query.forEach {
+                        parameters.append(it.first, it.second)
+                    }
+                }
             }
-            if (request != null) {
-                body(Json.encodeToString(request))
+            setBody(request)
+            headers {
+                if (authenticationRequired) {
+                    bearer(token = requestor.authToken)
+                }
             }
         }
 }
 
-fun AuthenticatedRequest.bearer(token: String?): Request {
+fun HeadersBuilder.bearer(token: String?) {
     if (token == null) throw SafehillError.ClientError.Unauthorized
-    return this.bearer(token)
+    this["Authorization"] = "Bearer $token"
 }
 
-private fun FuelError.getSafehillError(): SafehillError {
-    return when (this.response.statusCode) {
+suspend fun HttpResponse.getSafehillError(): SafehillError {
+    return when (this.status.value) {
         401 -> SafehillError.ClientError.Unauthorized
         402 -> SafehillError.ClientError.PaymentRequired
         404 -> SafehillError.ClientError.NotFound
@@ -153,7 +155,7 @@ private fun FuelError.getSafehillError(): SafehillError {
         501 -> SafehillError.ServerError.NotImplemented
         503 -> SafehillError.ServerError.BadGateway
         else -> {
-            val responseMessage = this.response.data.toString(Charsets.UTF_8)
+            val responseMessage = this.bodyAsBytes().toString(Charsets.UTF_8)
             val message = try {
                 val failure = Json.decodeFromString<GenericFailureResponse>(responseMessage)
                 failure.reason
@@ -162,7 +164,7 @@ private fun FuelError.getSafehillError(): SafehillError {
             } catch (e: IllegalArgumentException) {
                 null
             }
-            if (this.response.statusCode in 400..500) {
+            if (this.status.value in 400..500) {
                 SafehillError.ClientError.BadRequest(message ?: "Bad or malformed request")
             } else {
                 SafehillError.ServerError.Generic(message ?: "A server error occurred")
@@ -171,35 +173,7 @@ private fun FuelError.getSafehillError(): SafehillError {
     }
 }
 
-
-fun <T, R> ResponseResultOf<T>.getMappingOrThrow(transform: (T) -> R): R {
-    val value = getOrThrow()
-    return transform(value)
-}
-
-fun <T> ResponseResultOf<T>.getOrElseOnSafehillError(transform: (SafehillError) -> T): T {
-    return try {
-        this.getOrThrow()
-    } catch (e: Exception) {
-        if (e is SafehillError) {
-            transform(e)
-        } else {
-            throw e
-        }
-    }
-}
-
-fun <T> ResponseResultOf<T>.getOrThrow(): T {
-    return when (val result = this.third) {
-        is Result.Success -> result.value
-        is Result.Failure -> {
-            val fuelError = result.error
-            val exception = fuelError.exception
-            throw if (exception is HttpException) {
-                fuelError.getSafehillError()
-            } else {
-                exception
-            }
-        }
-    }
+suspend inline fun <reified T> HttpResponse.getOrThrow(): T {
+    val code = this.status.value
+    if (code in 200..299) return this.body<T>() else throw this.getSafehillError()
 }

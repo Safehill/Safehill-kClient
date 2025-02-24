@@ -6,7 +6,6 @@ import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.dtos.RetrieveThreadDTO
 import com.safehill.kclient.models.dtos.thread.ConversationThreadMembersUpdateDTO
 import com.safehill.kclient.models.dtos.thread.ConversationThreadNameUpdateDTO
-import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.api.BaseApi
 import com.safehill.kclient.network.api.RequestMethod
@@ -15,7 +14,9 @@ import com.safehill.kclient.network.api.postRequestForObjectResponse
 import com.safehill.kclient.network.api.postRequestForStringResponse
 import com.safehill.kclient.network.exceptions.SafehillError
 
-class ThreadApiImpl(override val requestor: LocalUser) : ThreadApi, BaseApi {
+class ThreadApiImpl(
+    baseApi: BaseApi
+) : ThreadApi, BaseApi by baseApi {
     override suspend fun listThreads(): List<ConversationThreadOutputDTO> {
         return listThreads(null)
     }
@@ -118,7 +119,6 @@ class ThreadApiImpl(override val requestor: LocalUser) : ThreadApi, BaseApi {
         )
     }
 
-
     override suspend fun deleteThread(threadId: String) {
         fireRequestForStringResponse<Unit>(
             requestMethod = RequestMethod.Delete,
@@ -127,6 +127,4 @@ class ThreadApiImpl(override val requestor: LocalUser) : ThreadApi, BaseApi {
             authenticationRequired = true
         )
     }
-
-
 }

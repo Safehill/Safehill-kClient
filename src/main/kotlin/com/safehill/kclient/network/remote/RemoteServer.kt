@@ -1,9 +1,5 @@
 package com.safehill.kclient.network.remote
 
-import com.github.kittinunf.fuel.core.HttpException
-import com.github.kittinunf.fuel.httpGet
-import com.github.kittinunf.fuel.httpPost
-import com.github.kittinunf.fuel.serialization.responseObject
 import com.safehill.SafehillClient
 import com.safehill.kclient.SafehillCypher
 import com.safehill.kclient.base64.base64EncodedString
@@ -50,25 +46,24 @@ import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.SafehillApi
+import com.safehill.kclient.network.api.BaseApi
+import com.safehill.kclient.network.api.RequestMethod
 import com.safehill.kclient.network.api.authorization.AuthorizationApi
 import com.safehill.kclient.network.api.authorization.AuthorizationApiImpl
-import com.safehill.kclient.network.api.getMappingOrThrow
-import com.safehill.kclient.network.api.getOrThrow
+import com.safehill.kclient.network.api.fireRequestForObjectResponse
 import com.safehill.kclient.network.api.group.GroupApi
 import com.safehill.kclient.network.api.group.GroupApiImpl
 import com.safehill.kclient.network.api.postRequestForObjectResponse
+import com.safehill.kclient.network.api.postRequestForStringResponse
 import com.safehill.kclient.network.api.reaction.ReactionApi
 import com.safehill.kclient.network.api.reaction.ReactionApiImpl
 import com.safehill.kclient.network.api.thread.ThreadApi
 import com.safehill.kclient.network.api.thread.ThreadApiImpl
-import com.safehill.kclient.network.exceptions.SafehillError
+import com.safehill.kclient.network.remote.S3Proxy.Companion.fetchAssets
 import com.safehill.kcrypto.models.ShareablePayload
+import io.ktor.client.HttpClient
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import java.security.MessageDigest
 import java.time.Instant
 import java.time.OffsetDateTime
@@ -76,22 +71,21 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Base64
 
-
-// For Fuel how to see https://www.baeldung.com/kotlin/fuel
-
-class RemoteServer(
-    override val requestor: LocalUser
+class RemoteServer private constructor(
+    private val baseApi: BaseApi
 ) : SafehillApi,
-    AuthorizationApi by AuthorizationApiImpl(requestor),
-    GroupApi by GroupApiImpl(requestor),
-    ReactionApi by ReactionApiImpl(requestor),
-    ThreadApi by ThreadApiImpl(requestor) {
+    AuthorizationApi by AuthorizationApiImpl(baseApi),
+    GroupApi by GroupApiImpl(baseApi),
+    ReactionApi by ReactionApiImpl(baseApi),
+    ThreadApi by ThreadApiImpl(baseApi),
+    BaseApi by baseApi {
 
-    @OptIn(ExperimentalSerializationApi::class)
-    private val ignorantJson = Json {
-        ignoreUnknownKeys = true
-        explicitNulls = false
-    }
+    constructor(requestor: LocalUser, client: HttpClient) : this(
+        object : BaseApi {
+            override val requestor: LocalUser = requestor
+            override val client: HttpClient = client
+        }
+    )
 
     @Throws
     override suspend fun createUser(name: String): ServerUser {
@@ -101,10 +95,11 @@ class RemoteServer(
             publicSignature = Base64.getEncoder().encodeToString(requestor.publicSignatureData),
             name = name
         )
-        return "/users/create".httpPost()
-            .body(Json.encodeToString(requestBody))
-            .responseObject<RemoteUser>(ignorantJson)
-            .getOrThrow()
+        return postRequestForObjectResponse<UserInputDTO, RemoteUser>(
+            endPoint = "/users/create",
+            request = requestBody,
+            authenticationRequired = false
+        )
     }
 
     override suspend fun sendCodeToUser(
@@ -113,22 +108,17 @@ class RemoteServer(
         code: String,
         medium: SendCodeToUserRequestDTO.Medium,
     ) {
-        val bearerToken =
-            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
-
         val requestBody = SendCodeToUserRequestDTO(
             countryCode = countryCode,
             phoneNumber = phoneNumber,
             code = code,
             medium = medium
         )
-
-        "/users/code/send".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Json.encodeToString(requestBody))
-            .response()
-            .getOrThrow()
-
+        postRequestForStringResponse(
+            endPoint = "/users/code/send",
+            request = requestBody,
+            authenticationRequired = true
+        )
     }
 
     @Throws
@@ -137,9 +127,6 @@ class RemoteServer(
         phoneNumber: String?,
         email: String?,
     ): ServerUser {
-        val bearerToken =
-            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
-
         val requestBody = UserUpdateDTO(
             identifier = null,
             name = name,
@@ -148,22 +135,20 @@ class RemoteServer(
             publicKey = null,
             publicSignature = null
         )
-        return "/users/update".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Json.encodeToString(requestBody))
-            .responseObject<RemoteUser>()
-            .getOrThrow()
+        return postRequestForObjectResponse<UserUpdateDTO, RemoteUser>(
+            endPoint = "/users/update",
+            request = requestBody,
+            authenticationRequired = true
+        )
     }
 
     @Throws
     override suspend fun deleteAccount() {
-        val bearerToken =
-            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
-
-        "/users/safe_delete".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .responseString()
-            .getOrThrow()
+        postRequestForStringResponse(
+            endPoint = "/users/safe_delete",
+            request = null,
+            authenticationRequired = true
+        )
     }
 
     @Throws
@@ -212,7 +197,6 @@ class RemoteServer(
             authenticationRequired = false
         )
 
-
         val solvedChallenge = this.solveChallenge(authChallenge)
 
         return postRequestForObjectResponse(
@@ -224,77 +208,58 @@ class RemoteServer(
     }
 
     override suspend fun registerDevice(deviceId: String, token: String?) {
-        val bearerToken =
-            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
-
         val userTokenRequest = UserDeviceTokenDTO(
             deviceId = deviceId,
             token = token,
             tokenType = FCM_TOKEN_TYPE
         )
-        "/users/devices/register".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Json.encodeToString(userTokenRequest))
-            .responseString()
-            .getOrThrow()
+        postRequestForStringResponse(
+            endPoint = "/users/devices/register",
+            request = userTokenRequest,
+            authenticationRequired = true
+        )
     }
 
     @Throws
     override suspend fun getUsers(withIdentifiers: List<UserIdentifier>): Map<UserIdentifier, RemoteUser> {
-        val bearerToken =
-            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
-
         if (withIdentifiers.isEmpty()) {
             return emptyMap()
         }
 
         val getUsersRequestBody = UserIdentifiersDTO(userIdentifiers = withIdentifiers)
-        return "/users/retrieve".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Json.encodeToString(getUsersRequestBody))
-            .responseObject(
-                ListSerializer(RemoteUser.serializer()),
-                Json {
-                    this.ignoreUnknownKeys = true
-                }
-            )
-            .getOrThrow()
-            .associateBy { it.identifier }
+        return postRequestForObjectResponse<UserIdentifiersDTO, List<RemoteUser>>(
+            endPoint = "/users/retrieve",
+            request = getUsersRequestBody,
+            authenticationRequired = true
+        ).associateBy { it.identifier }
     }
 
     override suspend fun getUsersWithPhoneNumber(hashedPhoneNumbers: List<HashedPhoneNumber>): Map<HashedPhoneNumber, RemoteUser> {
-        val bearerToken =
-            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
-
         if (hashedPhoneNumbers.isEmpty()) {
             return mapOf()
         }
-
         val getUsersRequestBody = UserPhoneNumbersDTO(phoneNumbers = hashedPhoneNumbers)
-        return "/users/retrieve/phone-number".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Json.encodeToString(getUsersRequestBody))
-            .responseObject<RemoteUserPhoneNumberMatchDto>()
-            .getOrThrow()
-            .result
+        return postRequestForObjectResponse<UserPhoneNumbersDTO, RemoteUserPhoneNumberMatchDto>(
+            endPoint = "/users/retrieve/phone-number",
+            request = getUsersRequestBody,
+            authenticationRequired = true
+        ).result
     }
 
     @Throws
     override suspend fun searchUsers(query: String, per: Int, page: Int): List<RemoteUser> {
-        val bearerToken =
-            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
-
-        return "/users/search".httpGet(
-            listOf(
-                "query" to query,
-                "per" to per,
-                "page" to page
-            )
-        )
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .responseObject<RemoteUserSearchDTO>()
-            .getOrThrow()
-            .items
+        return fireRequestForObjectResponse<List<Pair<String, String>>, RemoteUserSearchDTO>(
+            requestMethod = RequestMethod.Get(
+                query = listOf(
+                    "query" to query,
+                    "per" to per.toString(),
+                    "page" to page.toString()
+                )
+            ),
+            endPoint = "/users/search",
+            request = null,
+            authenticationRequired = true
+        ).items
     }
 
     @Throws
@@ -325,13 +290,11 @@ class RemoteServer(
     }
 
     override suspend fun getAssets(threadId: String): ConversationThreadAssetsDTO {
-        val bearerToken =
-            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
-
-        return "/threads/retrieve/$threadId/assets".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .responseObject(ConversationThreadAssetsDTO.serializer())
-            .getOrThrow()
+        return postRequestForObjectResponse(
+            endPoint = "/threads/retrieve/$threadId/assets",
+            request = null,
+            authenticationRequired = true
+        )
     }
 
     @Throws
@@ -350,8 +313,7 @@ class RemoteServer(
                 request = assetFilterCriteriaDTO,
                 authenticationRequired = true
             )
-        return S3Proxy.fetchAssets(assetOutputDTOs)
-
+        return fetchAssets(assetOutputDTOs)
     }
 
     @Throws
@@ -365,8 +327,6 @@ class RemoteServer(
         }
         val asset = assets.first()
 
-        val bearerToken =
-            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
 
         val assetCreatedAt = asset.creationDate ?: run { Instant.MIN }
         val dateTime = OffsetDateTime.ofInstant(assetCreatedAt, ZoneOffset.UTC)
@@ -399,8 +359,6 @@ class RemoteServer(
             throw NotImplementedError("Current API only supports share one asset per request")
         }
 
-        val bearerToken =
-            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
 
         val versions = mutableListOf<ShareVersionDetails>()
         for (version in asset.sharedVersions) {
@@ -421,11 +379,11 @@ class RemoteServer(
             groupId = asset.groupId,
             asPhotoMessageInThreadId = threadId
         )
-        "/assets/share".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(Json.encodeToString(AssetShareDTO.serializer(), requestBody))
-            .responseString()
-            .getOrThrow()
+        postRequestForStringResponse(
+            endPoint = "/assets/share",
+            request = requestBody,
+            authenticationRequired = true
+        )
     }
 
     override suspend fun unshare(
@@ -436,12 +394,11 @@ class RemoteServer(
     }
 
     override suspend fun topLevelInteractionsSummary(): InteractionsSummaryDTO {
-        val bearerToken = this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
-
-        return "interactions/summary".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .responseObject<InteractionsSummaryDTO>(json = ignorantJson)
-            .getOrThrow()
+        return postRequestForObjectResponse(
+            endPoint = "interactions/summary",
+            request = null,
+            authenticationRequired = true
+        )
     }
 
     override suspend fun upload(
@@ -470,7 +427,9 @@ class RemoteServer(
             encryptedVersionByPresignedURL.map { (presignedURL, encryptedVersion) ->
                 launch {
                     try {
-                        S3Proxy.upload(encryptedVersion.encryptedData, presignedURL)
+                        with(S3Proxy) {
+                            upload(encryptedVersion.encryptedData, presignedURL)
+                        }
                         remoteServer.markAsset(
                             asset.globalIdentifier,
                             encryptedVersion.quality,
@@ -493,34 +452,23 @@ class RemoteServer(
         quality: AssetQuality,
         asState: AssetDescriptorUploadState,
     ) {
-        val bearerToken =
-            this.requestor.authToken ?: throw HttpException(
-                401,
-                "unauthorized"
-            )
-
-        "assets/$assetGlobalIdentifier/versions/${quality.value}/uploaded".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .response()
-            .getOrThrow()
+        postRequestForStringResponse(
+            endPoint = "assets/$assetGlobalIdentifier/versions/${quality.value}/uploaded",
+            request = null,
+            authenticationRequired = true
+        )
     }
 
     @Throws
     override suspend fun deleteAssets(globalIdentifiers: List<AssetGlobalIdentifier>): List<AssetGlobalIdentifier> {
-        val bearerToken =
-            this.requestor.authToken ?: throw SafehillError.ClientError.Unauthorized
-
-        val responseResult = "/assets/delete".httpPost()
-            .header(mapOf("Authorization" to "Bearer $bearerToken"))
-            .body(
-                Json.encodeToString(
-                    AssetDeleteCriteriaDTO(
-                        globalIdentifiers
-                    )
-                )
-            )
-            .response()
-        return responseResult.getMappingOrThrow { globalIdentifiers }
+        postRequestForStringResponse(
+            endPoint = "/assets/delete",
+            request = AssetDeleteCriteriaDTO(
+                globalIdentifiers
+            ),
+            authenticationRequired = true
+        )
+        return globalIdentifiers
     }
 
     override suspend fun setGroupEncryptionDetails(
