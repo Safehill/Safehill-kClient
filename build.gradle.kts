@@ -14,7 +14,7 @@ repositories {
 
 dependencies {
     implementation(libs.hkdf)
-    implementation(libs.bcprov.jdk15on)
+    api(libs.bcprov.jdk15on)
 
 
     implementation(libs.kotlinx.serialization.json)
