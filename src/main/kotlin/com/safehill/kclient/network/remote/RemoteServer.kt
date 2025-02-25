@@ -1,9 +1,7 @@
 package com.safehill.kclient.network.remote
 
 import com.safehill.SafehillClient
-import com.safehill.kclient.SafehillCypher
 import com.safehill.kclient.base64.base64EncodedString
-import com.safehill.kclient.models.RemoteCryptoUser
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetDescriptorUploadState
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
@@ -17,10 +15,6 @@ import com.safehill.kclient.models.dtos.AssetDescriptorFilterCriteriaDTO
 import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.dtos.AssetSearchCriteriaDTO
 import com.safehill.kclient.models.dtos.AssetShareDTO
-import com.safehill.kclient.models.dtos.AuthChallengeRequestDTO
-import com.safehill.kclient.models.dtos.AuthChallengeResponseDTO
-import com.safehill.kclient.models.dtos.AuthResolvedChallengeDTO
-import com.safehill.kclient.models.dtos.AuthResponseDTO
 import com.safehill.kclient.models.dtos.ConversationThreadAssetsDTO
 import com.safehill.kclient.models.dtos.FCM_TOKEN_TYPE
 import com.safehill.kclient.models.dtos.GetInteractionDTO
@@ -36,7 +30,6 @@ import com.safehill.kclient.models.dtos.SendCodeToUserRequestDTO
 import com.safehill.kclient.models.dtos.ShareVersionDetails
 import com.safehill.kclient.models.dtos.UserDeviceTokenDTO
 import com.safehill.kclient.models.dtos.UserIdentifiersDTO
-import com.safehill.kclient.models.dtos.UserInputDTO
 import com.safehill.kclient.models.dtos.UserPhoneNumbersDTO
 import com.safehill.kclient.models.dtos.UserUpdateDTO
 import com.safehill.kclient.models.dtos.toAssetDescriptor
@@ -48,6 +41,8 @@ import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.SafehillApi
 import com.safehill.kclient.network.api.BaseApi
 import com.safehill.kclient.network.api.RequestMethod
+import com.safehill.kclient.network.api.auth.AuthApi
+import com.safehill.kclient.network.api.auth.AuthApiImpl
 import com.safehill.kclient.network.api.authorization.AuthorizationApi
 import com.safehill.kclient.network.api.authorization.AuthorizationApiImpl
 import com.safehill.kclient.network.api.fireRequestForObjectResponse
@@ -60,11 +55,9 @@ import com.safehill.kclient.network.api.reaction.ReactionApiImpl
 import com.safehill.kclient.network.api.thread.ThreadApi
 import com.safehill.kclient.network.api.thread.ThreadApiImpl
 import com.safehill.kclient.network.remote.S3Proxy.Companion.fetchAssets
-import com.safehill.kcrypto.models.ShareablePayload
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import java.security.MessageDigest
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -78,6 +71,7 @@ class RemoteServer private constructor(
     GroupApi by GroupApiImpl(baseApi),
     ReactionApi by ReactionApiImpl(baseApi),
     ThreadApi by ThreadApiImpl(baseApi),
+    AuthApi by AuthApiImpl(baseApi),
     BaseApi by baseApi {
 
     constructor(requestor: LocalUser, client: HttpClient) : this(
@@ -86,21 +80,6 @@ class RemoteServer private constructor(
             override val client: HttpClient = client
         }
     )
-
-    @Throws
-    override suspend fun createUser(name: String): ServerUser {
-        val requestBody = UserInputDTO(
-            identifier = requestor.identifier,
-            publicKey = Base64.getEncoder().encodeToString(requestor.publicKeyData),
-            publicSignature = Base64.getEncoder().encodeToString(requestor.publicSignatureData),
-            name = name
-        )
-        return postRequestForObjectResponse<UserInputDTO, RemoteUser>(
-            endPoint = "/users/create",
-            request = requestBody,
-            authenticationRequired = false
-        )
-    }
 
     override suspend fun sendCodeToUser(
         countryCode: Int,
@@ -116,8 +95,7 @@ class RemoteServer private constructor(
         )
         postRequestForStringResponse(
             endPoint = "/users/code/send",
-            request = requestBody,
-            authenticationRequired = true
+            request = requestBody
         )
     }
 
@@ -137,8 +115,7 @@ class RemoteServer private constructor(
         )
         return postRequestForObjectResponse<UserUpdateDTO, RemoteUser>(
             endPoint = "/users/update",
-            request = requestBody,
-            authenticationRequired = true
+            request = requestBody
         )
     }
 
@@ -146,65 +123,8 @@ class RemoteServer private constructor(
     override suspend fun deleteAccount() {
         postRequestForStringResponse(
             endPoint = "/users/safe_delete",
-            request = null,
-            authenticationRequired = true
+            request = null
         )
-    }
-
-    @Throws
-    fun solveChallenge(authChallenge: AuthChallengeResponseDTO): AuthResolvedChallengeDTO {
-        val serverCrypto = RemoteCryptoUser(
-            Base64.getDecoder().decode(authChallenge.publicKey),
-            Base64.getDecoder().decode(authChallenge.publicSignature)
-        )
-        val encryptedChallenge = ShareablePayload(
-            ephemeralPublicKeyData = Base64.getDecoder()
-                .decode(authChallenge.ephemeralPublicKey),
-            ciphertext = Base64.getDecoder().decode(authChallenge.challenge),
-            signature = Base64.getDecoder().decode(authChallenge.ephemeralPublicSignature),
-            null
-        )
-
-        val decryptedChallenge = SafehillCypher.decrypt(
-            sealedMessage = encryptedChallenge,
-            encryptionKey = this.requestor.shUser.key,
-            signedBy = serverCrypto.publicSignature,
-            iv = authChallenge.iv?.let { Base64.getDecoder().decode(it) },
-            protocolSalt = Base64.getDecoder().decode(authChallenge.protocolSalt)
-        )
-        val signatureForChallenge = this.requestor.shUser.sign(decryptedChallenge)
-        val md = MessageDigest.getInstance("SHA-512")
-        val digest512 = md.digest(decryptedChallenge)
-        val signatureForDigest = this.requestor.shUser.sign(digest512)
-
-        return AuthResolvedChallengeDTO(
-            userIdentifier = requestor.identifier,
-            signedChallenge = Base64.getEncoder().encodeToString(signatureForChallenge),
-            digest = Base64.getEncoder().encodeToString(digest512),
-            signedDigest = Base64.getEncoder().encodeToString(signatureForDigest)
-        )
-    }
-
-    @Throws
-    override suspend fun signIn(): AuthResponseDTO {
-        val authRequestBody = AuthChallengeRequestDTO(
-            identifier = requestor.identifier,
-        )
-
-        val authChallenge: AuthChallengeResponseDTO = postRequestForObjectResponse(
-            endPoint = "/signin/challenge/start",
-            request = authRequestBody,
-            authenticationRequired = false
-        )
-
-        val solvedChallenge = this.solveChallenge(authChallenge)
-
-        return postRequestForObjectResponse(
-            endPoint = "/signin/challenge/verify",
-            request = solvedChallenge,
-            authenticationRequired = false
-        )
-
     }
 
     override suspend fun registerDevice(deviceId: String, token: String?) {
@@ -215,8 +135,7 @@ class RemoteServer private constructor(
         )
         postRequestForStringResponse(
             endPoint = "/users/devices/register",
-            request = userTokenRequest,
-            authenticationRequired = true
+            request = userTokenRequest
         )
     }
 
@@ -229,8 +148,7 @@ class RemoteServer private constructor(
         val getUsersRequestBody = UserIdentifiersDTO(userIdentifiers = withIdentifiers)
         return postRequestForObjectResponse<UserIdentifiersDTO, List<RemoteUser>>(
             endPoint = "/users/retrieve",
-            request = getUsersRequestBody,
-            authenticationRequired = true
+            request = getUsersRequestBody
         ).associateBy { it.identifier }
     }
 
@@ -241,8 +159,7 @@ class RemoteServer private constructor(
         val getUsersRequestBody = UserPhoneNumbersDTO(phoneNumbers = hashedPhoneNumbers)
         return postRequestForObjectResponse<UserPhoneNumbersDTO, RemoteUserPhoneNumberMatchDto>(
             endPoint = "/users/retrieve/phone-number",
-            request = getUsersRequestBody,
-            authenticationRequired = true
+            request = getUsersRequestBody
         ).result
     }
 
@@ -257,8 +174,7 @@ class RemoteServer private constructor(
                 )
             ),
             endPoint = "/users/search",
-            request = null,
-            authenticationRequired = true
+            request = null
         ).items
     }
 
@@ -284,16 +200,14 @@ class RemoteServer private constructor(
         )
         return postRequestForObjectResponse<AssetDescriptorFilterCriteriaDTO, List<AssetDescriptorDTO>>(
             endPoint = "/assets/descriptors/retrieve",
-            request = descriptorFilterCriteriaDTO,
-            authenticationRequired = true
+            request = descriptorFilterCriteriaDTO
         ).map(AssetDescriptorDTO::toAssetDescriptor)
     }
 
     override suspend fun getAssets(threadId: String): ConversationThreadAssetsDTO {
         return postRequestForObjectResponse(
             endPoint = "/threads/retrieve/$threadId/assets",
-            request = null,
-            authenticationRequired = true
+            request = null
         )
     }
 
@@ -310,8 +224,7 @@ class RemoteServer private constructor(
         val assetOutputDTOs =
             postRequestForObjectResponse<AssetSearchCriteriaDTO, List<AssetOutputDTO>>(
                 endPoint = "/assets/retrieve",
-                request = assetFilterCriteriaDTO,
-                authenticationRequired = true
+                request = assetFilterCriteriaDTO
             )
         return fetchAssets(assetOutputDTOs)
     }
@@ -348,8 +261,7 @@ class RemoteServer private constructor(
         )
         val shOutput: AssetOutputDTO = postRequestForObjectResponse(
             endPoint = "/assets/create",
-            request = requestBody,
-            authenticationRequired = true
+            request = requestBody
         )
         return listOf(shOutput)
     }
@@ -381,8 +293,7 @@ class RemoteServer private constructor(
         )
         postRequestForStringResponse(
             endPoint = "/assets/share",
-            request = requestBody,
-            authenticationRequired = true
+            request = requestBody
         )
     }
 
@@ -396,8 +307,7 @@ class RemoteServer private constructor(
     override suspend fun topLevelInteractionsSummary(): InteractionsSummaryDTO {
         return postRequestForObjectResponse(
             endPoint = "interactions/summary",
-            request = null,
-            authenticationRequired = true
+            request = null
         )
     }
 
@@ -454,8 +364,7 @@ class RemoteServer private constructor(
     ) {
         postRequestForStringResponse(
             endPoint = "assets/$assetGlobalIdentifier/versions/${quality.value}/uploaded",
-            request = null,
-            authenticationRequired = true
+            request = null
         )
     }
 
@@ -465,8 +374,7 @@ class RemoteServer private constructor(
             endPoint = "/assets/delete",
             request = AssetDeleteCriteriaDTO(
                 globalIdentifiers
-            ),
-            authenticationRequired = true
+            )
         )
         return globalIdentifiers
     }
@@ -497,8 +405,7 @@ class RemoteServer private constructor(
                 InteractionAnchor.THREAD -> "interactions/user-threads/$anchorId"
                 InteractionAnchor.GROUP -> "interactions/assets-groups/$anchorId"
             },
-            request = requestBody,
-            authenticationRequired = true
+            request = requestBody
         )
     }
 
@@ -516,8 +423,7 @@ class RemoteServer private constructor(
                 InteractionAnchor.THREAD -> "interactions/user-threads/$anchorId/messages"
                 InteractionAnchor.GROUP -> "interactions/assets-groups/$anchorId/messages"
             },
-            request = messages.first(),
-            authenticationRequired = true
+            request = messages.first()
         ).run(::listOf)
     }
 }

@@ -19,6 +19,7 @@ import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.exceptions.SafehillError
 import com.safehill.kclient.network.local.LocalServerInterface
+import com.safehill.kclient.network.remote.RemoteServer
 import com.safehill.kclient.util.runCatchingPreservingCancellationException
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -31,7 +32,7 @@ import java.time.Instant
 
 class ServerProxyImpl(
     override val localServer: LocalServerInterface,
-    override val remoteServer: SafehillApi,
+    override val remoteServer: RemoteServer,
     override val requestor: LocalUser,
 ) : ServerProxy,
     // Delegates most of the functions to RemoteServer.

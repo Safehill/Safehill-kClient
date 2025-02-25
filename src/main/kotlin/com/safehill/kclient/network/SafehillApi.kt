@@ -8,7 +8,6 @@ import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.assets.ShareableEncryptedAsset
 import com.safehill.kclient.models.dtos.AssetOutputDTO
-import com.safehill.kclient.models.dtos.AuthResponseDTO
 import com.safehill.kclient.models.dtos.ConversationThreadAssetsDTO
 import com.safehill.kclient.models.dtos.HashedPhoneNumber
 import com.safehill.kclient.models.dtos.InteractionsGroupDTO
@@ -32,12 +31,6 @@ interface SafehillApi : AuthorizationApi, GroupApi, ReactionApi, ThreadApi {
 
     val requestor: LocalUser
 
-    /// Creates a new user given their credentials, their public key and public signature (store in the `requestor` object)
-    /// - Parameters:
-    ///   - name: the username
-    /// - Returns:
-    ///   - the user just created
-    suspend fun createUser(name: String): ServerUser
 
     /// Send a code to a user to verify identity, via either phone or SMS
     /// - Parameters:
@@ -64,12 +57,6 @@ interface SafehillApi : AuthorizationApi, GroupApi, ReactionApi, ThreadApi {
     /// Delete the user making the request and all related assets, metadata and sharing information
     suspend fun deleteAccount()
 
-    /// Logs the current user, aka the requestor
-    /// - Parameters:
-    ///   - name: the username
-    /// - Returns:
-    ///   - the response with the auth token if credentials are valid
-    suspend fun signIn(): AuthResponseDTO
 
     /**
      * Register a device with the server for push notifications and sockets.

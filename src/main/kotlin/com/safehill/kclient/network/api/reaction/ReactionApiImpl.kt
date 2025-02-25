@@ -21,8 +21,7 @@ class ReactionApiImpl(
         require(reactions.size == 1) { throw SafehillError.ServerError.UnSupportedOperation }
         return postRequestForObjectResponse<ReactionInputDTO, ReactionOutputDTO>(
             endPoint = "interactions/assets-groups/$toGroupId/reactions",
-            request = reactions.first(),
-            authenticationRequired = true
+            request = reactions.first()
         ).run(::listOf)
     }
 
@@ -30,8 +29,7 @@ class ReactionApiImpl(
         fireRequestForStringResponse(
             requestMethod = RequestMethod.Delete,
             endPoint = "interactions/assets-groups/$fromGroupId/reactions",
-            request = reaction,
-            authenticationRequired = true
+            request = reaction
         )
     }
 }

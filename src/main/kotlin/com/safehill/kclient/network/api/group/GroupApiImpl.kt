@@ -16,8 +16,7 @@ class GroupApiImpl(
     override suspend fun retrieveGroupUserEncryptionDetails(groupId: GroupId): RecipientEncryptionDetailsDTO {
         return postRequestForObjectResponse(
             endPoint = "groups/retrieve/$groupId",
-            request = null,
-            authenticationRequired = true
+            request = null
         )
     }
 }

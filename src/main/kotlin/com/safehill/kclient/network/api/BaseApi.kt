@@ -20,77 +20,70 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
-interface BaseApi {
-    val requestor: LocalUser
+interface BaseOpenApi {
     val client: HttpClient
 }
 
-suspend inline fun <reified Request : Any> BaseApi.postRequestForStringResponse(
+interface BaseApi : BaseOpenApi {
+    val requestor: LocalUser
+}
+
+suspend inline fun <reified Request : Any> BaseOpenApi.postRequestForStringResponse(
     endPoint: String,
-    request: Request? = null,
-    authenticationRequired: Boolean = true
+    request: Request? = null
 ): String {
     return fireRequestForStringResponse(
         request = request,
         requestMethod = RequestMethod.Post,
-        endPoint = endPoint,
-        authenticationRequired = authenticationRequired
+        endPoint = endPoint
     )
 }
 
 
-suspend inline fun <reified Request : Any> BaseApi.fireRequestForStringResponse(
+suspend inline fun <reified Request : Any> BaseOpenApi.fireRequestForStringResponse(
     requestMethod: RequestMethod,
     endPoint: String,
-    request: Request? = null,
-    authenticationRequired: Boolean = true
+    request: Request? = null
 ): String {
     return fireRequest(
         requestMethod = requestMethod,
         endPoint = endPoint,
-        request = request,
-        authenticationRequired = authenticationRequired
+        request = request
     )
 }
 
-suspend inline fun <reified Request : Any, reified Response : Any> BaseApi.postRequestForObjectResponse(
+suspend inline fun <reified Request : Any, reified Response : Any> BaseOpenApi.postRequestForObjectResponse(
     endPoint: String,
-    request: Request? = null,
-    authenticationRequired: Boolean = true
+    request: Request? = null
 ): Response {
     return fireRequestForObjectResponse<Request, Response>(
         requestMethod = RequestMethod.Post,
         endPoint = endPoint,
-        request = request,
-        authenticationRequired = authenticationRequired
+        request = request
     )
 }
 
-suspend inline fun <reified Request : Any, reified Response : Any> BaseApi.fireRequestForObjectResponse(
+suspend inline fun <reified Request : Any, reified Response : Any> BaseOpenApi.fireRequestForObjectResponse(
     requestMethod: RequestMethod,
     endPoint: String,
-    request: Request? = null,
-    authenticationRequired: Boolean = true
+    request: Request? = null
 ): Response {
     return fireRequest(
         requestMethod = requestMethod,
         endPoint = endPoint,
-        request = request,
-        authenticationRequired = authenticationRequired
+        request = request
     )
 }
 
-suspend inline fun <reified Request : Any, reified Response : Any> BaseApi.fireRequest(
+suspend inline fun <reified Request : Any, reified Response : Any> BaseOpenApi.fireRequest(
     requestMethod: RequestMethod,
     endPoint: String,
-    request: Request? = null,
-    authenticationRequired: Boolean = true
+    request: Request? = null
 ): Response {
     return withContext(Dispatchers.IO) {
         val requestBuilder = getRequestBuilder(
             endPoint = endPoint,
             request = request,
-            authenticationRequired = authenticationRequired,
             requestMethod = requestMethod
         )
         when (requestMethod) {
@@ -115,12 +108,13 @@ sealed class RequestMethod {
     data class Get(val query: List<Pair<String, String>>) : RequestMethod()
 }
 
-inline fun <reified Req> BaseApi.getRequestBuilder(
+inline fun <reified Req> BaseOpenApi.getRequestBuilder(
     endPoint: String,
     request: Req? = null,
-    requestMethod: RequestMethod,
-    authenticationRequired: Boolean = true
+    requestMethod: RequestMethod
 ): HttpRequestBuilder {
+    val api = this
+
     return HttpRequestBuilder()
         .apply {
             url {
@@ -133,8 +127,8 @@ inline fun <reified Req> BaseApi.getRequestBuilder(
             }
             setBody(request)
             headers {
-                if (authenticationRequired) {
-                    bearer(token = requestor.authToken)
+                if (api is BaseApi) {
+                    bearer(token = api.requestor.authToken)
                 }
             }
         }
