@@ -14,6 +14,7 @@ import com.safehill.kclient.network.WebSocketApi
 import com.safehill.kclient.network.local.LocalServerInterface
 import com.safehill.kclient.network.remote.RemoteServer
 import com.safehill.kclient.network.remote.RemoteServerEnvironment
+import com.safehill.kclient.util.Provider
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
@@ -145,12 +146,11 @@ class SafehillClient private constructor(
             logger = safehillLogger
             return SafehillClient(
                 serverProxy = ServerProxyImpl(
-                    localServer = localServer,
+                    localServerProvider = Provider { localServer },
                     remoteServer = RemoteServer(
-                        requestor = currentUser,
+                        userProvider = Provider { currentUser },
                         client = getHttpClient(safehillLogger)
-                    ),
-                    requestor = currentUser
+                    )
                 ),
                 webSocketApi = WebSocketApi(
                     socketUrl = buildWsURL()

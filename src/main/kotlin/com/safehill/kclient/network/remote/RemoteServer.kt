@@ -55,6 +55,7 @@ import com.safehill.kclient.network.api.reaction.ReactionApiImpl
 import com.safehill.kclient.network.api.thread.ThreadApi
 import com.safehill.kclient.network.api.thread.ThreadApiImpl
 import com.safehill.kclient.network.remote.S3Proxy.Companion.fetchAssets
+import com.safehill.kclient.util.Provider
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -74,9 +75,10 @@ class RemoteServer private constructor(
     AuthApi by AuthApiImpl(baseApi),
     BaseApi by baseApi {
 
-    constructor(requestor: LocalUser, client: HttpClient) : this(
+    constructor(userProvider: Provider<LocalUser>, client: HttpClient) : this(
         object : BaseApi {
-            override val requestor: LocalUser = requestor
+            override val requestor: LocalUser
+                get() = userProvider.get()
             override val client: HttpClient = client
         }
     )
