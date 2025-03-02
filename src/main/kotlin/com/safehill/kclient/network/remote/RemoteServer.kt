@@ -1,7 +1,7 @@
 package com.safehill.kclient.network.remote
 
-import com.safehill.SafehillClient
 import com.safehill.kclient.base64.base64EncodedString
+import com.safehill.kclient.logging.SafehillLogger
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetDescriptorUploadState
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
@@ -66,7 +66,8 @@ import java.time.format.DateTimeFormatter
 import java.util.Base64
 
 class RemoteServer private constructor(
-    private val baseApi: BaseApi
+    private val baseApi: BaseApi,
+    private val safehillLogger: SafehillLogger
 ) : SafehillApi,
     AuthorizationApi by AuthorizationApiImpl(baseApi),
     GroupApi by GroupApiImpl(baseApi),
@@ -75,12 +76,17 @@ class RemoteServer private constructor(
     AuthApi by AuthApiImpl(baseApi),
     BaseApi by baseApi {
 
-    constructor(userProvider: Provider<LocalUser>, client: HttpClient) : this(
-        object : BaseApi {
+    constructor(
+        userProvider: Provider<LocalUser>,
+        client: HttpClient,
+        safehillLogger: SafehillLogger
+    ) : this(
+        baseApi = object : BaseApi {
             override val requestor: LocalUser
                 get() = userProvider.get()
             override val client: HttpClient = client
-        }
+        },
+        safehillLogger = safehillLogger
     )
 
     override suspend fun sendCodeToUser(
@@ -327,7 +333,7 @@ class RemoteServer private constructor(
                         }
                         serverAssetVersion.presignedURL to encryptedVersion
                     } catch (_: NoSuchElementException) {
-                        SafehillClient.logger.log(
+                        safehillLogger.log(
                             "no server asset provided for version ${encryptedVersion.quality.value}"
                         )
                         null
@@ -348,7 +354,7 @@ class RemoteServer private constructor(
                             AssetDescriptorUploadState.Completed
                         )
                     } catch (exception: Exception) {
-                        SafehillClient.logger.error(
+                        safehillLogger.error(
                             exception.message
                                 ?: "Error while marking asset ${asset.globalIdentifier} ${encryptedVersion.quality}"
                         )

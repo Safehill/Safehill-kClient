@@ -5,24 +5,23 @@ import com.safehill.kclient.errors.CipherError
 import com.safehill.kclient.errors.DownloadError
 import com.safehill.kclient.models.SymmetricKey
 import com.safehill.kclient.models.assets.AssetDescriptor
-import com.safehill.kclient.models.assets.AssetDescriptorsCache
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.DecryptedAsset
 import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.assets.toDecryptedAsset
+import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.local.EncryptionHelper
 import com.safehill.kclient.util.runCatchingPreservingCancellationException
 
 class LocalAssetsStoreController(
-    safehillClient: SafehillClient,
+    private val safehillClient: SafehillClient,
     private var encryptionHelper: EncryptionHelper,
-    private val assetDescriptorsCache: AssetDescriptorsCache
 ) {
     private val serverProxy = safehillClient.serverProxy
-    private val currentUser = safehillClient.currentUser
     private val userController = safehillClient.userController
+    private val assetDescriptorsCache = safehillClient.assetDescriptorCache
 
     suspend fun getAsset(
         globalIdentifier: AssetGlobalIdentifier,
@@ -42,7 +41,9 @@ class LocalAssetsStoreController(
                         ?.also(assetDescriptorsCache::upsertAssetDescriptor)
                         ?: throw DownloadError.AssetDescriptorNotFound(globalIdentifier)
                 }
+            val currentUser = safehillClient.userProvider.get()
             val senderUser = getSenderUser(
+                currentUser = currentUser,
                 descriptor = assetDescriptor
             )
             val encryptedAsset = downloadAsset(
@@ -71,6 +72,7 @@ class LocalAssetsStoreController(
     }
 
     private suspend fun getSenderUser(
+        currentUser: LocalUser,
         descriptor: AssetDescriptor,
     ): ServerUser {
         val senderUserIdentifier = descriptor.sharingInfo.sharedByUserIdentifier

@@ -2,13 +2,13 @@ package com.safehill.kclient.controllers
 
 import com.safehill.kclient.models.SymmetricKey
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
-import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
+import com.safehill.kclient.models.users.UserProvider
 import com.safehill.kclient.network.ServerProxy
 import java.util.Base64
 
 class EncryptionDetailsController(
-    val currentUser: LocalUser,
+    private val userProvider: UserProvider,
     val serverProxy: ServerProxy
 ) {
     fun getRecipientEncryptionDetails(
@@ -16,6 +16,7 @@ class EncryptionDetailsController(
         secretKey: SymmetricKey
     ): List<RecipientEncryptionDetailsDTO> {
         return users.map { user ->
+            val currentUser = userProvider.get()
             val shareable = currentUser.shareable(
                 data = secretKey.secretKeySpec.encoded,
                 with = user,

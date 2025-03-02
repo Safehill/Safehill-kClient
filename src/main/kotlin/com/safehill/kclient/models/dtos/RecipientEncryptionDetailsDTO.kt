@@ -1,6 +1,5 @@
 package com.safehill.kclient.models.dtos
 
-import com.safehill.SafehillClient
 import com.safehill.kclient.SafehillCypher
 import com.safehill.kclient.base64.decodeBase64
 import com.safehill.kclient.models.SafehillPublicKey
@@ -36,7 +35,6 @@ data class RecipientEncryptionDetailsDTO(
             )
         )
     } catch (e: Exception) {
-        SafehillClient.logger.error("Could not derive symmetric key with user $currentUser and encryptionDetails $this")
         null
     }
 

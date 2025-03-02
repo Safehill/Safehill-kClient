@@ -1,6 +1,5 @@
 package com.safehill.kclient.tasks.outbound
 
-import com.safehill.kclient.controllers.UserInteractionController
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAsset
@@ -19,6 +18,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -40,14 +40,6 @@ class UploadOperationImpl(
 
     override val user: LocalUser
         get() = serverProxy.requestor
-
-    init {
-        scope.launch {
-            outboundQueueItemManager.loadOutboundQueueItems().forEach {
-                outboundQueueItems.send(it)
-            }
-        }
-    }
 
     override suspend fun enqueueUpload(
         localAsset: LocalAsset,
@@ -98,7 +90,10 @@ class UploadOperationImpl(
         }
     }
 
-    private suspend fun shareIfRecipientsExist(outboundQueueItem: OutboundQueueItem, globalIdentifier: String) {
+    private suspend fun shareIfRecipientsExist(
+        outboundQueueItem: OutboundQueueItem,
+        globalIdentifier: String
+    ) {
         if (outboundQueueItem.recipients.isNotEmpty()) {
             scope.launch {
                 enqueueShareItem(
@@ -200,7 +195,10 @@ class UploadOperationImpl(
         }
     }
 
-    private fun notifyListenersFinishedUploading(outboundQueueItem: OutboundQueueItem, globalIdentifier: String) {
+    private fun notifyListenersFinishedUploading(
+        outboundQueueItem: OutboundQueueItem,
+        globalIdentifier: String
+    ) {
         listeners.forEach {
             outboundQueueItem.localAsset?.let { localAsset ->
                 it.finishedUploading(
@@ -250,7 +248,10 @@ class UploadOperationImpl(
         }
     }
 
-    private suspend fun handleUploadException(outboundQueueItem: OutboundQueueItem, exception: Exception) {
+    private suspend fun handleUploadException(
+        outboundQueueItem: OutboundQueueItem,
+        exception: Exception
+    ) {
         println(exception.localizedMessage)
         when (exception) {
             is SafehillError.ClientError.Conflict -> {
@@ -261,6 +262,7 @@ class UploadOperationImpl(
                     return
                 }
             }
+
             is SafehillError.ClientError.BadRequest,
             SafehillError.ClientError.Unauthorized,
             SafehillError.ClientError.PaymentRequired -> {
@@ -281,9 +283,18 @@ class UploadOperationImpl(
         notifyListenersStartedSharing(outboundQueueItem)
         try {
             for (recipient in outboundQueueItem.recipients) {
-                val (_, sharablePayload) = encrypter.getSharablePayload(outboundQueueItem, user, recipient)
+                val (_, sharablePayload) = encrypter.getSharablePayload(
+                    outboundQueueItem,
+                    user,
+                    recipient
+                )
 
-                serverShare(outboundQueueItem, recipient, sharablePayload, outboundQueueItem.threadId!!)
+                serverShare(
+                    outboundQueueItem,
+                    recipient,
+                    sharablePayload,
+                    outboundQueueItem.threadId!!
+                )
             }
         } catch (e: Exception) {
             //TODO better exception handling
@@ -355,16 +366,26 @@ class UploadOperationImpl(
     override fun stop() {}
 
     override suspend fun run() {
-        for(queueItem in outboundQueueItems) {
-            when (queueItem.operationType) {
-                OutboundQueueItem.OperationType.Upload -> {
-                    this.upload(queueItem)
-                }
-                OutboundQueueItem.OperationType.Share -> {
-                    this.share(queueItem)
+        coroutineScope {
+            launch {
+                outboundQueueItemManager.loadOutboundQueueItems().forEach {
+                    outboundQueueItems.send(it)
                 }
             }
-            outboundQueueItemManager.removeOutboundQueueItem(queueItem)
+            launch {
+                for (queueItem in outboundQueueItems) {
+                    when (queueItem.operationType) {
+                        OutboundQueueItem.OperationType.Upload -> {
+                            upload(queueItem)
+                        }
+
+                        OutboundQueueItem.OperationType.Share -> {
+                            share(queueItem)
+                        }
+                    }
+                    outboundQueueItemManager.removeOutboundQueueItem(queueItem)
+                }
+            }
         }
     }
 
