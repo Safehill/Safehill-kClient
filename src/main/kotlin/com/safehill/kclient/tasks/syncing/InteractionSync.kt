@@ -16,13 +16,11 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 class InteractionSync(
-    interactionSyncListeners: List<InteractionSyncListener>,
     private val serverProxy: ServerProxy,
     private val webSocketApi: WebSocketApi
 ) : BackgroundTask {
 
-    private val interactionSyncListener =
-        InteractionSyncListenerListDelegate(interactionSyncListeners)
+    private val interactionSyncListeners = InteractionSyncListenerListDelegate()
 
     private val singleTaskExecutor = SingleTaskExecutor()
 
@@ -67,11 +65,11 @@ class InteractionSync(
 
     private suspend fun ThreadUpdatedDTO.handleThreadUpdate() {
         serverProxy.localServer.updateThread(this)
-        interactionSyncListener.didUpdateThread(this)
+        interactionSyncListeners.didUpdateThread(this)
     }
 
     private suspend fun ThreadCreated.notifyCreationOfThread() {
-        interactionSyncListener.didAddThread(
+        interactionSyncListeners.didAddThread(
             threadDTO = thread
         ).also {
             serverProxy.localServer.createOrUpdateThread(
@@ -81,14 +79,14 @@ class InteractionSync(
     }
 
     private suspend fun ThreadAssets.notifyNewAssetInThread() {
-        interactionSyncListener.didReceivePhotoMessages(
+        interactionSyncListeners.didReceivePhotoMessages(
             threadId = threadId,
             conversationThreadAssetDtos = assets
         )
     }
 
     private suspend fun TextMessage.notifyTextMessage() {
-        interactionSyncListener.didReceiveTextMessages(
+        interactionSyncListeners.didReceiveTextMessages(
             messageDtos = listOf(this.toMessageDTO()),
             anchorId = this.anchorId,
             anchor = anchorType
@@ -117,7 +115,7 @@ class InteractionSync(
             interactionsSummary
                 .onSuccess { interactionsSummaryDTO ->
                     launch {
-                        interactionSyncListener.didFetchRemoteGroupSummary(interactionsSummaryDTO.summaryByGroupId)
+                        interactionSyncListeners.didFetchRemoteGroupSummary(interactionsSummaryDTO.summaryByGroupId)
                     }
                     launch {
                         val allThreads =
@@ -129,11 +127,23 @@ class InteractionSync(
                         )
                     }
                     launch {
-                        interactionSyncListener.didFetchRemoteThreadSummary(
+                        interactionSyncListeners.didFetchRemoteThreadSummary(
                             interactionsSummaryDTO.summaryByThreadId
                         )
                     }
                 }
+        }
+    }
+
+    fun addListener(listener: InteractionSyncListener) {
+        synchronized(interactionSyncListeners) {
+            interactionSyncListeners.add(listener)
+        }
+    }
+
+    fun removeListener(listener: InteractionSyncListener) {
+        synchronized(interactionSyncListeners) {
+            interactionSyncListeners.remove(listener)
         }
     }
 
