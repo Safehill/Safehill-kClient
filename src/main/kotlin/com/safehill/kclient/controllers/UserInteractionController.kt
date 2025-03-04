@@ -195,11 +195,19 @@ class UserInteractionController internal constructor(
         phoneNumbersToAdd: List<String> = listOf(),
         phoneNumbersToRemove: List<String> = listOf()
     ): Result<Unit> {
+        val currentThread: ConversationThreadOutputDTO
         return runCatchingPreservingCancellationException {
+            val currentUser = userProvider.get()
+            currentThread = serverProxy.retrieveThread(threadId = threadId)
+                ?: throw InteractionErrors.ThreadNotFound(threadId)
+            val symmetricKey = currentThread.encryptionDetails.getSymmetricKey(currentUser)
+                ?: throw InteractionErrors.MissingE2EEDetails(
+                    anchorId = threadId,
+                    anchor = InteractionAnchor.THREAD
+                )
             val encryptionDetails = encryptionDetailsController.getRecipientEncryptionDetails(
                 users = usersToAdd,
-                //todo fix get symmetric key of thread.
-                secretKey = SymmetricKey()
+                secretKey = symmetricKey
             )
             serverProxy.updateThreadMembers(
                 threadId = threadId,
@@ -210,8 +218,6 @@ class UserInteractionController internal constructor(
             )
         }.recoverCatching { exception ->
             if (exception is SafehillError.ClientError.Conflict) {
-                val currentThread = serverProxy.retrieveThread(threadId = threadId)
-                    ?: throw InteractionErrors.ThreadNotFound(threadId)
                 with(currentThread) {
                     val newUserIdentifiers = membersPublicIdentifier.toSet()
                         .plus(usersToAdd.map { it.identifier })
