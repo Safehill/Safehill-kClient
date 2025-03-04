@@ -13,7 +13,7 @@ import com.safehill.kclient.models.assets.toDecryptedAsset
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.local.EncryptionHelper
-import com.safehill.kclient.util.runCatchingPreservingCancellationException
+import com.safehill.kclient.util.runCatchingSafe
 
 class LocalAssetsStoreController(
     private val safehillClient: SafehillClient,
@@ -29,7 +29,7 @@ class LocalAssetsStoreController(
         descriptor: AssetDescriptor? = null,
         cacheAfterFetch: Boolean
     ): Result<DecryptedAsset> {
-        return runCatchingPreservingCancellationException {
+        return runCatchingSafe {
             val assetDescriptor =
                 descriptor ?: assetDescriptorsCache.getDescriptor(globalIdentifier) ?: run {
                     val descriptors = serverProxy.getAssetDescriptors(

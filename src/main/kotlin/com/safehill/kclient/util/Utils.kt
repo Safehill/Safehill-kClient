@@ -7,7 +7,7 @@ import kotlin.contracts.contract
 import kotlin.coroutines.cancellation.CancellationException
 
 @OptIn(ExperimentalContracts::class)
-inline fun <T> runCatchingPreservingCancellationException(
+inline fun <T> runCatchingSafe(
     block: () -> T
 ): Result<T> {
     contract {
@@ -25,7 +25,7 @@ inline fun <T> runCatchingPreservingCancellationException(
 
 suspend inline fun <T> safeApiCall(crossinline invoke: suspend () -> T): Result<T> {
     return withContext(Dispatchers.IO) {
-        runCatchingPreservingCancellationException {
+        runCatchingSafe {
             invoke()
         }
     }

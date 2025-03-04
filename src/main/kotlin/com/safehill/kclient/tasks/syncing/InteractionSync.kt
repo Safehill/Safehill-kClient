@@ -11,7 +11,7 @@ import com.safehill.kclient.models.dtos.websockets.WebSocketMessage
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.WebSocketApi
 import com.safehill.kclient.tasks.BackgroundTask
-import com.safehill.kclient.util.runCatchingPreservingCancellationException
+import com.safehill.kclient.util.runCatchingSafe
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
@@ -109,7 +109,7 @@ class InteractionSync(
 
     private suspend fun syncThreadInteractionSummary() {
         coroutineScope {
-            val interactionsSummary = runCatchingPreservingCancellationException {
+            val interactionsSummary = runCatchingSafe {
                 serverProxy.topLevelInteractionsSummary()
             }
             interactionsSummary

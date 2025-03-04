@@ -20,7 +20,7 @@ import com.safehill.kclient.network.exceptions.SafehillError
 import com.safehill.kclient.network.local.LocalServerInterface
 import com.safehill.kclient.network.remote.RemoteServer
 import com.safehill.kclient.util.Provider
-import com.safehill.kclient.util.runCatchingPreservingCancellationException
+import com.safehill.kclient.util.runCatchingSafe
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -86,7 +86,7 @@ class ServerProxyImpl(
 
 
     override suspend fun topLevelInteractionsSummary(): InteractionsSummaryDTO {
-        return runCatchingPreservingCancellationException {
+        return runCatchingSafe {
             remoteServer.topLevelInteractionsSummary().also {
                 storeInteractionSummary(it)
             }
@@ -116,7 +116,7 @@ class ServerProxyImpl(
         usersIdentifiers: List<UserIdentifier>,
         phoneNumbers: List<String>
     ): ConversationThreadOutputDTO? {
-        return runCatchingPreservingCancellationException {
+        return runCatchingSafe {
             remoteServer.retrieveThread(
                 usersIdentifiers = usersIdentifiers,
                 phoneNumbers = phoneNumbers
@@ -208,7 +208,7 @@ class ServerProxyImpl(
         return coroutineScope {
             globalIdentifiersAndQualities.map { (globalIdentifier, assetQualities) ->
                 async {
-                    runCatchingPreservingCancellationException {
+                    runCatchingSafe {
                         remoteServer.getAssets(
                             globalIdentifiers = listOf(globalIdentifier),
                             versions = assetQualities

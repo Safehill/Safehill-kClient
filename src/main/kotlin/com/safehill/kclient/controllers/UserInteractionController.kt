@@ -19,7 +19,7 @@ import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.models.users.UserProvider
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.exceptions.SafehillError
-import com.safehill.kclient.util.runCatchingPreservingCancellationException
+import com.safehill.kclient.util.runCatchingSafe
 import com.safehill.kclient.util.safeApiCall
 
 /**
@@ -121,7 +121,7 @@ class UserInteractionController internal constructor(
         reactionType: ReactionType,
         groupId: GroupId
     ): Result<ReactionOutputDTO> {
-        return runCatchingPreservingCancellationException {
+        return runCatchingSafe {
             serverProxy.addReactions(
                 reactions = listOf(
                     ReactionInputDTO(
@@ -139,7 +139,7 @@ class UserInteractionController internal constructor(
         reactionType: ReactionType,
         groupId: GroupId
     ): Result<Unit> {
-        return runCatchingPreservingCancellationException {
+        return runCatchingSafe {
             serverProxy.removeReaction(
                 reaction = RemoveReactionInputDTO(
                     reactionType = reactionType.toServerValue(),
@@ -155,7 +155,7 @@ class UserInteractionController internal constructor(
         anchorId: String,
         interactionAnchor: InteractionAnchor
     ): SymmetricKey? {
-        return runCatchingPreservingCancellationException {
+        return runCatchingSafe {
             val currentUser = userProvider.get()
             val encryptionDetails: RecipientEncryptionDetailsDTO? = when (interactionAnchor) {
                 InteractionAnchor.THREAD -> {
@@ -171,13 +171,13 @@ class UserInteractionController internal constructor(
     }
 
     suspend fun deleteThread(threadId: String): Result<Unit> {
-        return runCatchingPreservingCancellationException {
+        return runCatchingSafe {
             serverProxy.deleteThread(threadId = threadId)
         }
     }
 
     suspend fun leaveThread(threadId: String): Result<Unit> {
-        return runCatchingPreservingCancellationException {
+        return runCatchingSafe {
             val currentUser = userProvider.get()
             updateThreadMembers(
                 threadId = threadId,
@@ -196,7 +196,7 @@ class UserInteractionController internal constructor(
         phoneNumbersToRemove: List<String> = listOf()
     ): Result<Unit> {
         val currentThread: ConversationThreadOutputDTO
-        return runCatchingPreservingCancellationException {
+        return runCatchingSafe {
             val currentUser = userProvider.get()
             currentThread = serverProxy.retrieveThread(threadId = threadId)
                 ?: throw InteractionErrors.ThreadNotFound(threadId)
