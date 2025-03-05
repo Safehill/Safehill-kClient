@@ -1,10 +1,12 @@
 package com.safehill.kclient.tasks.inbound
 
 import com.safehill.kclient.models.assets.AssetDescriptor
+import com.safehill.kclient.models.assets.AssetDescriptorsCache
 import com.safehill.kclient.tasks.BackgroundTask
 
-abstract class AbstractDownloadOperation : DownloadOperation, BackgroundTask {
-
+abstract class AbstractDownloadOperation(
+    private val assetDescriptorsCache: AssetDescriptorsCache
+) : DownloadOperation, BackgroundTask {
     abstract suspend fun getDescriptors(): List<AssetDescriptor>
 
     override suspend fun run() {
@@ -21,7 +23,7 @@ abstract class AbstractDownloadOperation : DownloadOperation, BackgroundTask {
     }
 
     private fun processAssetsInDescriptors(descriptors: List<AssetDescriptor>) {
-        safehillClient.assetDescriptorCache.upsertAssetDescriptors(descriptors)
+        assetDescriptorsCache.upsertAssetDescriptors(descriptors)
 
         // Will this be redundant listener?
         // Can we collect asset descriptors from descriptors cache?

@@ -8,12 +8,14 @@ import com.safehill.kclient.models.assets.LocalAsset
 import com.safehill.kclient.models.assets.ShareableEncryptedAssetImpl
 import com.safehill.kclient.models.assets.ShareableEncryptedAssetVersionImpl
 import com.safehill.kclient.models.dtos.AssetOutputDTO
-import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
+import com.safehill.kclient.models.users.UserProvider
+import com.safehill.kclient.models.users.getOrNull
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.exceptions.SafehillError
 import com.safehill.kcrypto.models.ShareablePayload
+import com.safehill.safehillclient.sdk.platform.UserModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -22,17 +24,19 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.util.UUID
 
-//todo remove this coupling from android and client.
-interface ThreadStateRegistryInterface {
-    suspend fun upsertThreadStates(threadDtos: List<ConversationThreadOutputDTO>)
-}
-
 class UploadOperationImpl(
     val serverProxy: ServerProxy,
     override val listeners: MutableList<UploadOperationListener>,
     private val encrypter: AssetEncrypterInterface,
-    private val outboundQueueItemManager: OutboundQueueItemManagerInterface,
+    private val userModule: UserModule,
+    private val userProvider: UserProvider
 ) : UploadOperation {
+
+    private val outboundQueueItemManager: OutboundQueueItemManagerInterface?
+        get() {
+            val currentUser = userProvider.getOrNull() ?: return null
+            return userModule.getOutboundQueueItemManager(currentUser)
+        }
 
     private val outboundQueueItems: Channel<OutboundQueueItem> = Channel(Channel.UNLIMITED)
     private val job = Job()
@@ -41,7 +45,7 @@ class UploadOperationImpl(
     override val user: LocalUser
         get() = serverProxy.requestor
 
-    override suspend fun enqueueUpload(
+    override fun enqueueUpload(
         localAsset: LocalAsset,
         assetQualities: Array<AssetQuality>,
         groupId: GroupId,
@@ -63,7 +67,7 @@ class UploadOperationImpl(
                     threadId = threadId
                 )
                 outboundQueueItems.send(item)
-                outboundQueueItemManager.addOutboundQueueItem(item)
+                outboundQueueItemManager?.addOutboundQueueItem(item)
             }
         }
     }
@@ -127,7 +131,7 @@ class UploadOperationImpl(
             threadId = threadId
         )
         outboundQueueItems.send(item)
-        outboundQueueItemManager.addOutboundQueueItem(item)
+        outboundQueueItemManager?.addOutboundQueueItem(item)
     }
 
     private suspend fun upload(outboundQueueItem: OutboundQueueItem) {
@@ -273,7 +277,7 @@ class UploadOperationImpl(
         // Move the item to the end of the queue and reduce the number of remaining retries
         scope.launch {
             outboundQueueItems.send(outboundQueueItem)
-            outboundQueueItemManager.addOutboundQueueItem(outboundQueueItem)
+            outboundQueueItemManager?.addOutboundQueueItem(outboundQueueItem)
         }
     }
 
@@ -368,25 +372,30 @@ class UploadOperationImpl(
     override suspend fun run() {
         coroutineScope {
             launch {
-                outboundQueueItemManager.loadOutboundQueueItems().forEach {
-                    outboundQueueItems.send(it)
-                }
-            }
-            launch {
-                for (queueItem in outboundQueueItems) {
-                    when (queueItem.operationType) {
-                        OutboundQueueItem.OperationType.Upload -> {
-                            upload(queueItem)
-                        }
-
-                        OutboundQueueItem.OperationType.Share -> {
-                            share(queueItem)
-                        }
+                launch {
+                    outboundQueueItemManager?.loadOutboundQueueItems()?.forEach {
+                        outboundQueueItems.send(it)
                     }
-                    outboundQueueItemManager.removeOutboundQueueItem(queueItem)
+                }
+                launch {
+                    for (queueItem in outboundQueueItems) {
+                        when (queueItem.operationType) {
+                            OutboundQueueItem.OperationType.Upload -> {
+                                upload(queueItem)
+                            }
+
+                            OutboundQueueItem.OperationType.Share -> {
+                                share(queueItem)
+                            }
+                        }
+                        outboundQueueItemManager?.removeOutboundQueueItem(queueItem)
+                    }
+                }
+            }.invokeOnCompletion {
+                while (true) {
+                    outboundQueueItems.tryReceive().getOrNull() ?: break
                 }
             }
         }
     }
-
 }

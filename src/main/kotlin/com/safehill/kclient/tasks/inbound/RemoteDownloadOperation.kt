@@ -1,13 +1,16 @@
 package com.safehill.kclient.tasks.inbound
 
-import com.safehill.SafehillClient
 import com.safehill.kclient.models.assets.AssetDescriptor
+import com.safehill.kclient.models.assets.AssetDescriptorsCache
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
+import com.safehill.kclient.network.ServerProxy
 
 class RemoteDownloadOperation(
-    override val safehillClient: SafehillClient,
-    override val listeners: List<DownloadOperationListener>,
-) : AbstractDownloadOperation() {
+    assetDescriptorsCache: AssetDescriptorsCache,
+    private val serverProxy: ServerProxy,
+) : AbstractDownloadOperation(assetDescriptorsCache) {
+
+    override val listeners: List<DownloadOperationListener> = mutableListOf()
 
     companion object {
         var alreadyProcessed = mutableListOf<AssetGlobalIdentifier>()
@@ -15,8 +18,8 @@ class RemoteDownloadOperation(
 
     override suspend fun getDescriptors(): List<AssetDescriptor> {
         val remoteDescriptors =
-            safehillClient.serverProxy.remoteServer.getAssetDescriptors(after = null)
-        val globalIdentifiersInLocalServer = safehillClient.serverProxy.localServer
+            serverProxy.remoteServer.getAssetDescriptors(after = null)
+        val globalIdentifiersInLocalServer = serverProxy.localServer
             .getAssetDescriptors(after = null)
             .map { it.globalIdentifier }
         val filteredDescriptors = remoteDescriptors

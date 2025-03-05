@@ -1,20 +1,16 @@
 package com.safehill.kclient.models.assets
 
-import com.safehill.kclient.models.users.UserProvider
-import com.safehill.kclient.models.users.getOrNull
 import com.safehill.utils.flow.mapState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
-class AssetDescriptorsCache(
-    private val userProvider: UserProvider
-) {
+class AssetDescriptorsCache {
+
     private val _assetDescriptors =
         MutableStateFlow(mapOf<AssetGlobalIdentifier, AssetDescriptor>())
 
     val assetDescriptors = _assetDescriptors.mapState { assetDescriptorMap ->
-        assetDescriptorMap.values
-            .filter { it.isSharedWithCurrentUser() }
+        assetDescriptorMap.values.toList()
     }
 
     fun upsertAssetDescriptor(assetDescriptor: AssetDescriptor) {
@@ -34,9 +30,4 @@ class AssetDescriptorsCache(
     fun clearAssetDescriptors() {
         _assetDescriptors.update { mapOf() }
     }
-
-    private fun AssetDescriptor.isSharedWithCurrentUser() =
-        this.sharingInfo.groupIdsByRecipientUserIdentifier.any {
-            it.key == userProvider.getOrNull()?.identifier
-        }
 }

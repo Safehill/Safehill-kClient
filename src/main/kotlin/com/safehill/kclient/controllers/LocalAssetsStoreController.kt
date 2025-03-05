@@ -1,10 +1,9 @@
 package com.safehill.kclient.controllers
 
-import com.safehill.SafehillClient
 import com.safehill.kclient.errors.CipherError
 import com.safehill.kclient.errors.DownloadError
-import com.safehill.kclient.models.SymmetricKey
 import com.safehill.kclient.models.assets.AssetDescriptor
+import com.safehill.kclient.models.assets.AssetDescriptorsCache
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.DecryptedAsset
@@ -12,16 +11,17 @@ import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.assets.toDecryptedAsset
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
-import com.safehill.kclient.network.local.EncryptionHelper
+import com.safehill.kclient.models.users.UserProvider
+import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.util.runCatchingSafe
 
 class LocalAssetsStoreController(
-    private val safehillClient: SafehillClient,
-    private var encryptionHelper: EncryptionHelper,
+    private val serverProxy: ServerProxy,
+    private val userController: UserController,
+    private val assetDescriptorsCache: AssetDescriptorsCache,
+    private val userProvider: UserProvider
 ) {
-    private val serverProxy = safehillClient.serverProxy
-    private val userController = safehillClient.userController
-    private val assetDescriptorsCache = safehillClient.assetDescriptorCache
+
 
     suspend fun getAsset(
         globalIdentifier: AssetGlobalIdentifier,
@@ -41,7 +41,7 @@ class LocalAssetsStoreController(
                         ?.also(assetDescriptorsCache::upsertAssetDescriptor)
                         ?: throw DownloadError.AssetDescriptorNotFound(globalIdentifier)
                 }
-            val currentUser = safehillClient.userProvider.get()
+            val currentUser = userProvider.get()
             val senderUser = getSenderUser(
                 currentUser = currentUser,
                 descriptor = assetDescriptor
@@ -84,18 +84,6 @@ class LocalAssetsStoreController(
             ).getOrThrow()
             usersDict[senderUserIdentifier] ?: throw CipherError.UnexpectedData(usersDict)
         }
-    }
-
-
-    suspend fun encryptionKey(globalIdentifier: AssetGlobalIdentifier): SymmetricKey? {
-        return encryptionHelper.getEncryptionKey(globalIdentifier)
-    }
-
-    suspend fun saveEncryptionKey(
-        globalIdentifier: AssetGlobalIdentifier,
-        symmetricKey: SymmetricKey
-    ) {
-        encryptionHelper.saveEncryptionKey(globalIdentifier, symmetricKey)
     }
 
 }
