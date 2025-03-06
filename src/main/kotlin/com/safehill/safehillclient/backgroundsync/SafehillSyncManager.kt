@@ -21,7 +21,7 @@ import kotlin.time.Duration.Companion.seconds
 class SafehillSyncManager(
     private val backgroundTasksRegistry: BackgroundTasksRegistry,
     private val userScope: UserScope
-) : UploadOperationListenerAbstract() {
+) : UploadOperationListenerAbstract(), UserObserver {
 
     private val singleTaskExecutor = SingleTaskExecutor()
 
@@ -41,7 +41,7 @@ class SafehillSyncManager(
         backgroundTasksRegistry.uploadOperation.listeners.add(this)
     }
 
-    fun startBackgroundSync(currentUser: LocalUser) {
+    private fun startBackgroundSync() {
         userScope.launch {
             launch {
                 remoteDownloadProcessor.run(
@@ -85,5 +85,11 @@ class SafehillSyncManager(
             }
         }
     }
+
+    override suspend fun userSet(user: LocalUser) {
+        startBackgroundSync()
+    }
+
+    override fun clearUser(clearPersistence: Boolean) {}
 
 }

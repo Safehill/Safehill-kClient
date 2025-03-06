@@ -80,6 +80,3 @@ class ClientModule(
         currentUser.set(null)
     }
 }
-
-val ClientModule.serverProxy
-    get() = this.networkModule.serverProxy

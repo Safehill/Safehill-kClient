@@ -24,6 +24,16 @@ val SafehillClient.backgroundTasksRegistry
 val SafehillClient.uploadOperation
     get() = this.backgroundTasksRegistry.uploadOperation
 
+// Network Module dependencies
+
+val SafehillClient.remoteServerEnvironment: RemoteServerEnvironment
+    get() = networkModule.remoteServerEnvironment
+
+val SafehillClient.serverProxy
+    get() = this.networkModule.serverProxy
+
+val SafehillClient.webSocketApi
+    get() = this.networkModule.webSocketApi
 
 // Repositories
 val SafehillClient.userDiscoveryRepository
@@ -36,12 +46,6 @@ val SafehillClient.userAuthorizationRepository
     get() = this.repositories.userAuthorizationRepository
 
 // Dependencies
-
-val SafehillClient.remoteServerEnvironment: RemoteServerEnvironment
-    get() = networkModule.remoteServerEnvironment
-
-val SafehillClient.serverProxy
-    get() = networkModule.serverProxy
 
 fun SafehillClient.getGroupIdLink(groupId: GroupId): String {
     val (schema: String, host: String) = "https://" to this.remoteServerEnvironment.hostName

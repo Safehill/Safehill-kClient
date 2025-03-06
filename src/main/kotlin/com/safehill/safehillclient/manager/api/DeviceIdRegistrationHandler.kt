@@ -6,7 +6,6 @@ import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.util.safeApiCall
 import com.safehill.safehillclient.manager.dependencies.UserObserver
 import com.safehill.safehillclient.module.client.ClientModule
-import com.safehill.safehillclient.module.client.serverProxy
 import com.safehill.safehillclient.utils.api.deviceid.DeviceIdProvider
 
 class DeviceIdRegistrationHandler(
@@ -15,7 +14,7 @@ class DeviceIdRegistrationHandler(
     private val safehillLogger: SafehillLogger
 ) : UserObserver {
 
-    suspend fun registerDeviceId() {
+    private suspend fun registerDeviceId() {
         val remoteResult = safeApiCall {
             serverProxy.registerDevice(
                 deviceId = deviceIdProvider.getDeviceID(),
@@ -37,14 +36,16 @@ class DeviceIdRegistrationHandler(
 
     override fun clearUser(clearPersistence: Boolean) {}
 
-    class Factory(private val clientModule: ClientModule) {
+    class Factory(
+        private val clientModule: ClientModule
+    ) {
+
         fun create(): DeviceIdRegistrationHandler {
             return DeviceIdRegistrationHandler(
-                serverProxy = clientModule.serverProxy,
+                serverProxy = clientModule.networkModule.serverProxy,
                 deviceIdProvider = clientModule.platformModule.deviceIdProvider,
                 safehillLogger = clientModule.platformModule.safehillLogger
             )
         }
     }
-
 }
