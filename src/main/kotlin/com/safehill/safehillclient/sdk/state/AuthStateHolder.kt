@@ -11,7 +11,7 @@ class AuthStateHolder {
     private val _authState = MutableStateFlow<AuthState>(AuthState.NoUser)
     val authState = _authState.asStateFlow()
 
-    val currentUser = _authState.map { (it as? AuthState.SignedOn)?.user }
+    val authenticatedUser = _authState.map { (it as? AuthState.SignedOn)?.user }
 
     fun setAuthState(state: AuthState) {
         _authState.update { state }

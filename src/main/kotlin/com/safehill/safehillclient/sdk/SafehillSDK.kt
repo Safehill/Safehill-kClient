@@ -30,8 +30,9 @@ class SafehillSDK(
 
     suspend fun signIn(user: LocalUser): Result<SignInResponse> {
         return runCatching {
-            if (authStateHolder.currentUser.first()?.identifier == user.identifier) {
-                SignInResponse.SuccessWithUnknownMetadata
+            val currentUser = authStateHolder.authenticatedUser.first()
+            if (currentUser?.identifier == user.identifier) {
+                SignInResponse.SuccessWithUnknownMetadata(currentUser)
             } else {
                 authStateHolder.setAuthState(AuthState.Loading)
                 val response = authApi.signIn(user = user)
