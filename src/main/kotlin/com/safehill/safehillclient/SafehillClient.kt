@@ -6,9 +6,9 @@ import com.safehill.kclient.network.api.auth.AuthApi
 import com.safehill.safehillclient.error.UserContextMismatch
 import com.safehill.safehillclient.manager.ClientManager
 import com.safehill.safehillclient.model.SignInResponse
-import com.safehill.safehillclient.module.client.ClientModule
 import com.safehill.safehillclient.model.auth.state.AuthState
 import com.safehill.safehillclient.model.auth.state.AuthStateHolder
+import com.safehill.safehillclient.module.client.ClientModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import java.util.concurrent.atomic.AtomicReference
@@ -24,7 +24,7 @@ class SafehillClient(
 
     private val currentUserId = AtomicReference<String?>(null)
 
-    private val clientManager = ClientManager(clientModule)
+    private val clientManager = ClientManager.Factory(clientModule).create()
 
     val repositories = clientManager.repositories
 

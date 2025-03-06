@@ -6,11 +6,11 @@ import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.util.Provider
 import com.safehill.safehillclient.backgroundsync.ClientOptions
 import com.safehill.safehillclient.backgroundsync.SafehillBackgroundTasksRegistryFactory
+import com.safehill.safehillclient.factory.NetworkModuleFactory
 import com.safehill.safehillclient.manager.dependencies.UserObserver
 import com.safehill.safehillclient.module.asset.AssetModule
 import com.safehill.safehillclient.module.platform.PlatformModule
 import com.safehill.safehillclient.module.platform.UserModule
-import com.safehill.safehillclient.factory.NetworkModuleFactory
 import kotlinx.coroutines.CoroutineScope
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicReference
@@ -28,7 +28,7 @@ class UserObserverRegistry : UserObserver {
         userObservers.remove(userObserver)
     }
 
-    override fun userSet(user: LocalUser) {
+    override suspend fun userSet(user: LocalUser) {
         userObservers.forEach { it.userSet(user) }
     }
 
@@ -36,7 +36,6 @@ class UserObserverRegistry : UserObserver {
         userObservers.forEach { it.clearUser(clearPersistence) }
     }
 }
-
 
 
 class ClientModule(
@@ -73,7 +72,7 @@ class ClientModule(
         userProvider = userProvider
     ).create()
 
-    override fun userSet(user: LocalUser) {
+    override suspend fun userSet(user: LocalUser) {
         currentUser.set(user)
     }
 
@@ -81,3 +80,6 @@ class ClientModule(
         currentUser.set(null)
     }
 }
+
+val ClientModule.serverProxy
+    get() = this.networkModule.serverProxy

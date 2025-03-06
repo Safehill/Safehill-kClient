@@ -42,7 +42,7 @@ class SdkRepositories private constructor(
         repositoriesFactory.createUserDiscoveryRepository()
     }
 
-    override fun userSet(user: LocalUser) {
+    override suspend fun userSet(user: LocalUser) {
         userAuthorizationRepository.userSet(user)
         threadsRepository.userSet(user)
     }
@@ -52,8 +52,11 @@ class SdkRepositories private constructor(
         threadsRepository.clearUser(clearPersistence)
     }
 
-    class Factory {
-        fun create(clientModule: ClientModule): Repositories {
+    class Factory(
+        private val clientModule: ClientModule
+    ) {
+
+        fun create(): Repositories {
             return with(clientModule) {
                 SdkRepositories(
                     backgroundTaskRegistry = backgroundTasksRegistry,

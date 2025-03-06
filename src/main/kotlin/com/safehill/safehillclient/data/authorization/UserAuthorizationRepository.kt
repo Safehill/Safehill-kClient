@@ -89,7 +89,7 @@ class UserAuthorizationRepository(
         }
     }
 
-    override fun userSet(user: LocalUser) {
+    override suspend fun userSet(user: LocalUser) {
         getUnAuthorizedAndBlockedUsers()
         listenForNewAuthorizationEvents()
     }

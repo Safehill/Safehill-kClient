@@ -202,7 +202,7 @@ class ThreadsRepository(
         }
     }
 
-    override fun userSet(user: LocalUser) {
+    override suspend fun userSet(user: LocalUser) {
         syncThreadsWithServer()
         interactionSync.addListener(this)
     }
