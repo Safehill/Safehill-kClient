@@ -12,7 +12,7 @@ import com.safehill.kclient.models.users.UserProvider
 import com.safehill.kclient.network.local.EncryptionHelper
 import com.safehill.kclient.utils.ImageResizerInterface
 import com.safehill.kcrypto.models.ShareablePayload
-import com.safehill.safehillclient.sdk.platform.UserModule
+import com.safehill.safehillclient.platform.UserModule
 
 class AssetEncrypter(
     private val resizer: ImageResizerInterface,

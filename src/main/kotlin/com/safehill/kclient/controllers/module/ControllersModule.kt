@@ -6,8 +6,8 @@ import com.safehill.kclient.controllers.LocalAssetsStoreController
 import com.safehill.kclient.controllers.UserController
 import com.safehill.kclient.controllers.UserInteractionController
 import com.safehill.kclient.models.users.UserProvider
-import com.safehill.safehillclient.sdk.backgroundsync.NetworkModule
-import com.safehill.safehillclient.sdk.module.asset.AssetModule
+import com.safehill.safehillclient.backgroundsync.NetworkModule
+import com.safehill.safehillclient.module.asset.AssetModule
 
 class ControllersModule(
     private val userProvider: UserProvider,
