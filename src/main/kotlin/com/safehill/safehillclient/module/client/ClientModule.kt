@@ -12,31 +12,9 @@ import com.safehill.safehillclient.module.asset.AssetModule
 import com.safehill.safehillclient.module.platform.PlatformModule
 import com.safehill.safehillclient.module.platform.UserModule
 import kotlinx.coroutines.CoroutineScope
-import java.util.Collections
 import java.util.concurrent.atomic.AtomicReference
 
 internal typealias UserScope = CoroutineScope
-
-class UserObserverRegistry : UserObserver {
-    private val userObservers = Collections.synchronizedList(mutableListOf<UserObserver>())
-
-    fun addUserObserver(userObserver: UserObserver) {
-        userObservers.add(userObserver)
-    }
-
-    fun removeUserObserver(userObserver: UserObserver) {
-        userObservers.remove(userObserver)
-    }
-
-    override suspend fun userSet(user: LocalUser) {
-        userObservers.forEach { it.userSet(user) }
-    }
-
-    override fun clearUser(clearPersistence: Boolean) {
-        userObservers.forEach { it.clearUser(clearPersistence) }
-    }
-}
-
 
 class ClientModule(
     networkModuleFactory: NetworkModuleFactory,

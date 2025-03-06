@@ -4,10 +4,10 @@ import com.safehill.kclient.models.users.LocalUser
 import com.safehill.safehillclient.backgroundsync.SafehillSyncManager
 import com.safehill.safehillclient.manager.api.DeviceIdRegistrationHandler
 import com.safehill.safehillclient.manager.api.SocketManager
+import com.safehill.safehillclient.data.user.api.UserObserverRegistry
 import com.safehill.safehillclient.manager.dependencies.SdkRepositories
 import com.safehill.safehillclient.manager.dependencies.UserObserver
 import com.safehill.safehillclient.module.client.ClientModule
-import com.safehill.safehillclient.module.client.UserObserverRegistry
 
 class ClientManager(
     private val clientModule: ClientModule,

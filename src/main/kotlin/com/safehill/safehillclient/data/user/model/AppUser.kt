@@ -1,4 +1,4 @@
-package com.safehill.safehillclient.model.user
+package com.safehill.safehillclient.data.user.model
 
 import com.safehill.kclient.models.LocalCryptoUser
 import com.safehill.kclient.models.users.LocalUser

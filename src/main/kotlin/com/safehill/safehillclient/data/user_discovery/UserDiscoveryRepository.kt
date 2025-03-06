@@ -2,8 +2,8 @@ package com.safehill.safehillclient.data.user_discovery
 
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.util.safeApiCall
-import com.safehill.safehillclient.model.user.AppUser
-import com.safehill.safehillclient.model.user.toAppUser
+import com.safehill.safehillclient.data.user.model.AppUser
+import com.safehill.safehillclient.data.user.model.toAppUser
 import com.safehill.safehillclient.utils.api.dispatchers.SdkDispatchers
 import kotlinx.coroutines.withContext
 

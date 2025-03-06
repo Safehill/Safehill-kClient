@@ -6,7 +6,7 @@ import com.safehill.safehillclient.data.message.model.Message
 import com.safehill.safehillclient.data.message.model.MessageType
 import com.safehill.safehillclient.data.message.model.MessagesContainer
 import com.safehill.safehillclient.data.message.model.MutableMessagesContainer
-import com.safehill.safehillclient.model.user.AppUser
+import com.safehill.safehillclient.data.user.model.AppUser
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

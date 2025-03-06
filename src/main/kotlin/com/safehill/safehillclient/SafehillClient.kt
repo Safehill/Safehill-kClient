@@ -63,7 +63,7 @@ class SafehillClient(
     }
 
     suspend fun signOut(clearPersistence: Boolean) {
-        clientModule.clearUser(clearPersistence = clearPersistence)
+        clientManager.clearUser(clearPersistence = clearPersistence)
         authStateHolder.setAuthState(AuthState.SignedOff)
     }
 

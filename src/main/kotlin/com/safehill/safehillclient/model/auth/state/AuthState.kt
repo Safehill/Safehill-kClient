@@ -1,7 +1,7 @@
 package com.safehill.safehillclient.model.auth.state
 
 import com.safehill.kclient.models.users.LocalUser
-import com.safehill.safehillclient.model.user.toAppUser
+import com.safehill.safehillclient.data.user.model.toAppUser
 
 sealed class AuthState {
     data class SignedOn(val user: LocalUser) : AuthState() {

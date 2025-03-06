@@ -16,7 +16,7 @@ import com.safehill.safehillclient.data.message.model.Message
 import com.safehill.safehillclient.data.message.model.MessageStatus
 import com.safehill.safehillclient.data.message.model.MessageType
 import com.safehill.safehillclient.data.threads.model.MutableThreadState
-import com.safehill.safehillclient.model.user.toAppUser
+import com.safehill.safehillclient.data.user.model.toAppUser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.time.Instant
