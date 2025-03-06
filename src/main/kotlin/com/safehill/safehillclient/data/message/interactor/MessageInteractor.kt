@@ -1,4 +1,4 @@
-package com.safehill.safehillclient.data.threads.interactor
+package com.safehill.safehillclient.data.message.interactor
 
 import com.safehill.kclient.controllers.UserInteractionController
 import com.safehill.kclient.models.dtos.MessageOutputDTO
@@ -6,13 +6,13 @@ import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.models.users.UserProvider
 import com.safehill.kclient.models.users.getOrNull
 import com.safehill.kclient.util.runCatchingSafe
-import com.safehill.safehillclient.data.threads.model.Message
-import com.safehill.safehillclient.data.threads.model.MessageStatus
-import com.safehill.safehillclient.data.threads.model.MessageType
-import com.safehill.safehillclient.data.threads.model.MessagesContainer
-import com.safehill.safehillclient.data.threads.model.MutableMessagesContainer
-import com.safehill.safehillclient.data.threads.model.toMessage
-import com.safehill.safehillclient.module.sdk.UserScope
+import com.safehill.safehillclient.data.message.model.Message
+import com.safehill.safehillclient.data.message.model.MessageStatus
+import com.safehill.safehillclient.data.message.model.MessageType
+import com.safehill.safehillclient.data.message.model.MessagesContainer
+import com.safehill.safehillclient.data.message.model.MutableMessagesContainer
+import com.safehill.safehillclient.data.message.model.toMessage
+import com.safehill.safehillclient.module.client.UserScope
 import com.safehill.safehillclient.utils.extensions.errorMsg
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch

@@ -1,4 +1,4 @@
-package com.safehill.safehillclient.state
+package com.safehill.safehillclient.model.auth.state
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

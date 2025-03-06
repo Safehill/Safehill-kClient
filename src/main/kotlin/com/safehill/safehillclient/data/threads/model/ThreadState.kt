@@ -2,7 +2,11 @@ package com.safehill.safehillclient.data.threads.model
 
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.users.UserIdentifier
-import com.safehill.safehillclient.model.AppUser
+import com.safehill.safehillclient.data.message.model.Message
+import com.safehill.safehillclient.data.message.model.MessageType
+import com.safehill.safehillclient.data.message.model.MessagesContainer
+import com.safehill.safehillclient.data.message.model.MutableMessagesContainer
+import com.safehill.safehillclient.model.user.AppUser
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

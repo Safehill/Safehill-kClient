@@ -1,4 +1,4 @@
-package com.safehill.safehillclient.serverproxy
+package com.safehill.safehillclient.factory
 
 import com.safehill.kclient.models.users.UserProvider
 import com.safehill.kclient.network.ServerProxyImpl
@@ -8,8 +8,8 @@ import com.safehill.kclient.network.remote.RemoteServer
 import com.safehill.kclient.network.remote.RemoteServerEnvironment
 import com.safehill.kclient.util.Provider
 import com.safehill.safehillclient.backgroundsync.NetworkModule
-import com.safehill.safehillclient.platform.PlatformModule
-import com.safehill.safehillclient.platform.UserModule
+import com.safehill.safehillclient.module.platform.PlatformModule
+import com.safehill.safehillclient.module.platform.UserModule
 import io.ktor.client.HttpClient
 import io.ktor.http.Url
 import java.util.concurrent.ConcurrentHashMap

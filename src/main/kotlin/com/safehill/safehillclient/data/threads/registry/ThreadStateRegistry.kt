@@ -7,7 +7,7 @@ import com.safehill.kclient.models.users.UserProvider
 import com.safehill.kclient.models.users.getOrNull
 import com.safehill.safehillclient.data.threads.model.MutableThreadState
 import com.safehill.safehillclient.data.threads.model.ThreadState
-import com.safehill.safehillclient.model.toAppUser
+import com.safehill.safehillclient.model.user.toAppUser
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

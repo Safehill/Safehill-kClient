@@ -2,10 +2,10 @@ package com.safehill.safehillclient.manager
 
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.safehillclient.backgroundsync.SafehillSyncManager
-import com.safehill.safehillclient.dependencies.SdkRepositories
-import com.safehill.safehillclient.dependencies.UserObserver
-import com.safehill.safehillclient.module.sdk.ClientModule
-import com.safehill.safehillclient.module.sdk.UserObserverRegistry
+import com.safehill.safehillclient.manager.dependencies.SdkRepositories
+import com.safehill.safehillclient.manager.dependencies.UserObserver
+import com.safehill.safehillclient.module.client.ClientModule
+import com.safehill.safehillclient.module.client.UserObserverRegistry
 
 class ClientManager(
     private val clientModule: ClientModule

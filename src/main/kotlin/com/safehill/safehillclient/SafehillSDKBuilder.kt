@@ -5,11 +5,11 @@ import com.safehill.kclient.network.api.auth.AuthApiImpl
 import com.safehill.kclient.network.remote.RemoteServerEnvironment
 import com.safehill.kclient.utils.setupBouncyCastle
 import com.safehill.safehillclient.backgroundsync.ClientOptions
-import com.safehill.safehillclient.module.sdk.ClientModule
-import com.safehill.safehillclient.platform.PlatformModule
-import com.safehill.safehillclient.platform.UserModule
-import com.safehill.safehillclient.serverproxy.HttpClientFactory
-import com.safehill.safehillclient.serverproxy.NetworkModuleFactory
+import com.safehill.safehillclient.module.client.ClientModule
+import com.safehill.safehillclient.module.platform.PlatformModule
+import com.safehill.safehillclient.module.platform.UserModule
+import com.safehill.safehillclient.factory.HttpClientFactory
+import com.safehill.safehillclient.factory.NetworkModuleFactory
 import io.ktor.client.HttpClient
 import io.ktor.http.URLBuilder
 import io.ktor.http.URLProtocol

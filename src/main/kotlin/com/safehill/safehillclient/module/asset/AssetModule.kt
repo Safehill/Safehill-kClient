@@ -4,8 +4,8 @@ import com.safehill.kclient.models.assets.AssetDescriptorsCache
 import com.safehill.kclient.models.users.UserProvider
 import com.safehill.kclient.tasks.outbound.AssetEncrypter
 import com.safehill.safehillclient.asset.AssetsUploadPipelineStateHolder
-import com.safehill.safehillclient.platform.PlatformModule
-import com.safehill.safehillclient.platform.UserModule
+import com.safehill.safehillclient.module.platform.PlatformModule
+import com.safehill.safehillclient.module.platform.UserModule
 
 class AssetModule(
     private val platformModule: PlatformModule,

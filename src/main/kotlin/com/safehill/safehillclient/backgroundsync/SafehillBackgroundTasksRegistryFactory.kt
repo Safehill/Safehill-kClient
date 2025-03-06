@@ -13,7 +13,7 @@ import com.safehill.kclient.tasks.outbound.UploadOperationImpl
 import com.safehill.kclient.tasks.syncing.InteractionSync
 import com.safehill.safehillclient.ClientScope
 import com.safehill.safehillclient.module.asset.AssetModule
-import com.safehill.safehillclient.platform.UserModule
+import com.safehill.safehillclient.module.platform.UserModule
 import com.safehill.safehillclient.utils.api.dispatchers.SdkDispatchers
 import com.safehill.safehillclient.utils.extensions.createChildScope
 import kotlinx.coroutines.CoroutineExceptionHandler

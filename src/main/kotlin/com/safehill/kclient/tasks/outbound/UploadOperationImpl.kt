@@ -15,7 +15,7 @@ import com.safehill.kclient.models.users.getOrNull
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.exceptions.SafehillError
 import com.safehill.kcrypto.models.ShareablePayload
-import com.safehill.safehillclient.platform.UserModule
+import com.safehill.safehillclient.module.platform.UserModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

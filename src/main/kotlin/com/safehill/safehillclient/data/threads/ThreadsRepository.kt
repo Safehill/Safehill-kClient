@@ -18,9 +18,9 @@ import com.safehill.safehillclient.data.threads.interactor.ThreadStateInteractor
 import com.safehill.safehillclient.data.threads.model.Thread
 import com.safehill.safehillclient.data.threads.model.ThreadState
 import com.safehill.safehillclient.data.threads.registry.ThreadStateRegistry
-import com.safehill.safehillclient.dependencies.UserObserver
-import com.safehill.safehillclient.model.AppUser
-import com.safehill.safehillclient.model.toServerUser
+import com.safehill.safehillclient.manager.dependencies.UserObserver
+import com.safehill.safehillclient.model.user.AppUser
+import com.safehill.safehillclient.model.user.toServerUser
 import com.safehill.safehillclient.utils.extensions.createChildScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

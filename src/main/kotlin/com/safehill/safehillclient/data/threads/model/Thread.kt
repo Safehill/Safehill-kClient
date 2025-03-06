@@ -1,7 +1,7 @@
 package com.safehill.safehillclient.data.threads.model
 
 import com.safehill.kclient.models.users.UserIdentifier
-import com.safehill.safehillclient.model.AppUser
+import com.safehill.safehillclient.model.user.AppUser
 import java.time.Instant
 
 data class Thread(

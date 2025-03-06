@@ -1,4 +1,4 @@
-package com.safehill.safehillclient.serverproxy
+package com.safehill.safehillclient.factory
 
 import com.safehill.kclient.logging.SafehillLogger
 import com.safehill.kclient.network.remote.RemoteServerEnvironment

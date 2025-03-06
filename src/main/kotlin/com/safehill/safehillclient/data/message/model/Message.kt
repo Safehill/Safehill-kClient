@@ -1,4 +1,4 @@
-package com.safehill.safehillclient.data.threads.model
+package com.safehill.safehillclient.data.message.model
 
 import com.safehill.kclient.SafehillCypher
 import com.safehill.kclient.base64.decodeBase64

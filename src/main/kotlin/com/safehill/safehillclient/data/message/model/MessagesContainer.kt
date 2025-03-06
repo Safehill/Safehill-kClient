@@ -1,4 +1,4 @@
-package com.safehill.safehillclient.data.threads.model
+package com.safehill.safehillclient.data.message.model
 
 import com.safehill.safehillclient.utils.api.paginateable.DefaultPaginateable
 import com.safehill.safehillclient.utils.api.paginateable.Paginateable

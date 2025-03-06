@@ -1,4 +1,4 @@
-package com.safehill.safehillclient.dependencies
+package com.safehill.safehillclient.manager.dependencies
 
 import com.safehill.safehillclient.data.authorization.UserAuthorizationRepository
 import com.safehill.safehillclient.data.threads.ThreadsRepository

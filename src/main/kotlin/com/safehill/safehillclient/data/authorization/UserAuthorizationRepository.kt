@@ -8,10 +8,10 @@ import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.WebSocketApi
 import com.safehill.kclient.tasks.syncing.InteractionSync
 import com.safehill.kclient.util.safeApiCall
-import com.safehill.safehillclient.dependencies.UserObserver
-import com.safehill.safehillclient.model.AppUser
-import com.safehill.safehillclient.model.toAppUser
-import com.safehill.safehillclient.module.sdk.UserScope
+import com.safehill.safehillclient.manager.dependencies.UserObserver
+import com.safehill.safehillclient.model.user.AppUser
+import com.safehill.safehillclient.model.user.toAppUser
+import com.safehill.safehillclient.module.client.UserScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update

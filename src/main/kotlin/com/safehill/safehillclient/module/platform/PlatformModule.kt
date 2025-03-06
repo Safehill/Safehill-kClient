@@ -1,4 +1,4 @@
-package com.safehill.safehillclient.platform
+package com.safehill.safehillclient.module.platform
 
 import com.safehill.kclient.logging.DefaultSafehillLogger
 import com.safehill.kclient.logging.SafehillLogger

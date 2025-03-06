@@ -13,7 +13,7 @@ import com.safehill.kclient.tasks.outbound.UploadOperation
 import com.safehill.kclient.tasks.outbound.UploadOperationListenerAbstract
 import com.safehill.kclient.tasks.syncing.InteractionSync
 import com.safehill.kclient.tasks.syncing.SingleTaskExecutor
-import com.safehill.safehillclient.module.sdk.UserScope
+import com.safehill.safehillclient.module.client.UserScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
