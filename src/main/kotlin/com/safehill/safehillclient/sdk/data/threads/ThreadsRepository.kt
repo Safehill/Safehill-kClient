@@ -60,7 +60,7 @@ class ThreadsRepository(
         .map { it.values.toList() }
         .toThreads()
         .map { threads -> threads.sortedByDescending { it.lastActiveTime } }
-        .stateIn(clientOptions.sdkScope, SharingStarted.Eagerly, listOf())
+        .stateIn(clientOptions.clientScope, SharingStarted.Eagerly, listOf())
 
 
     private fun syncThreadsWithServer(): Job {

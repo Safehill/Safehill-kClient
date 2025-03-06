@@ -6,17 +6,17 @@ import com.safehill.kclient.network.api.auth.AuthApi
 import com.safehill.safehillclient.sdk.error.UserContextMismatch
 import com.safehill.safehillclient.sdk.model.SignInResponse
 import com.safehill.safehillclient.sdk.module.sdk.ClientManager
-import com.safehill.safehillclient.sdk.module.sdk.SdkModule
+import com.safehill.safehillclient.sdk.module.sdk.ClientModule
 import com.safehill.safehillclient.sdk.state.AuthState
 import com.safehill.safehillclient.sdk.state.AuthStateHolder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import java.util.concurrent.atomic.AtomicReference
 
-typealias SDKScope = CoroutineScope
+typealias ClientScope = CoroutineScope
 
-class SafehillSDK(
-    val sdkModule: SdkModule,
+class SafehillClient(
+    val clientModule: ClientModule,
     private val authApi: AuthApi
 ) {
 
@@ -24,7 +24,7 @@ class SafehillSDK(
 
     private val currentUserId = AtomicReference<String?>(null)
 
-    private val clientManager = ClientManager(sdkModule)
+    private val clientManager = ClientManager(clientModule)
 
     val repositories = clientManager.repositories
 
@@ -63,7 +63,7 @@ class SafehillSDK(
     }
 
     suspend fun signOut(clearPersistence: Boolean) {
-        sdkModule.clearUser(clearPersistence = clearPersistence)
+        clientModule.clearUser(clearPersistence = clearPersistence)
         authStateHolder.setAuthState(AuthState.SignedOff)
     }
 

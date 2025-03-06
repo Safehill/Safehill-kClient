@@ -11,7 +11,7 @@ import com.safehill.kclient.tasks.inbound.RemoteDownloadOperation
 import com.safehill.kclient.tasks.outbound.UploadOperation
 import com.safehill.kclient.tasks.outbound.UploadOperationImpl
 import com.safehill.kclient.tasks.syncing.InteractionSync
-import com.safehill.safehillclient.sdk.SDKScope
+import com.safehill.safehillclient.sdk.ClientScope
 import com.safehill.safehillclient.sdk.module.asset.AssetModule
 import com.safehill.safehillclient.sdk.platform.UserModule
 import com.safehill.safehillclient.sdk.utils.api.dispatchers.SdkDispatchers
@@ -27,12 +27,12 @@ class ClientOptions(
         io = Dispatchers.IO,
         default = Dispatchers.Default
     ),
-    val sdkScope: SDKScope = CoroutineScope(
+    val clientScope: ClientScope = CoroutineScope(
         SupervisorJob() + sdkDispatchers.io + CoroutineExceptionHandler { coroutineContext, throwable ->
             safehillLogger.error("Exception in coroutine scope: coroutineContext=$coroutineContext, throwable=$throwable")
         }
     ),
-    val userScope: CoroutineScope = sdkScope.createChildScope { SupervisorJob(it) }
+    val userScope: CoroutineScope = clientScope.createChildScope { SupervisorJob(it) }
 )
 
 class NetworkModule(

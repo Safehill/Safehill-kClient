@@ -7,7 +7,7 @@ import com.safehill.kclient.utils.setupBouncyCastle
 import com.safehill.safehillclient.sdk.backgroundsync.ClientOptions
 import com.safehill.safehillclient.sdk.factory.serverproxy.HttpClientFactory
 import com.safehill.safehillclient.sdk.factory.serverproxy.NetworkModuleFactory
-import com.safehill.safehillclient.sdk.module.sdk.SdkModule
+import com.safehill.safehillclient.sdk.module.sdk.ClientModule
 import com.safehill.safehillclient.sdk.platform.PlatformModule
 import com.safehill.safehillclient.sdk.platform.UserModule
 import io.ktor.client.HttpClient
@@ -22,7 +22,7 @@ class SafehillSDKBuilder(
     private val configureHttpClient: HttpClient.() -> Unit = { }
 ) {
 
-    fun build(): SafehillSDK {
+    fun build(): SafehillClient {
         setupBouncyCastle()
         val httpClient = HttpClientFactory(
             safehillLogger = platformModule.safehillLogger,
@@ -39,14 +39,14 @@ class SafehillSDKBuilder(
             platformModule = platformModule,
             userModule = userModule
         )
-        val sdkModule = SdkModule(
+        val clientModule = ClientModule(
             platformModule = platformModule,
             clientOptions = clientOptions,
             userModule = userModule,
             networkModuleFactory = networkModuleFactory
         )
-        return SafehillSDK(
-            sdkModule = sdkModule,
+        return SafehillClient(
+            clientModule = clientModule,
             authApi = AuthApiImpl(baseOpenApi)
         )
     }

@@ -2,48 +2,48 @@ package com.safehill.safehillclient.sdk.utils.extensions
 
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.network.remote.RemoteServerEnvironment
-import com.safehill.safehillclient.sdk.SafehillSDK
+import com.safehill.safehillclient.sdk.SafehillClient
 
-val SafehillSDK.userProvider
-    get() = sdkModule.userProvider
+val SafehillClient.userProvider
+    get() = clientModule.userProvider
 
 // Modules
-val SafehillSDK.networkModule
-    get() = sdkModule.networkModule
+val SafehillClient.networkModule
+    get() = clientModule.networkModule
 
-val SafehillSDK.assetModule
-    get() = sdkModule.assetModule
+val SafehillClient.assetModule
+    get() = clientModule.assetModule
 
-val SafehillSDK.controllersModule
-    get() = sdkModule.controllersModule
+val SafehillClient.controllersModule
+    get() = clientModule.controllersModule
 
-val SafehillSDK.backgroundTasksRegistry
-    get() = sdkModule.backgroundTasksRegistry
+val SafehillClient.backgroundTasksRegistry
+    get() = clientModule.backgroundTasksRegistry
 
 // Background Tasks
-val SafehillSDK.uploadOperation
+val SafehillClient.uploadOperation
     get() = this.backgroundTasksRegistry.uploadOperation
 
 
 // Repositories
-val SafehillSDK.userDiscoveryRepository
+val SafehillClient.userDiscoveryRepository
     get() = this.repositories.userDiscoveryRepository
 
-val SafehillSDK.threadsRepository
+val SafehillClient.threadsRepository
     get() = this.repositories.threadsRepository
 
-val SafehillSDK.userAuthorizationRepository
+val SafehillClient.userAuthorizationRepository
     get() = this.repositories.userAuthorizationRepository
 
 // Dependencies
 
-val SafehillSDK.remoteServerEnvironment: RemoteServerEnvironment
+val SafehillClient.remoteServerEnvironment: RemoteServerEnvironment
     get() = networkModule.remoteServerEnvironment
 
-val SafehillSDK.serverProxy
+val SafehillClient.serverProxy
     get() = networkModule.serverProxy
 
-fun SafehillSDK.getGroupIdLink(groupId: GroupId): String {
+fun SafehillClient.getGroupIdLink(groupId: GroupId): String {
     val (schema: String, host: String) = "https://" to this.remoteServerEnvironment.hostName
     return "$schema$host/sng/share/$groupId"
 }

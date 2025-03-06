@@ -10,7 +10,7 @@ import com.safehill.safehillclient.sdk.data.authorization.UserAuthorizationRepos
 import com.safehill.safehillclient.sdk.data.threads.ThreadsRepository
 import com.safehill.safehillclient.sdk.data.threads.factory.RepositoriesFactory
 import com.safehill.safehillclient.sdk.data.user_discovery.UserDiscoveryRepository
-import com.safehill.safehillclient.sdk.module.sdk.SdkModule
+import com.safehill.safehillclient.sdk.module.sdk.ClientModule
 
 class SdkRepositories private constructor(
     backgroundTaskRegistry: BackgroundTasksRegistry,
@@ -53,8 +53,8 @@ class SdkRepositories private constructor(
     }
 
     class Factory {
-        fun create(sdkModule: SdkModule): Repositories {
-            return with(sdkModule) {
+        fun create(clientModule: ClientModule): Repositories {
+            return with(clientModule) {
                 SdkRepositories(
                     backgroundTaskRegistry = backgroundTasksRegistry,
                     clientOptions = clientOptions,

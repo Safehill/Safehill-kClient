@@ -41,32 +41,32 @@ class UserObserverRegistry : UserObserver {
 
 
 class ClientManager(
-    private val sdkModule: SdkModule
+    private val clientModule: ClientModule
 ) : UserObserver {
 
-    val repositories = SdkRepositories.Factory().create(sdkModule)
+    val repositories = SdkRepositories.Factory().create(clientModule)
 
     private val observerRegistry = UserObserverRegistry().apply {
         addUserObserver(repositories)
     }
 
     val safehillSyncManager: SafehillSyncManager = SafehillSyncManager(
-        backgroundTasksRegistry = sdkModule.backgroundTasksRegistry,
-        userScope = sdkModule.clientOptions.userScope
+        backgroundTasksRegistry = clientModule.backgroundTasksRegistry,
+        userScope = clientModule.clientOptions.userScope
     )
 
     override fun userSet(user: LocalUser) {
-        sdkModule.userSet(user)
+        clientModule.userSet(user)
         observerRegistry.userSet(user)
     }
 
     override fun clearUser(clearPersistence: Boolean) {
         observerRegistry.clearUser(clearPersistence)
-        sdkModule.clearUser(clearPersistence)
+        clientModule.clearUser(clearPersistence)
     }
 }
 
-class SdkModule(
+class ClientModule(
     networkModuleFactory: NetworkModuleFactory,
     val clientOptions: ClientOptions,
     val platformModule: PlatformModule,
