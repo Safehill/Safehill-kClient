@@ -45,8 +45,12 @@ val SafehillClient.threadsRepository
 val SafehillClient.userAuthorizationRepository
     get() = this.repositories.userAuthorizationRepository
 
-// Dependencies
 
+// Auth States
+val SafehillClient.authState
+    get() = this.authStateHolder.authState
+
+// Dependencies
 fun SafehillClient.getGroupIdLink(groupId: GroupId): String {
     val (schema: String, host: String) = "https://" to this.remoteServerEnvironment.hostName
     return "$schema$host/sng/share/$groupId"
