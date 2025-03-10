@@ -10,6 +10,7 @@ class UserDataManager(
     private val userModule: UserModule,
     private val sdkDispatchers: SdkDispatchers
 ) {
+
     suspend fun clear(localUser: LocalUser) {
         withContext(sdkDispatchers.io) {
             userModule.getLocalServer(localUser).clear()
