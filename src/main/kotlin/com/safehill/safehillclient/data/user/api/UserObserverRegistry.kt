@@ -8,11 +8,15 @@ class UserObserverRegistry : UserObserver {
     private val userObservers = Collections.synchronizedList(mutableListOf<UserObserver>())
 
     fun addUserObserver(userObserver: UserObserver) {
-        userObservers.add(userObserver)
+        synchronized(userObservers) {
+            userObservers.add(userObserver)
+        }
     }
 
     fun removeUserObserver(userObserver: UserObserver) {
-        userObservers.remove(userObserver)
+        synchronized(userObservers) {
+            userObservers.remove(userObserver)
+        }
     }
 
     override suspend fun userSet(user: LocalUser) {
