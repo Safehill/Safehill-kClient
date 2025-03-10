@@ -11,6 +11,7 @@ import com.safehill.safehillclient.manager.dependencies.UserObserver
 import com.safehill.safehillclient.module.asset.AssetModule
 import com.safehill.safehillclient.module.platform.PlatformModule
 import com.safehill.safehillclient.module.platform.UserModule
+import com.safehill.safehillclient.utils.extensions.cancelChildren
 import kotlinx.coroutines.CoroutineScope
 import java.util.concurrent.atomic.AtomicReference
 
@@ -55,6 +56,7 @@ class ClientModule(
     }
 
     override fun clearUser(clearPersistence: Boolean) {
+        clientOptions.userScope.cancelChildren()
         currentUser.set(null)
     }
 }
