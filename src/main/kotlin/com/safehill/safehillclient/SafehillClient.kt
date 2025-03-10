@@ -64,6 +64,8 @@ class SafehillClient(
 
     suspend fun signOut(clearPersistence: Boolean) {
         clientManager.clearUser(clearPersistence = clearPersistence)
+        clientModule.clearUser(clearPersistence)
+        currentUserId.set(null)
         authStateHolder.setAuthState(AuthState.SignedOff)
     }
 
@@ -78,6 +80,7 @@ class SafehillClient(
     }
 
     private suspend fun setUserToSdk(user: LocalUser) {
+        clientModule.userSet(user)
         clientManager.userSet(user)
         currentUserId.set(user.identifier)
     }
