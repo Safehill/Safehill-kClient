@@ -7,6 +7,7 @@ import com.safehill.kclient.utils.setupBouncyCastle
 import com.safehill.safehillclient.backgroundsync.ClientOptions
 import com.safehill.safehillclient.factory.HttpClientFactory
 import com.safehill.safehillclient.factory.NetworkModuleFactory
+import com.safehill.safehillclient.manager.ClientManager
 import com.safehill.safehillclient.module.client.ClientModule
 import com.safehill.safehillclient.module.platform.PlatformModule
 import com.safehill.safehillclient.module.platform.UserModule
@@ -47,7 +48,8 @@ class SafehillClientBuilder(
         )
         return SafehillClient(
             clientModule = clientModule,
-            authApi = AuthApiImpl(baseOpenApi)
+            authApi = AuthApiImpl(baseOpenApi),
+            clientManager = ClientManager.Factory(clientModule).create()
         )
     }
 

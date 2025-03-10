@@ -16,16 +16,15 @@ typealias ClientScope = CoroutineScope
 
 class SafehillClient(
     val clientModule: ClientModule,
-    private val authApi: AuthApi
+    private val authApi: AuthApi,
+    private val clientManager: ClientManager
 ) {
 
     val authStateHolder = AuthStateHolder()
 
-    private val currentUserId = AtomicReference<String?>(null)
-
-    private val clientManager = ClientManager.Factory(clientModule).create()
-
     val repositories = clientManager.repositories
+
+    private val currentUserId = AtomicReference<String?>(null)
 
     suspend fun signIn(user: LocalUser): Result<SignInResponse> {
         return runCatching {
