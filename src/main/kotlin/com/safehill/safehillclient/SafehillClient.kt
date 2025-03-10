@@ -42,7 +42,7 @@ class SafehillClient(
                 SignInResponse.Success(authResponseDTO = response)
             }
         }.onFailure {
-            signOut(clearPersistence = false)
+            signOut()
             authStateHolder.setAuthState(AuthState.SignedOff)
         }
     }
@@ -62,9 +62,9 @@ class SafehillClient(
         }
     }
 
-    suspend fun signOut(clearPersistence: Boolean) {
-        clientManager.clearUser(clearPersistence = clearPersistence)
-        clientModule.clearUser(clearPersistence)
+    suspend fun signOut() {
+        clientManager.userLoggedOut()
+        clientModule.userLoggedOut()
         currentUserId.set(null)
         authStateHolder.setAuthState(AuthState.SignedOff)
     }
@@ -76,12 +76,12 @@ class SafehillClient(
         } else if (currentUserId != user.identifier) {
             throw UserContextMismatch()
         }
-        signOut(clearPersistence = true)
+        signOut()
     }
 
     private suspend fun setUserToSdk(user: LocalUser) {
-        clientModule.userSet(user)
-        clientManager.userSet(user)
+        clientModule.userLoggedIn(user)
+        clientManager.userLoggedIn(user)
         currentUserId.set(user.identifier)
     }
 }

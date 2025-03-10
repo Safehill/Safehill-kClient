@@ -8,9 +8,9 @@ import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.WebSocketApi
 import com.safehill.kclient.tasks.syncing.InteractionSync
 import com.safehill.kclient.util.safeApiCall
-import com.safehill.safehillclient.manager.dependencies.UserObserver
 import com.safehill.safehillclient.data.user.model.AppUser
 import com.safehill.safehillclient.data.user.model.toAppUser
+import com.safehill.safehillclient.manager.dependencies.UserObserver
 import com.safehill.safehillclient.module.client.UserScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -89,12 +89,12 @@ class UserAuthorizationRepository(
         }
     }
 
-    override suspend fun userSet(user: LocalUser) {
+    override suspend fun userLoggedIn(user: LocalUser) {
         getUnAuthorizedAndBlockedUsers()
         listenForNewAuthorizationEvents()
     }
 
-    override fun clearUser(clearPersistence: Boolean) {
+    override fun userLoggedOut() {
         _unAuthorizedUsers.update { emptyList() }
         _blockedUsers.update { emptyList() }
     }

@@ -14,7 +14,7 @@ class SocketManager(
     private val deviceIdProvider: DeviceIdProvider
 ) : UserObserver {
 
-    override suspend fun userSet(user: LocalUser) {
+    override suspend fun userLoggedIn(user: LocalUser) {
         userScope.launch {
             webSocketApi.connectToSocket(
                 currentUser = user,
@@ -23,9 +23,8 @@ class SocketManager(
         }
     }
 
-    override fun clearUser(clearPersistence: Boolean) {
+    override fun userLoggedOut() {}
 
-    }
 
     class Factory(
         private val clientModule: ClientModule

@@ -19,11 +19,11 @@ class UserObserverRegistry : UserObserver {
         }
     }
 
-    override suspend fun userSet(user: LocalUser) {
-        userObservers.forEach { it.userSet(user) }
+    override suspend fun userLoggedIn(user: LocalUser) {
+        userObservers.forEach { it.userLoggedIn(user) }
     }
 
-    override fun clearUser(clearPersistence: Boolean) {
-        userObservers.forEach { it.clearUser(clearPersistence) }
+    override fun userLoggedOut() {
+        userObservers.forEach { it.userLoggedOut() }
     }
 }

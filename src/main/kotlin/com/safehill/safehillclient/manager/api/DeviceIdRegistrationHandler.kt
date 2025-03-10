@@ -30,11 +30,11 @@ class DeviceIdRegistrationHandler(
             }
     }
 
-    override suspend fun userSet(user: LocalUser) {
+    override suspend fun userLoggedIn(user: LocalUser) {
         registerDeviceId()
     }
 
-    override fun clearUser(clearPersistence: Boolean) {}
+    override fun userLoggedOut() {}
 
     class Factory(
         private val clientModule: ClientModule

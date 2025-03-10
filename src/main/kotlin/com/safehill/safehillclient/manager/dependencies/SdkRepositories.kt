@@ -42,14 +42,14 @@ class SdkRepositories private constructor(
         repositoriesFactory.createUserDiscoveryRepository()
     }
 
-    override suspend fun userSet(user: LocalUser) {
-        userAuthorizationRepository.userSet(user)
-        threadsRepository.userSet(user)
+    override suspend fun userLoggedIn(user: LocalUser) {
+        userAuthorizationRepository.userLoggedIn(user)
+        threadsRepository.userLoggedIn(user)
     }
 
-    override fun clearUser(clearPersistence: Boolean) {
-        userAuthorizationRepository.clearUser(clearPersistence)
-        threadsRepository.clearUser(clearPersistence)
+    override fun userLoggedOut() {
+        userAuthorizationRepository.userLoggedOut()
+        threadsRepository.userLoggedOut()
     }
 
     class Factory(

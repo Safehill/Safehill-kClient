@@ -25,12 +25,12 @@ class ClientManager(
     }
 
 
-    override suspend fun userSet(user: LocalUser) {
-        observerRegistry.userSet(user)
+    override suspend fun userLoggedIn(user: LocalUser) {
+        observerRegistry.userLoggedIn(user)
     }
 
-    override fun clearUser(clearPersistence: Boolean) {
-        observerRegistry.clearUser(clearPersistence)
+    override fun userLoggedOut() {
+        observerRegistry.userLoggedOut()
     }
 
     class Factory(

@@ -87,10 +87,10 @@ class SafehillSyncManager(
         }
     }
 
-    override suspend fun userSet(user: LocalUser) {
+    override suspend fun userLoggedIn(user: LocalUser) {
         startBackgroundSync()
     }
 
-    override fun clearUser(clearPersistence: Boolean) {}
+    override fun userLoggedOut() {}
 
 }

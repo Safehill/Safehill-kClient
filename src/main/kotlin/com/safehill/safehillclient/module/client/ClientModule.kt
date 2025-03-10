@@ -51,11 +51,11 @@ class ClientModule(
         userProvider = userProvider
     ).create()
 
-    override suspend fun userSet(user: LocalUser) {
+    override suspend fun userLoggedIn(user: LocalUser) {
         currentUser.set(user)
     }
 
-    override fun clearUser(clearPersistence: Boolean) {
+    override fun userLoggedOut() {
         clientOptions.userScope.cancelChildren()
         currentUser.set(null)
     }
