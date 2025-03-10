@@ -3,7 +3,6 @@ package com.safehill.safehillclient
 import com.safehill.kclient.models.LocalCryptoUser
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.network.api.auth.AuthApi
-import com.safehill.safehillclient.error.UserContextMismatch
 import com.safehill.safehillclient.manager.ClientManager
 import com.safehill.safehillclient.model.SignInResponse
 import com.safehill.safehillclient.model.auth.state.AuthState
@@ -42,7 +41,7 @@ class SafehillClient(
                 SignInResponse.Success(authResponseDTO = response)
             }
         }.onFailure {
-            signOut()
+            logOut()
             authStateHolder.setAuthState(AuthState.SignedOff)
         }
     }
@@ -62,7 +61,7 @@ class SafehillClient(
         }
     }
 
-    suspend fun signOut() {
+    private fun logOut() {
         clientManager.userLoggedOut()
         clientModule.userLoggedOut()
         currentUserId.set(null)
@@ -70,13 +69,9 @@ class SafehillClient(
     }
 
     suspend fun clear(user: LocalUser) {
-        val currentUserId = currentUserId.get()
-        if (currentUserId == null) {
-            setUserToSdk(user)
-        } else if (currentUserId != user.identifier) {
-            throw UserContextMismatch()
-        }
-        signOut()
+        logOut()
+        clientManager.clearUserData(user)
+        authStateHolder.setAuthState(AuthState.NoUser)
     }
 
     private suspend fun setUserToSdk(user: LocalUser) {

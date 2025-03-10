@@ -2,6 +2,7 @@ package com.safehill.safehillclient.manager
 
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.safehillclient.backgroundsync.SafehillSyncManager
+import com.safehill.safehillclient.data.user.api.UserDataManager
 import com.safehill.safehillclient.data.user.api.UserObserverRegistry
 import com.safehill.safehillclient.manager.api.DeviceIdRegistrationHandler
 import com.safehill.safehillclient.manager.api.SocketManager
@@ -14,7 +15,8 @@ class ClientManager(
     val repositories: Repositories,
     private val deviceRegistrationHandler: DeviceIdRegistrationHandler,
     private val socketManager: SocketManager,
-    private val safehillSyncManager: SafehillSyncManager
+    private val safehillSyncManager: SafehillSyncManager,
+    private val userDataManager: UserDataManager
 ) : UserObserver {
 
     private val observerRegistry = UserObserverRegistry().apply {
@@ -31,6 +33,10 @@ class ClientManager(
 
     override fun userLoggedOut() {
         observerRegistry.userLoggedOut()
+    }
+
+    suspend fun clearUserData(user: LocalUser) {
+        userDataManager.clear(user)
     }
 
     class Factory(
@@ -51,7 +57,10 @@ class ClientManager(
                 safehillSyncManager = SafehillSyncManager(
                     backgroundTasksRegistry = clientModule.backgroundTasksRegistry,
                     userScope = clientModule.clientOptions.userScope
-                )
+                ),
+                userDataManager = UserDataManager
+                    .Factory(clientModule)
+                    .create()
             )
         }
     }

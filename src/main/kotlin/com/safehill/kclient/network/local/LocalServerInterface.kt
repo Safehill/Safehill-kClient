@@ -24,4 +24,6 @@ interface LocalServerInterface : SafehillApi, LocalAssetApi {
 
     suspend fun upsertUsers(remoteUsers: List<RemoteUser>)
 
+    suspend fun clear()
+
 }
