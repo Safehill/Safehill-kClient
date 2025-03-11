@@ -20,7 +20,7 @@ sealed class SignInResponse(
         serverUser: ServerUser
     ) : SignInResponse(serverUser)
 
-    val isPhoneNumberVerified: Boolean
-        get() = this is Success && this.authResponseDTO.metadata.isPhoneNumberVerified
+    val isPhoneNumberVerified: Boolean?
+        get() = (this as? Success)?.authResponseDTO?.metadata?.isPhoneNumberVerified
 
 }

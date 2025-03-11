@@ -129,6 +129,7 @@ class SafehillClient(
 
     fun logOut() {
         userObserver.userLoggedOut()
+        loggedInUser.set(null)
         authStateHolder.setAuthState(AuthState.SignedOff)
     }
 
