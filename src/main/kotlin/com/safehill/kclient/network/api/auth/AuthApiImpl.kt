@@ -12,7 +12,7 @@ import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.api.BaseOpenApi
-import com.safehill.kclient.network.api.postRequestForObjectResponse
+import com.safehill.kclient.network.api.postRequestForResponse
 import com.safehill.kcrypto.models.ShareablePayload
 import java.security.MessageDigest
 import java.security.PublicKey
@@ -27,14 +27,14 @@ class AuthApiImpl(
             identifier = user.identifier,
         )
 
-        val authChallenge: AuthChallengeResponseDTO = postRequestForObjectResponse(
+        val authChallenge: AuthChallengeResponseDTO = postRequestForResponse(
             endPoint = "/signin/challenge/start",
             request = authRequestBody
         )
 
         val solvedChallenge = this.solveChallenge(authChallenge, user)
 
-        return postRequestForObjectResponse(
+        return postRequestForResponse(
             endPoint = "/signin/challenge/verify",
             request = solvedChallenge
         )
@@ -90,7 +90,7 @@ class AuthApiImpl(
             publicSignature = signature.encoded.base64EncodedString(),
             name = name
         )
-        return postRequestForObjectResponse<UserInputDTO, RemoteUser>(
+        return postRequestForResponse<UserInputDTO, RemoteUser>(
             endPoint = "/users/create",
             request = requestBody
         )

@@ -28,48 +28,22 @@ interface BaseApi : BaseOpenApi {
     val requestor: LocalUser
 }
 
-suspend inline fun <reified Request : Any> BaseOpenApi.postRequestForStringResponse(
-    endPoint: String,
-    request: Request? = null
-): String {
-    return fireRequestForStringResponse(
-        request = request,
-        requestMethod = RequestMethod.Post,
-        endPoint = endPoint
-    )
-}
-
-
-suspend inline fun <reified Request : Any> BaseOpenApi.fireRequestForStringResponse(
-    requestMethod: RequestMethod,
-    endPoint: String,
-    request: Request? = null
-): String {
-    return fireRequest(
-        requestMethod = requestMethod,
-        endPoint = endPoint,
-        request = request
-    )
-}
-
-suspend inline fun <reified Request : Any, reified Response : Any> BaseOpenApi.postRequestForObjectResponse(
+suspend inline fun <reified Request : Any, reified Response : Any> BaseOpenApi.postRequestForResponse(
     endPoint: String,
     request: Request? = null
 ): Response {
-    return fireRequestForObjectResponse<Request, Response>(
+    return fireRequest<Request, Response>(
         requestMethod = RequestMethod.Post,
         endPoint = endPoint,
         request = request
     )
 }
 
-suspend inline fun <reified Request : Any, reified Response : Any> BaseOpenApi.fireRequestForObjectResponse(
-    requestMethod: RequestMethod,
+suspend inline fun <reified Request : Any> BaseOpenApi.postRequest(
     endPoint: String,
     request: Request? = null
-): Response {
-    return fireRequest(
-        requestMethod = requestMethod,
+) {
+    return postRequestForResponse<Request, Unit>(
         endPoint = endPoint,
         request = request
     )

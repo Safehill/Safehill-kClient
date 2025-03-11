@@ -45,11 +45,11 @@ import com.safehill.kclient.network.api.auth.AuthApi
 import com.safehill.kclient.network.api.auth.AuthApiImpl
 import com.safehill.kclient.network.api.authorization.AuthorizationApi
 import com.safehill.kclient.network.api.authorization.AuthorizationApiImpl
-import com.safehill.kclient.network.api.fireRequestForObjectResponse
+import com.safehill.kclient.network.api.fireRequest
 import com.safehill.kclient.network.api.group.GroupApi
 import com.safehill.kclient.network.api.group.GroupApiImpl
-import com.safehill.kclient.network.api.postRequestForObjectResponse
-import com.safehill.kclient.network.api.postRequestForStringResponse
+import com.safehill.kclient.network.api.postRequest
+import com.safehill.kclient.network.api.postRequestForResponse
 import com.safehill.kclient.network.api.reaction.ReactionApi
 import com.safehill.kclient.network.api.reaction.ReactionApiImpl
 import com.safehill.kclient.network.api.thread.ThreadApi
@@ -101,7 +101,7 @@ class RemoteServer private constructor(
             code = code,
             medium = medium
         )
-        postRequestForStringResponse(
+        postRequest(
             endPoint = "/users/code/send",
             request = requestBody
         )
@@ -121,7 +121,7 @@ class RemoteServer private constructor(
             publicKey = null,
             publicSignature = null
         )
-        return postRequestForObjectResponse<UserUpdateDTO, RemoteUser>(
+        return postRequestForResponse<UserUpdateDTO, RemoteUser>(
             endPoint = "/users/update",
             request = requestBody
         )
@@ -129,7 +129,7 @@ class RemoteServer private constructor(
 
     @Throws
     override suspend fun deleteAccount() {
-        postRequestForStringResponse(
+        postRequest(
             endPoint = "/users/safe_delete",
             request = null
         )
@@ -141,7 +141,7 @@ class RemoteServer private constructor(
             token = token,
             tokenType = FCM_TOKEN_TYPE
         )
-        postRequestForStringResponse(
+        postRequest(
             endPoint = "/users/devices/register",
             request = userTokenRequest
         )
@@ -154,7 +154,7 @@ class RemoteServer private constructor(
         }
 
         val getUsersRequestBody = UserIdentifiersDTO(userIdentifiers = withIdentifiers)
-        return postRequestForObjectResponse<UserIdentifiersDTO, List<RemoteUser>>(
+        return postRequestForResponse<UserIdentifiersDTO, List<RemoteUser>>(
             endPoint = "/users/retrieve",
             request = getUsersRequestBody
         ).associateBy { it.identifier }
@@ -165,7 +165,7 @@ class RemoteServer private constructor(
             return mapOf()
         }
         val getUsersRequestBody = UserPhoneNumbersDTO(phoneNumbers = hashedPhoneNumbers)
-        return postRequestForObjectResponse<UserPhoneNumbersDTO, RemoteUserPhoneNumberMatchDto>(
+        return postRequestForResponse<UserPhoneNumbersDTO, RemoteUserPhoneNumberMatchDto>(
             endPoint = "/users/retrieve/phone-number",
             request = getUsersRequestBody
         ).result
@@ -173,7 +173,7 @@ class RemoteServer private constructor(
 
     @Throws
     override suspend fun searchUsers(query: String, per: Int, page: Int): List<RemoteUser> {
-        return fireRequestForObjectResponse<List<Pair<String, String>>, RemoteUserSearchDTO>(
+        return fireRequest<List<Pair<String, String>>, RemoteUserSearchDTO>(
             requestMethod = RequestMethod.Get(
                 query = listOf(
                     "query" to query,
@@ -206,14 +206,14 @@ class RemoteServer private constructor(
             globalIdentifiers = assetGlobalIdentifiers,
             groupIds = groupIds
         )
-        return postRequestForObjectResponse<AssetDescriptorFilterCriteriaDTO, List<AssetDescriptorDTO>>(
+        return postRequestForResponse<AssetDescriptorFilterCriteriaDTO, List<AssetDescriptorDTO>>(
             endPoint = "/assets/descriptors/retrieve",
             request = descriptorFilterCriteriaDTO
         ).map(AssetDescriptorDTO::toAssetDescriptor)
     }
 
     override suspend fun getAssets(threadId: String): ConversationThreadAssetsDTO {
-        return postRequestForObjectResponse(
+        return postRequestForResponse(
             endPoint = "/threads/retrieve/$threadId/assets",
             request = null
         )
@@ -230,7 +230,7 @@ class RemoteServer private constructor(
         )
 
         val assetOutputDTOs =
-            postRequestForObjectResponse<AssetSearchCriteriaDTO, List<AssetOutputDTO>>(
+            postRequestForResponse<AssetSearchCriteriaDTO, List<AssetOutputDTO>>(
                 endPoint = "/assets/retrieve",
                 request = assetFilterCriteriaDTO
             )
@@ -267,7 +267,7 @@ class RemoteServer private constructor(
             },
             forceUpdateVersions = true
         )
-        val shOutput: AssetOutputDTO = postRequestForObjectResponse(
+        val shOutput: AssetOutputDTO = postRequestForResponse(
             endPoint = "/assets/create",
             request = requestBody
         )
@@ -299,7 +299,7 @@ class RemoteServer private constructor(
             groupId = asset.groupId,
             asPhotoMessageInThreadId = threadId
         )
-        postRequestForStringResponse(
+        postRequest(
             endPoint = "/assets/share",
             request = requestBody
         )
@@ -313,7 +313,7 @@ class RemoteServer private constructor(
     }
 
     override suspend fun topLevelInteractionsSummary(): InteractionsSummaryDTO {
-        return postRequestForObjectResponse(
+        return postRequestForResponse(
             endPoint = "interactions/summary",
             request = null
         )
@@ -370,7 +370,7 @@ class RemoteServer private constructor(
         quality: AssetQuality,
         asState: AssetDescriptorUploadState,
     ) {
-        postRequestForStringResponse(
+        postRequest(
             endPoint = "assets/$assetGlobalIdentifier/versions/${quality.value}/uploaded",
             request = null
         )
@@ -378,7 +378,7 @@ class RemoteServer private constructor(
 
     @Throws
     override suspend fun deleteAssets(globalIdentifiers: List<AssetGlobalIdentifier>): List<AssetGlobalIdentifier> {
-        postRequestForStringResponse(
+        postRequest(
             endPoint = "/assets/delete",
             request = AssetDeleteCriteriaDTO(
                 globalIdentifiers
@@ -408,7 +408,7 @@ class RemoteServer private constructor(
             referencedInteractionId = null,
             before = before
         )
-        return postRequestForObjectResponse(
+        return postRequestForResponse(
             endPoint = when (interactionAnchor) {
                 InteractionAnchor.THREAD -> "interactions/user-threads/$anchorId"
                 InteractionAnchor.GROUP -> "interactions/assets-groups/$anchorId"
@@ -426,7 +426,7 @@ class RemoteServer private constructor(
             "Can only add one message at a time."
         }
 
-        return postRequestForObjectResponse<MessageInputDTO, MessageOutputDTO>(
+        return postRequestForResponse<MessageInputDTO, MessageOutputDTO>(
             endPoint = when (interactionAnchor) {
                 InteractionAnchor.THREAD -> "interactions/user-threads/$anchorId/messages"
                 InteractionAnchor.GROUP -> "interactions/assets-groups/$anchorId/messages"
