@@ -21,6 +21,7 @@ import com.safehill.kclient.network.local.LocalServerInterface
 import com.safehill.kclient.network.remote.RemoteServer
 import com.safehill.kclient.util.Provider
 import com.safehill.kclient.util.runCatchingSafe
+import com.safehill.kclient.utils.setupBouncyCastle
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -37,6 +38,10 @@ class ServerProxyImpl(
     // Delegates most of the functions to RemoteServer.
     // Override if different implementation is necessary.
     SafehillApi by remoteServer {
+
+    init {
+        setupBouncyCastle()
+    }
 
     override val localServer: LocalServerInterface
         get() = localServerProvider.get()
