@@ -48,7 +48,7 @@ val SafehillClient.userAuthorizationRepository
 
 // Auth States
 val SafehillClient.authState
-    get() = this.authStateHolder.authState
+    get() = this.getAuthState()
 
 // Dependencies
 fun SafehillClient.getGroupIdLink(groupId: GroupId): String {
