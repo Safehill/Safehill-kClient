@@ -34,15 +34,16 @@ interface InteractionSyncListener {
 }
 
 
-class InteractionSyncListenerListDelegate(
-    private val interactionListeners: List<InteractionSyncListener>
-) : InteractionSyncListener {
+class InteractionSyncListenerListDelegate
+    : InteractionSyncListener,
+    MutableList<InteractionSyncListener> by mutableListOf() {
+
     override suspend fun didUpdateThreadsList(threadDTOs: List<ConversationThreadOutputDTO>) {
-        interactionListeners.forEach { it.didUpdateThreadsList(threadDTOs) }
+        forEach { it.didUpdateThreadsList(threadDTOs) }
     }
 
     override suspend fun didAddThread(threadDTO: ConversationThreadOutputDTO) {
-        interactionListeners.forEach { it.didAddThread(threadDTO) }
+        forEach { it.didAddThread(threadDTO) }
     }
 
     override suspend fun didReceiveTextMessages(
@@ -50,11 +51,11 @@ class InteractionSyncListenerListDelegate(
         anchorId: String,
         anchor: InteractionAnchor
     ) {
-        interactionListeners.forEach { it.didReceiveTextMessages(messageDtos, anchorId, anchor) }
+        forEach { it.didReceiveTextMessages(messageDtos, anchorId, anchor) }
     }
 
     override suspend fun didUpdateThread(threadUpdatedDTO: ThreadUpdatedDTO) {
-        interactionListeners.forEach {
+        forEach {
             it.didUpdateThread(threadUpdatedDTO)
         }
     }
@@ -63,7 +64,7 @@ class InteractionSyncListenerListDelegate(
         threadId: String,
         conversationThreadAssetDtos: List<ConversationThreadAssetDTO>
     ) {
-        interactionListeners.forEach {
+        forEach {
             it.didReceivePhotoMessages(
                 threadId,
                 conversationThreadAssetDtos
@@ -72,10 +73,10 @@ class InteractionSyncListenerListDelegate(
     }
 
     override suspend fun didFetchRemoteThreadSummary(summaryByThreadId: Map<String, InteractionsThreadSummaryDTO>) {
-        interactionListeners.forEach { it.didFetchRemoteThreadSummary(summaryByThreadId) }
+        forEach { it.didFetchRemoteThreadSummary(summaryByThreadId) }
     }
 
     override suspend fun didFetchRemoteGroupSummary(summaryByGroupId: Map<GroupId, InteractionsGroupSummaryDTO>) {
-        interactionListeners.forEach { it.didFetchRemoteGroupSummary(summaryByGroupId) }
+        forEach { it.didFetchRemoteGroupSummary(summaryByGroupId) }
     }
 }

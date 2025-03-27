@@ -22,11 +22,11 @@ dependencies {
     implementation(libs.kotlin.onetimepassword)
 
     api(libs.ktor.client.core)
-    implementation(libs.ktor.client.cio)
-    implementation(libs.ktor.client.logging)
-    implementation(libs.ktor.client.websockets)
-    implementation(libs.ktor.serialization.kotlinx.json)
-    implementation(libs.ktor.client.content.negotiation)
+    api(libs.ktor.client.cio)
+    api(libs.ktor.client.logging)
+    api(libs.ktor.client.websockets)
+    api(libs.ktor.serialization.kotlinx.json)
+    api(libs.ktor.client.content.negotiation)
 
     implementation(kotlin("stdlib"))
 

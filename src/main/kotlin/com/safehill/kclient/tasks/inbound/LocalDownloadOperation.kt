@@ -1,15 +1,18 @@
 package com.safehill.kclient.tasks.inbound
 
-import com.safehill.SafehillClient
 import com.safehill.kclient.models.assets.AssetDescriptor
+import com.safehill.kclient.models.assets.AssetDescriptorsCache
+import com.safehill.kclient.network.ServerProxy
 
 class LocalDownloadOperation(
-    override var listeners: List<DownloadOperationListener>,
-    override val safehillClient: SafehillClient,
-) : AbstractDownloadOperation() {
+    private val serverProxy: ServerProxy,
+    assetDescriptorsCache: AssetDescriptorsCache
+) : AbstractDownloadOperation(assetDescriptorsCache) {
+
+    override val listeners: List<DownloadOperationListener> = listOf()
 
     override suspend fun getDescriptors(): List<AssetDescriptor> {
-        return safehillClient.serverProxy.localServer.getAssetDescriptors(after = null)
+        return serverProxy.localServer.getAssetDescriptors(after = null)
     }
 
 }

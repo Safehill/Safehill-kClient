@@ -9,14 +9,15 @@ import com.safehill.kclient.models.dtos.thread.ConversationThreadNameUpdateDTO
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.api.BaseApi
 import com.safehill.kclient.network.api.RequestMethod
-import com.safehill.kclient.network.api.fireRequestForStringResponse
-import com.safehill.kclient.network.api.postRequestForObjectResponse
-import com.safehill.kclient.network.api.postRequestForStringResponse
+import com.safehill.kclient.network.api.fireRequest
+import com.safehill.kclient.network.api.postRequest
+import com.safehill.kclient.network.api.postRequestForResponse
 import com.safehill.kclient.network.exceptions.SafehillError
 
 class ThreadApiImpl(
     baseApi: BaseApi
 ) : ThreadApi, BaseApi by baseApi {
+
     override suspend fun listThreads(): List<ConversationThreadOutputDTO> {
         return listThreads(null)
     }
@@ -28,18 +29,16 @@ class ThreadApiImpl(
         val request = ConversationThreadNameUpdateDTO(
             name = name
         )
-        postRequestForStringResponse(
+        postRequest(
             endPoint = "/threads/update/$threadId",
-            request = request,
-            authenticationRequired = true
+            request = request
         )
     }
 
     private suspend fun listThreads(retrieveThreadDTO: RetrieveThreadDTO?): List<ConversationThreadOutputDTO> {
-        return postRequestForObjectResponse<RetrieveThreadDTO, List<ConversationThreadOutputDTO>>(
+        return postRequestForResponse<RetrieveThreadDTO, List<ConversationThreadOutputDTO>>(
             endPoint = "/threads/retrieve",
-            request = retrieveThreadDTO,
-            authenticationRequired = true
+            request = retrieveThreadDTO
         )
     }
 
@@ -57,9 +56,8 @@ class ThreadApiImpl(
 
     override suspend fun retrieveThread(threadId: String): ConversationThreadOutputDTO? {
         return runCatching {
-            postRequestForObjectResponse<Unit, ConversationThreadOutputDTO>(
+            postRequestForResponse<Unit, ConversationThreadOutputDTO>(
                 endPoint = "/threads/retrieve/$threadId",
-                authenticationRequired = true,
                 request = null
             )
         }.recoverCatching {
@@ -81,10 +79,9 @@ class ThreadApiImpl(
             recipients = recipientsEncryptionDetails,
             phoneNumbers = phoneNumbers
         )
-        return postRequestForObjectResponse(
+        return postRequestForResponse(
             endPoint = "/threads/upsert",
-            request = request,
-            authenticationRequired = true
+            request = request
         )
     }
 
@@ -92,10 +89,9 @@ class ThreadApiImpl(
         threadIdWithEncryptionDetails: Map<String, List<RecipientEncryptionDetailsDTO>>
     ) {
         val request = mapOf("newRecipientsByThreadId" to threadIdWithEncryptionDetails)
-        postRequestForStringResponse(
+        postRequest(
             endPoint = "/threads/convert-invitees",
-            request = request,
-            authenticationRequired = true
+            request = request
         )
     }
 
@@ -112,19 +108,20 @@ class ThreadApiImpl(
             phoneNumbersToAdd = phoneNumbersToAdd,
             phoneNumbersToRemove = phoneNumbersToRemove
         )
-        postRequestForStringResponse(
+        postRequest(
             endPoint = "/threads/update/$threadId/members",
-            request = request,
-            authenticationRequired = true
+            request = request
         )
     }
 
+
     override suspend fun deleteThread(threadId: String) {
-        fireRequestForStringResponse<Unit>(
+        fireRequest<Unit, String>(
             requestMethod = RequestMethod.Delete,
             endPoint = "/threads/$threadId",
-            request = null,
-            authenticationRequired = true
+            request = null
         )
     }
+
+
 }

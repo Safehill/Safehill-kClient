@@ -2,23 +2,21 @@ package com.safehill.kclient.errors
 
 sealed class LocalUserError : Exception() {
 
-    data object InvalidKeychainEntry : LocalUserError() {
-        private fun readResolve(): Any = InvalidKeychainEntry
+    class InvalidKeychainEntry : LocalUserError() {
         override fun getLocalizedMessage() = "invalid entry in the keychain"
     }
 
-    data object FailedToRemoveKeychainEntry : LocalUserError() {
-        private fun readResolve(): Any = FailedToRemoveKeychainEntry
+    class FailedToRemoveKeychainEntry : LocalUserError() {
         override fun getLocalizedMessage() = "failed to remove keychain entry"
     }
 
-    data object MissingProtocolSalt : LocalUserError() {
-        private fun readResolve(): Any = MissingProtocolSalt
+    class MissingProtocolSalt : LocalUserError() {
         override fun getLocalizedMessage() = "protocol salt was never retrieved from server"
     }
 
-    data object NotAuthenticated : LocalUserError() {
-        private fun readResolve(): Any = NotAuthenticated
-        override fun getLocalizedMessage() = "you need to be authenticated to perform this operation"
+    class NotAuthenticated : LocalUserError() {
+        fun getLocalizedMessage() = "you need to be authenticated to perform this operation"
     }
+
+    class UnAvailable : LocalUserError()
 }

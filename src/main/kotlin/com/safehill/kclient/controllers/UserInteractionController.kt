@@ -14,12 +14,12 @@ import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.dtos.RemoveReactionInputDTO
 import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.models.interactions.ReactionType
-import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
+import com.safehill.kclient.models.users.UserProvider
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.exceptions.SafehillError
-import com.safehill.kclient.util.runCatchingPreservingCancellationException
+import com.safehill.kclient.util.runCatchingSafe
 import com.safehill.kclient.util.safeApiCall
 
 /**
@@ -28,7 +28,7 @@ import com.safehill.kclient.util.safeApiCall
 
 class UserInteractionController internal constructor(
     private val serverProxy: ServerProxy,
-    private val currentUser: LocalUser,
+    private val userProvider: UserProvider,
     private val encryptionDetailsController: EncryptionDetailsController
 ) {
 
@@ -48,6 +48,7 @@ class UserInteractionController internal constructor(
         interactionAnchor: InteractionAnchor
     ): Result<MessageOutputDTO> {
         return runCatching {
+            val currentUser = userProvider.get()
             val symmetricKey =
                 getSymmetricKey(anchorId = anchorId, interactionAnchor = interactionAnchor)
                     ?: throw InteractionErrors.MissingE2EEDetails(
@@ -92,6 +93,7 @@ class UserInteractionController internal constructor(
         withUsers: List<ServerUser>,
         withPhoneNumbers: List<String>
     ): ConversationThreadOutputDTO {
+        val currentUser = userProvider.get()
         val usersAndSelf = (withUsers + currentUser).distinctBy { it.identifier }
 
         val existingThread = serverProxy.retrieveThread(
@@ -119,7 +121,7 @@ class UserInteractionController internal constructor(
         reactionType: ReactionType,
         groupId: GroupId
     ): Result<ReactionOutputDTO> {
-        return runCatchingPreservingCancellationException {
+        return runCatchingSafe {
             serverProxy.addReactions(
                 reactions = listOf(
                     ReactionInputDTO(
@@ -137,7 +139,7 @@ class UserInteractionController internal constructor(
         reactionType: ReactionType,
         groupId: GroupId
     ): Result<Unit> {
-        return runCatchingPreservingCancellationException {
+        return runCatchingSafe {
             serverProxy.removeReaction(
                 reaction = RemoveReactionInputDTO(
                     reactionType = reactionType.toServerValue(),
@@ -153,7 +155,8 @@ class UserInteractionController internal constructor(
         anchorId: String,
         interactionAnchor: InteractionAnchor
     ): SymmetricKey? {
-        return runCatchingPreservingCancellationException {
+        return runCatchingSafe {
+            val currentUser = userProvider.get()
             val encryptionDetails: RecipientEncryptionDetailsDTO? = when (interactionAnchor) {
                 InteractionAnchor.THREAD -> {
                     serverProxy.retrieveThread(threadId = anchorId)?.encryptionDetails
@@ -168,17 +171,20 @@ class UserInteractionController internal constructor(
     }
 
     suspend fun deleteThread(threadId: String): Result<Unit> {
-        return runCatchingPreservingCancellationException {
+        return runCatchingSafe {
             serverProxy.deleteThread(threadId = threadId)
         }
     }
 
     suspend fun leaveThread(threadId: String): Result<Unit> {
-        return updateThreadMembers(
-            threadId = threadId,
-            membersPublicIdentifierToRemove = listOf(currentUser.identifier)
-        ).onSuccess {
-            serverProxy.localServer.deleteThread(threadId = threadId)
+        return runCatchingSafe {
+            val currentUser = userProvider.get()
+            updateThreadMembers(
+                threadId = threadId,
+                membersPublicIdentifierToRemove = listOf(currentUser.identifier)
+            ).onSuccess {
+                serverProxy.localServer.deleteThread(threadId = threadId)
+            }.getOrThrow()
         }
     }
 
@@ -189,11 +195,19 @@ class UserInteractionController internal constructor(
         phoneNumbersToAdd: List<String> = listOf(),
         phoneNumbersToRemove: List<String> = listOf()
     ): Result<Unit> {
-        return runCatchingPreservingCancellationException {
+        val currentThread: ConversationThreadOutputDTO
+        return runCatchingSafe {
+            val currentUser = userProvider.get()
+            currentThread = serverProxy.retrieveThread(threadId = threadId)
+                ?: throw InteractionErrors.ThreadNotFound(threadId)
+            val symmetricKey = currentThread.encryptionDetails.getSymmetricKey(currentUser)
+                ?: throw InteractionErrors.MissingE2EEDetails(
+                    anchorId = threadId,
+                    anchor = InteractionAnchor.THREAD
+                )
             val encryptionDetails = encryptionDetailsController.getRecipientEncryptionDetails(
                 users = usersToAdd,
-                //todo fix get symmetric key of thread.
-                secretKey = SymmetricKey()
+                secretKey = symmetricKey
             )
             serverProxy.updateThreadMembers(
                 threadId = threadId,
@@ -204,8 +218,6 @@ class UserInteractionController internal constructor(
             )
         }.recoverCatching { exception ->
             if (exception is SafehillError.ClientError.Conflict) {
-                val currentThread = serverProxy.retrieveThread(threadId = threadId)
-                    ?: throw InteractionErrors.ThreadNotFound(threadId)
                 with(currentThread) {
                     val newUserIdentifiers = membersPublicIdentifier.toSet()
                         .plus(usersToAdd.map { it.identifier })

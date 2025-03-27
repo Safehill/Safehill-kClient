@@ -1,6 +1,6 @@
 package com.safehill.kclient.network
 
-import com.safehill.SafehillClient
+import com.safehill.kclient.logging.SafehillLogger
 import com.safehill.kclient.models.dtos.websockets.WebSocketMessage
 import com.safehill.kclient.models.serde.WebSocketMessageDeserializer
 import com.safehill.kclient.models.users.LocalUser
@@ -32,8 +32,9 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * Obtain [WebSocketApi]'s instance from configured [com.safehill.SafehillClient]
  */
-class WebSocketApi internal constructor(
-    private val socketUrl: Url
+class WebSocketApi(
+    private val socketUrl: Url,
+    private val logger: SafehillLogger
 ) {
 
     private val connectionMutex = Mutex()
@@ -45,7 +46,7 @@ class WebSocketApi internal constructor(
 
     private val httpClient = HttpClient(CIO) {
         install(Logging) {
-            this.logger = Logger.SAFEHILL_CLIENT_LOGGER
+            this.logger = safehillClientLogger
         }
         install(WebSockets)
     }
@@ -78,7 +79,7 @@ class WebSocketApi internal constructor(
                                 deserializer = WebSocketMessageDeserializer,
                                 string = frame.readText()
                             )
-                            SafehillClient.logger.verbose("Socket message ${frame.readText()} parsed to $socketData")
+                            logger.verbose("Socket message ${frame.readText()} parsed to $socketData")
                             _socketMessage.emit(socketData)
                         }
                     }
@@ -128,19 +129,19 @@ class WebSocketApi internal constructor(
             } catch (e: Exception) {
                 delay(1.seconds * retryDelay)
                 retryDelay = minOf(MAX_RETRY_DELAY, retryDelay * 2)
-                SafehillClient.logger.error("Socket Connection error = $e")
+                logger.error("Socket Connection error = $e")
             }
         }
     }
+
+    private val safehillClientLogger
+        get() = object : Logger {
+            override fun log(message: String) {
+                logger.verbose(message)
+            }
+        }
 
     companion object {
         private const val MAX_RETRY_DELAY: Int = 8
     }
 }
-
-val Logger.Companion.SAFEHILL_CLIENT_LOGGER
-    get() = object : Logger {
-        override fun log(message: String) {
-            SafehillClient.logger.verbose(message)
-        }
-    }

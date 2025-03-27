@@ -1,21 +1,32 @@
 package com.safehill.kclient.tasks.outbound
 
-import com.safehill.kclient.controllers.LocalAssetsStoreController
+import com.safehill.kclient.SafehillCypher
+import com.safehill.kclient.models.SymmetricKey
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.assets.EncryptedAssetVersion
-import com.safehill.kclient.models.users.LocalUser
-import com.safehill.kclient.utils.ImageResizerInterface
-import com.safehill.kclient.SafehillCypher
-import com.safehill.kcrypto.models.ShareablePayload
-import com.safehill.kclient.models.SymmetricKey
 import com.safehill.kclient.models.bytes
+import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
+import com.safehill.kclient.models.users.UserProvider
+import com.safehill.kclient.network.local.EncryptionHelper
+import com.safehill.kclient.utils.ImageResizerInterface
+import com.safehill.kcrypto.models.ShareablePayload
+import com.safehill.safehillclient.module.platform.UserModule
 
 class AssetEncrypter(
     private val resizer: ImageResizerInterface,
-    private val localAssetsStoreController: LocalAssetsStoreController
+    private val userModule: UserModule,
+    private val userProvider: UserProvider
 ) : AssetEncrypterInterface {
+
+    private val encryptionHelper: EncryptionHelper
+        get() {
+            val currentUser = userProvider.get()
+            return userModule.getEncryptionHelper(currentUser)
+        }
+
+
     override suspend fun encryptedAsset(
         outboundQueueItem: OutboundQueueItem,
         user: LocalUser,
@@ -23,7 +34,11 @@ class AssetEncrypter(
     ): EncryptedAsset {
         requireNotNull(outboundQueueItem.globalIdentifier)
         requireNotNull(outboundQueueItem.localAsset)
-        val (privateSecret, encryptedAssetSecret) = getSharablePayload(outboundQueueItem, user, recipient)
+        val (privateSecret, encryptedAssetSecret) = getSharablePayload(
+            outboundQueueItem,
+            user,
+            recipient
+        )
 
         val quality = outboundQueueItem.assetQuality
         val imageBytes = outboundQueueItem.localAsset.data
@@ -64,10 +79,10 @@ class AssetEncrypter(
     }
 
     private suspend fun retrieveCommonEncryptionKey(globalIdentifier: AssetGlobalIdentifier): SymmetricKey {
-        var symmetricKey = localAssetsStoreController.encryptionKey(globalIdentifier)
+        var symmetricKey = encryptionHelper.getEncryptionKey(globalIdentifier)
         if (symmetricKey != null) return symmetricKey
         symmetricKey = SymmetricKey()
-        localAssetsStoreController.saveEncryptionKey(globalIdentifier, symmetricKey)
+        encryptionHelper.saveEncryptionKey(globalIdentifier, symmetricKey)
         return symmetricKey
     }
 }

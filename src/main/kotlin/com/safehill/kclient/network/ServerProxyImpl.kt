@@ -14,12 +14,14 @@ import com.safehill.kclient.models.dtos.MessageInputDTO
 import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.models.interactions.InteractionAnchor
-import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.exceptions.SafehillError
 import com.safehill.kclient.network.local.LocalServerInterface
-import com.safehill.kclient.util.runCatchingPreservingCancellationException
+import com.safehill.kclient.network.remote.RemoteServer
+import com.safehill.kclient.util.Provider
+import com.safehill.kclient.util.runCatchingSafe
+import com.safehill.kclient.utils.setupBouncyCastle
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -30,14 +32,19 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 
 class ServerProxyImpl(
-    override val localServer: LocalServerInterface,
-    override val remoteServer: SafehillApi,
-    override val requestor: LocalUser,
+    private val localServerProvider: Provider<LocalServerInterface>,
+    override val remoteServer: RemoteServer
 ) : ServerProxy,
     // Delegates most of the functions to RemoteServer.
     // Override if different implementation is necessary.
     SafehillApi by remoteServer {
 
+    init {
+        setupBouncyCastle()
+    }
+
+    override val localServer: LocalServerInterface
+        get() = localServerProvider.get()
 
     override suspend fun listThreads(): List<ConversationThreadOutputDTO> {
         return try {
@@ -84,7 +91,7 @@ class ServerProxyImpl(
 
 
     override suspend fun topLevelInteractionsSummary(): InteractionsSummaryDTO {
-        return runCatchingPreservingCancellationException {
+        return runCatchingSafe {
             remoteServer.topLevelInteractionsSummary().also {
                 storeInteractionSummary(it)
             }
@@ -114,7 +121,7 @@ class ServerProxyImpl(
         usersIdentifiers: List<UserIdentifier>,
         phoneNumbers: List<String>
     ): ConversationThreadOutputDTO? {
-        return runCatchingPreservingCancellationException {
+        return runCatchingSafe {
             remoteServer.retrieveThread(
                 usersIdentifiers = usersIdentifiers,
                 phoneNumbers = phoneNumbers
@@ -206,7 +213,7 @@ class ServerProxyImpl(
         return coroutineScope {
             globalIdentifiersAndQualities.map { (globalIdentifier, assetQualities) ->
                 async {
-                    runCatchingPreservingCancellationException {
+                    runCatchingSafe {
                         remoteServer.getAssets(
                             globalIdentifiers = listOf(globalIdentifier),
                             versions = assetQualities

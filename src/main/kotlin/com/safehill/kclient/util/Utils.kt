@@ -2,11 +2,17 @@ package com.safehill.kclient.util
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.contract
 import kotlin.coroutines.cancellation.CancellationException
 
-inline fun <T> runCatchingPreservingCancellationException(
+@OptIn(ExperimentalContracts::class)
+inline fun <T> runCatchingSafe(
     block: () -> T
 ): Result<T> {
+    contract {
+        callsInPlace(block, kotlin.contracts.InvocationKind.EXACTLY_ONCE)
+    }
     return try {
         Result.success(block())
     } catch (e: CancellationException) {
@@ -19,7 +25,7 @@ inline fun <T> runCatchingPreservingCancellationException(
 
 suspend inline fun <T> safeApiCall(crossinline invoke: suspend () -> T): Result<T> {
     return withContext(Dispatchers.IO) {
-        runCatchingPreservingCancellationException {
+        runCatchingSafe {
             invoke()
         }
     }

@@ -3,7 +3,7 @@ package com.safehill.kclient.network.api.group
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.dtos.RecipientEncryptionDetailsDTO
 import com.safehill.kclient.network.api.BaseApi
-import com.safehill.kclient.network.api.postRequestForObjectResponse
+import com.safehill.kclient.network.api.postRequestForResponse
 
 class GroupApiImpl(
     baseApi: BaseApi
@@ -14,10 +14,9 @@ class GroupApiImpl(
     }
 
     override suspend fun retrieveGroupUserEncryptionDetails(groupId: GroupId): RecipientEncryptionDetailsDTO {
-        return postRequestForObjectResponse(
+        return postRequestForResponse(
             endPoint = "groups/retrieve/$groupId",
-            request = null,
-            authenticationRequired = true
+            request = null
         )
     }
 }

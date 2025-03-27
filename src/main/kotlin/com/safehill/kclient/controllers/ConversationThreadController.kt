@@ -3,7 +3,7 @@ package com.safehill.kclient.controllers
 import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.ServerProxy
-import com.safehill.kclient.util.runCatchingPreservingCancellationException
+import com.safehill.kclient.util.runCatchingSafe
 
 class ConversationThreadController(
     val serverProxy: ServerProxy,
@@ -15,7 +15,7 @@ class ConversationThreadController(
         threadId: String,
         invitees: List<ServerUser>
     ): Result<Unit> {
-        return runCatchingPreservingCancellationException {
+        return runCatchingSafe {
             val symmetricKey = userInteractionController.getSymmetricKey(
                 anchorId = threadId,
                 interactionAnchor = InteractionAnchor.THREAD
