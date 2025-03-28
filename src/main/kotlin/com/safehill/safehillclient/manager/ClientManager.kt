@@ -4,7 +4,7 @@ import com.safehill.kclient.models.users.LocalUser
 import com.safehill.safehillclient.backgroundsync.SafehillSyncManager
 import com.safehill.safehillclient.data.user.api.UserDataManager
 import com.safehill.safehillclient.data.user.api.UserObserverRegistry
-import com.safehill.safehillclient.manager.api.DeviceIdRegistrationHandler
+import com.safehill.safehillclient.device_registration.DeviceRegistrationHandler
 import com.safehill.safehillclient.manager.api.SocketManager
 import com.safehill.safehillclient.manager.dependencies.Repositories
 import com.safehill.safehillclient.manager.dependencies.SdkRepositories
@@ -13,7 +13,7 @@ import com.safehill.safehillclient.module.client.ClientModule
 
 class ClientManager(
     val repositories: Repositories,
-    private val deviceRegistrationHandler: DeviceIdRegistrationHandler,
+    private val deviceRegistrationHandler: DeviceRegistrationHandler,
     private val socketManager: SocketManager,
     private val safehillSyncManager: SafehillSyncManager,
     private val userDataManager: UserDataManager
@@ -48,7 +48,7 @@ class ClientManager(
                 repositories = SdkRepositories
                     .Factory(clientModule)
                     .create(),
-                deviceRegistrationHandler = DeviceIdRegistrationHandler
+                deviceRegistrationHandler = DeviceRegistrationHandler
                     .Factory(clientModule)
                     .create(),
                 socketManager = SocketManager

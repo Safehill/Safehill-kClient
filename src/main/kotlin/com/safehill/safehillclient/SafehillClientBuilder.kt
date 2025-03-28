@@ -4,13 +4,15 @@ import com.safehill.kclient.network.api.BaseOpenApi
 import com.safehill.kclient.network.api.auth.AuthApiImpl
 import com.safehill.kclient.network.remote.RemoteServerEnvironment
 import com.safehill.kclient.utils.setupBouncyCastle
-import com.safehill.safehillclient.backgroundsync.ClientOptions
 import com.safehill.safehillclient.data.user.api.UserStorage
+import com.safehill.safehillclient.device_registration.DeviceRegistrationStrategy
 import com.safehill.safehillclient.factory.HttpClientFactory
 import com.safehill.safehillclient.factory.NetworkModuleFactory
 import com.safehill.safehillclient.manager.ClientManager
 import com.safehill.safehillclient.model.auth.state.AuthStateHolder
 import com.safehill.safehillclient.module.client.ClientModule
+import com.safehill.safehillclient.module.config.ClientOptions
+import com.safehill.safehillclient.module.config.Configs
 import com.safehill.safehillclient.module.platform.PlatformModule
 import com.safehill.safehillclient.module.platform.UserModule
 import io.ktor.client.HttpClient
@@ -22,6 +24,7 @@ class SafehillClientBuilder(
     private val platformModule: PlatformModule,
     private val userModule: UserModule,
     private val userStorage: UserStorage,
+    private val deviceRegistrationStrategy: DeviceRegistrationStrategy,
     private val clientOptions: ClientOptions = ClientOptions(),
     private val configureHttpClient: HttpClient.() -> Unit = { }
 ) {
@@ -29,7 +32,7 @@ class SafehillClientBuilder(
     fun build(): SafehillClient {
         setupBouncyCastle()
         val httpClient = HttpClientFactory(
-            safehillLogger = platformModule.safehillLogger,
+            safehillLogger = clientOptions.safehillLogger,
             configureHttpClient = configureHttpClient
         ).create(remoteServerEnvironment)
         val baseOpenApi = object : BaseOpenApi {
@@ -43,11 +46,15 @@ class SafehillClientBuilder(
             platformModule = platformModule,
             userModule = userModule
         )
+
         val clientModule = ClientModule(
             platformModule = platformModule,
             clientOptions = clientOptions,
             userModule = userModule,
-            networkModuleFactory = networkModuleFactory
+            networkModuleFactory = networkModuleFactory,
+            configs = Configs(
+                deviceRegistrationStrategy = deviceRegistrationStrategy
+            )
         )
         val clientManager = ClientManager.Factory(clientModule).create()
         return SafehillClient(

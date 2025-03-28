@@ -100,7 +100,12 @@ class SafehillClient(
             loggedInUser.set(user)
             userObserver.userLoggedIn(user)
             authStateHolder.setAuthState(AuthState.SignedOn(user = user))
-            SignInResponse.Success(response)
+            SignInResponse.Success(
+                authResponseDTO = response,
+                currentUser = user.updateFromServerUser(
+                    response.user
+                )
+            )
         }.onFailure {
             authStateHolder.setAuthState(AuthState.SignedOff)
         }
@@ -114,8 +119,7 @@ class SafehillClient(
             try {
                 val shLocalUser = Json.decodeFromString<UserQrData>(userJson).toLocalUser()
                 val response = signIn(shLocalUser).getOrThrow()
-                val updatedUser = shLocalUser.updateFromServerUser(response.serverUser)
-                userStorage.storeUser(updatedUser)
+                userStorage.storeUser(response.currentUser)
                 response
             } catch (e: SerializationException) {
                 throw "Invalid Data".toError()

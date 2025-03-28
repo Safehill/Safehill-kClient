@@ -1,7 +1,5 @@
 package com.safehill.safehillclient.backgroundsync
 
-import com.safehill.kclient.logging.DefaultSafehillLogger
-import com.safehill.kclient.logging.SafehillLogger
 import com.safehill.kclient.models.users.UserProvider
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.WebSocketApi
@@ -11,29 +9,8 @@ import com.safehill.kclient.tasks.inbound.RemoteDownloadOperation
 import com.safehill.kclient.tasks.outbound.UploadOperation
 import com.safehill.kclient.tasks.outbound.UploadOperationImpl
 import com.safehill.kclient.tasks.syncing.InteractionSync
-import com.safehill.safehillclient.ClientScope
 import com.safehill.safehillclient.module.asset.AssetModule
 import com.safehill.safehillclient.module.platform.UserModule
-import com.safehill.safehillclient.utils.api.dispatchers.SdkDispatchers
-import com.safehill.safehillclient.utils.extensions.createChildScope
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-
-class ClientOptions(
-    val safehillLogger: SafehillLogger = DefaultSafehillLogger(),
-    val sdkDispatchers: SdkDispatchers = SdkDispatchers(
-        io = Dispatchers.IO,
-        default = Dispatchers.Default
-    ),
-    val clientScope: ClientScope = CoroutineScope(
-        SupervisorJob() + sdkDispatchers.io + CoroutineExceptionHandler { coroutineContext, throwable ->
-            safehillLogger.error("Exception in coroutine scope: coroutineContext=$coroutineContext, throwable=$throwable")
-        }
-    ),
-    val userScope: CoroutineScope = clientScope.createChildScope { SupervisorJob(it) }
-)
 
 class NetworkModule(
     val serverProxy: ServerProxy,
