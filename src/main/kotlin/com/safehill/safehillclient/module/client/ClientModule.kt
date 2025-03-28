@@ -58,6 +58,7 @@ class ClientModule(
     }
 
     override fun userLoggedOut() {
+        assetModule.assetDescriptorCache.clearAssetDescriptors()
         clientOptions.userScope.cancelChildren()
         currentUser.set(null)
     }
