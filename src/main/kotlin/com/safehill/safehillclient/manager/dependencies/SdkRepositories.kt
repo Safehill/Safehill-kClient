@@ -4,13 +4,13 @@ import com.safehill.kclient.controllers.module.ControllersModule
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.UserProvider
 import com.safehill.safehillclient.backgroundsync.BackgroundTasksRegistry
-import com.safehill.safehillclient.backgroundsync.ClientOptions
 import com.safehill.safehillclient.backgroundsync.NetworkModule
 import com.safehill.safehillclient.data.authorization.UserAuthorizationRepository
 import com.safehill.safehillclient.data.factory.RepositoriesFactory
 import com.safehill.safehillclient.data.threads.ThreadsRepository
 import com.safehill.safehillclient.data.user_discovery.UserDiscoveryRepository
 import com.safehill.safehillclient.module.client.ClientModule
+import com.safehill.safehillclient.module.config.ClientOptions
 
 class SdkRepositories private constructor(
     backgroundTaskRegistry: BackgroundTasksRegistry,

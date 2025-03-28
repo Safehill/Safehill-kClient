@@ -43,7 +43,7 @@ class SafehillClientBuilder(
             remoteServerEnvironment = remoteServerEnvironment,
             client = httpClient,
             socketUrl = socketUrl,
-            platformModule = platformModule,
+            clientOptions = clientOptions,
             userModule = userModule
         )
 

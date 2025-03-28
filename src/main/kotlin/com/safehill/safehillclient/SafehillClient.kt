@@ -27,8 +27,8 @@ typealias ClientScope = CoroutineScope
 class SafehillClient(
     val clientModule: ClientModule,
     val repositories: Repositories,
+    val clientManager: ClientManager,
     private val authStateHolder: AuthStateHolder,
-    private val clientManager: ClientManager,
     private val userStorage: UserStorage,
     private val authApi: AuthApi
 ) {

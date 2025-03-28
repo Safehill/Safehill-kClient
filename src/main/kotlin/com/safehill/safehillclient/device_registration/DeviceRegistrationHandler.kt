@@ -8,19 +8,25 @@ import com.safehill.safehillclient.manager.dependencies.UserObserver
 import com.safehill.safehillclient.module.client.ClientModule
 import com.safehill.safehillclient.utils.api.deviceid.DeviceIdProvider
 
-class DeviceRegistrationHandler(
+interface DeviceRegistrationHandler {
+    suspend fun registerDevice()
+}
+
+class DefaultDeviceRegistrationHandler(
     private val serverProxy: ServerProxy,
     private val deviceIdProvider: DeviceIdProvider,
     private val safehillLogger: SafehillLogger,
     private val deviceRegistrationStrategy: DeviceRegistrationStrategy
-) : UserObserver {
+) : DeviceRegistrationHandler, UserObserver {
 
     private val deviceRegistrationCache = run {
-        val onChangeStrategy = deviceRegistrationStrategy as? DeviceRegistrationStrategy.OnChange
-        onChangeStrategy?.deviceRegistrationCache
+        when (deviceRegistrationStrategy) {
+            is DeviceRegistrationStrategy.OnChange -> deviceRegistrationStrategy.deviceRegistrationCache
+            is DeviceRegistrationStrategy.OnEveryLogin -> null
+        }
     }
 
-    private suspend fun registerDeviceId() {
+    override suspend fun registerDevice() {
         val token = deviceRegistrationStrategy
             .pushTokenConfig
             .getToken()
@@ -51,7 +57,7 @@ class DeviceRegistrationHandler(
     }
 
     override suspend fun userLoggedIn(user: LocalUser) {
-        registerDeviceId()
+        registerDevice()
     }
 
     override fun userLoggedOut() {}
@@ -59,8 +65,8 @@ class DeviceRegistrationHandler(
     class Factory(
         private val clientModule: ClientModule
     ) {
-        fun create(): DeviceRegistrationHandler {
-            return DeviceRegistrationHandler(
+        fun create(): DefaultDeviceRegistrationHandler {
+            return DefaultDeviceRegistrationHandler(
                 serverProxy = clientModule.networkModule.serverProxy,
                 deviceIdProvider = clientModule.platformModule.deviceIdProvider,
                 safehillLogger = clientModule.clientOptions.safehillLogger,
