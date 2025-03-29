@@ -2,6 +2,7 @@ package com.safehill.safehillclient.manager
 
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.safehillclient.backgroundsync.SafehillSyncManager
+import com.safehill.safehillclient.data.user.api.DefaultUserObserverRegistry
 import com.safehill.safehillclient.data.user.api.UserDataManager
 import com.safehill.safehillclient.data.user.api.UserObserverRegistry
 import com.safehill.safehillclient.device_registration.DefaultDeviceRegistrationHandler
@@ -9,7 +10,6 @@ import com.safehill.safehillclient.device_registration.DeviceRegistrationHandler
 import com.safehill.safehillclient.manager.api.SocketManager
 import com.safehill.safehillclient.manager.dependencies.Repositories
 import com.safehill.safehillclient.manager.dependencies.SdkRepositories
-import com.safehill.safehillclient.manager.dependencies.UserObserver
 import com.safehill.safehillclient.module.client.ClientModule
 
 class ClientManager(
@@ -18,25 +18,14 @@ class ClientManager(
     private val socketManager: SocketManager,
     private val safehillSyncManager: SafehillSyncManager,
     private val userDataManager: UserDataManager
-) : UserObserver {
+) : UserObserverRegistry by DefaultUserObserverRegistry(
+    repositories,
+    defaultDeviceRegistrationHandler,
+    safehillSyncManager,
+    socketManager
+) {
 
     val deviceRegistrationHandler: DeviceRegistrationHandler = defaultDeviceRegistrationHandler
-
-    private val observerRegistry = UserObserverRegistry().apply {
-        addUserObserver(repositories)
-        addUserObserver(defaultDeviceRegistrationHandler)
-        addUserObserver(safehillSyncManager)
-        addUserObserver(socketManager)
-    }
-
-
-    override suspend fun userLoggedIn(user: LocalUser) {
-        observerRegistry.userLoggedIn(user)
-    }
-
-    override fun userLoggedOut() {
-        observerRegistry.userLoggedOut()
-    }
 
     suspend fun clearUserData(user: LocalUser) {
         userDataManager.clear(user)
@@ -45,7 +34,6 @@ class ClientManager(
     class Factory(
         private val clientModule: ClientModule
     ) {
-
         fun create(): ClientManager {
             return ClientManager(
                 repositories = SdkRepositories

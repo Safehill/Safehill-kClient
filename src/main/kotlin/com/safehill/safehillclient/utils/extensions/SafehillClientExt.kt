@@ -48,6 +48,9 @@ val SafehillClient.threadsRepository
 val SafehillClient.userAuthorizationRepository
     get() = this.repositories.userAuthorizationRepository
 
+val SafehillClient.activityRepository
+    get() = this.repositories.activityRepository
+
 
 // Auth States
 val SafehillClient.authState

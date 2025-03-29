@@ -4,16 +4,26 @@ import com.safehill.kclient.models.users.LocalUser
 import com.safehill.safehillclient.manager.dependencies.UserObserver
 import java.util.Collections
 
-class UserObserverRegistry : UserObserver {
-    private val userObservers = Collections.synchronizedList(mutableListOf<UserObserver>())
+interface UserObserverRegistry : UserObserver {
+    fun addUserObserver(userObserver: UserObserver)
+    fun removeUserObserver(userObserver: UserObserver)
+}
 
-    fun addUserObserver(userObserver: UserObserver) {
+class DefaultUserObserverRegistry(
+    vararg userObserver: UserObserver
+) : UserObserverRegistry {
+
+    private val userObservers = Collections.synchronizedList(
+        mutableListOf<UserObserver>(*userObserver)
+    )
+
+    override fun addUserObserver(userObserver: UserObserver) {
         synchronized(userObservers) {
             userObservers.add(userObserver)
         }
     }
 
-    fun removeUserObserver(userObserver: UserObserver) {
+    override fun removeUserObserver(userObserver: UserObserver) {
         synchronized(userObservers) {
             userObservers.remove(userObserver)
         }
