@@ -5,10 +5,11 @@ import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.api.auth.AuthApi
 import com.safehill.kclient.util.runCatchingSafe
+import com.safehill.safehillclient.data.user.api.DefaultUserObserverRegistry
+import com.safehill.safehillclient.data.user.api.UserObserverRegistry
 import com.safehill.safehillclient.data.user.api.UserStorage
 import com.safehill.safehillclient.manager.ClientManager
 import com.safehill.safehillclient.manager.dependencies.Repositories
-import com.safehill.safehillclient.manager.dependencies.UserObserver
 import com.safehill.safehillclient.model.SignInResponse
 import com.safehill.safehillclient.model.auth.state.AuthState
 import com.safehill.safehillclient.model.auth.state.AuthStateHolder
@@ -31,23 +32,11 @@ class SafehillClient(
     private val authStateHolder: AuthStateHolder,
     private val userStorage: UserStorage,
     private val authApi: AuthApi
+) : UserObserverRegistry by DefaultUserObserverRegistry(
+    clientManager
 ) {
 
     private val loggedInUser = AtomicReference<LocalUser?>(null)
-
-    private val userObserver = object : UserObserver {
-        override suspend fun userLoggedIn(user: LocalUser) {
-            // First set the user in the ClientModule. Then notify ClientManager of user existence.
-            clientModule.userLoggedIn(user)
-            clientManager.userLoggedIn(user)
-        }
-
-        override fun userLoggedOut() {
-            // First notify ClientManager of logout. Then notify the ClientModule.
-            clientManager.userLoggedOut()
-            clientModule.userLoggedOut()
-        }
-    }
 
     suspend fun signIn(): Result<SignInResponse> {
         val storedUser = userStorage.getUser()
@@ -98,7 +87,9 @@ class SafehillClient(
             val response = authApi.signIn(user = user)
             user.authenticate(response.user, response)
             loggedInUser.set(user)
-            userObserver.userLoggedIn(user)
+            // First set user in ClientModule before notifying listeners.
+            clientModule.userLoggedIn(user)
+            userLoggedIn(user)
             authStateHolder.setAuthState(AuthState.SignedOn(user = user))
             SignInResponse.Success(
                 authResponseDTO = response,
@@ -132,7 +123,9 @@ class SafehillClient(
     }
 
     fun logOut() {
-        userObserver.userLoggedOut()
+        // Notify the listeners before removing the user from ClientModule
+        userLoggedOut()
+        clientModule.userLoggedOut()
         loggedInUser.set(null)
         authStateHolder.setAuthState(AuthState.SignedOff)
     }
