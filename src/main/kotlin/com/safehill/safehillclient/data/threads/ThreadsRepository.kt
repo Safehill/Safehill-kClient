@@ -12,7 +12,6 @@ import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.tasks.syncing.InteractionSync
 import com.safehill.kclient.tasks.syncing.InteractionSyncListener
 import com.safehill.kclient.util.runCatchingSafe
-import com.safehill.safehillclient.backgroundsync.ClientOptions
 import com.safehill.safehillclient.data.threads.factory.ThreadStateInteractorFactory
 import com.safehill.safehillclient.data.threads.interactor.ThreadStateInteractor
 import com.safehill.safehillclient.data.threads.model.Thread
@@ -21,6 +20,7 @@ import com.safehill.safehillclient.data.threads.registry.ThreadStateRegistry
 import com.safehill.safehillclient.data.user.model.AppUser
 import com.safehill.safehillclient.data.user.model.toServerUser
 import com.safehill.safehillclient.manager.dependencies.UserObserver
+import com.safehill.safehillclient.module.config.ClientOptions
 import com.safehill.safehillclient.utils.extensions.createChildScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

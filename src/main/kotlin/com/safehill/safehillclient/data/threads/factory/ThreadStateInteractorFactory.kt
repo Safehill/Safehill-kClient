@@ -3,10 +3,10 @@ package com.safehill.safehillclient.data.threads.factory
 import com.safehill.kclient.controllers.module.ControllersModule
 import com.safehill.kclient.models.users.UserProvider
 import com.safehill.kclient.network.ServerProxy
-import com.safehill.safehillclient.backgroundsync.ClientOptions
 import com.safehill.safehillclient.data.message.factory.MessageInteractorFactory
 import com.safehill.safehillclient.data.threads.interactor.ThreadStateInteractor
 import com.safehill.safehillclient.data.threads.model.MutableThreadState
+import com.safehill.safehillclient.module.config.ClientOptions
 import kotlinx.coroutines.CoroutineScope
 
 class ThreadStateInteractorFactory(

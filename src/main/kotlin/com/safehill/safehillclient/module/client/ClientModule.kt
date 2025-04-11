@@ -4,11 +4,12 @@ import com.safehill.kclient.controllers.module.ControllersModule
 import com.safehill.kclient.errors.LocalUserError
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.util.Provider
-import com.safehill.safehillclient.backgroundsync.ClientOptions
 import com.safehill.safehillclient.backgroundsync.SafehillBackgroundTasksRegistryFactory
 import com.safehill.safehillclient.factory.NetworkModuleFactory
 import com.safehill.safehillclient.manager.dependencies.UserObserver
 import com.safehill.safehillclient.module.asset.AssetModule
+import com.safehill.safehillclient.module.config.ClientOptions
+import com.safehill.safehillclient.module.config.Configs
 import com.safehill.safehillclient.module.platform.PlatformModule
 import com.safehill.safehillclient.module.platform.UserModule
 import com.safehill.safehillclient.utils.extensions.cancelChildren
@@ -19,6 +20,7 @@ internal typealias UserScope = CoroutineScope
 
 class ClientModule(
     networkModuleFactory: NetworkModuleFactory,
+    val configs: Configs,
     val clientOptions: ClientOptions,
     val platformModule: PlatformModule,
     val userModule: UserModule
@@ -56,6 +58,7 @@ class ClientModule(
     }
 
     override fun userLoggedOut() {
+        assetModule.assetDescriptorCache.clearAssetDescriptors()
         clientOptions.userScope.cancelChildren()
         currentUser.set(null)
     }

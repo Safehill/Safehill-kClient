@@ -8,7 +8,7 @@ import com.safehill.kclient.network.remote.RemoteServer
 import com.safehill.kclient.network.remote.RemoteServerEnvironment
 import com.safehill.kclient.util.Provider
 import com.safehill.safehillclient.backgroundsync.NetworkModule
-import com.safehill.safehillclient.module.platform.PlatformModule
+import com.safehill.safehillclient.module.config.ClientOptions
 import com.safehill.safehillclient.module.platform.UserModule
 import io.ktor.client.HttpClient
 import io.ktor.http.Url
@@ -19,7 +19,7 @@ class NetworkModuleFactory(
     private val client: HttpClient,
     private val socketUrl: Url,
     private val userModule: UserModule,
-    private val platformModule: PlatformModule
+    private val clientOptions: ClientOptions
 ) {
 
     private val localServerCache = ConcurrentHashMap<String, LocalServerInterface>()
@@ -37,12 +37,12 @@ class NetworkModuleFactory(
             remoteServer = RemoteServer(
                 userProvider = userProvider,
                 client = client,
-                safehillLogger = platformModule.safehillLogger
+                safehillLogger = clientOptions.safehillLogger
             )
         )
         val webSocketApi = WebSocketApi(
             socketUrl = socketUrl,
-            logger = platformModule.safehillLogger
+            logger = clientOptions.safehillLogger
         )
         return NetworkModule(
             serverProxy = serverProxy,

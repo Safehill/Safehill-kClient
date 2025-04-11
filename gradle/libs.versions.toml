@@ -6,7 +6,7 @@ fuel = "2.3.1"
 kotlinx-serialization-json = "1.7.3"
 kotlinx-coroutines-core = "1.10.1"
 kotlin-onetimepassword = "2.4.0"
-ktor = "3.0.1"
+ktor = "3.1.1"
 mockito-core = "5.14.2"
 junit-jupiter = "5.10.2"
 

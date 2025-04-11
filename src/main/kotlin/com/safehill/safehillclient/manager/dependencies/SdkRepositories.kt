@@ -4,20 +4,23 @@ import com.safehill.kclient.controllers.module.ControllersModule
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.UserProvider
 import com.safehill.safehillclient.backgroundsync.BackgroundTasksRegistry
-import com.safehill.safehillclient.backgroundsync.ClientOptions
 import com.safehill.safehillclient.backgroundsync.NetworkModule
+import com.safehill.safehillclient.data.activity.repository.ActivityRepository
 import com.safehill.safehillclient.data.authorization.UserAuthorizationRepository
 import com.safehill.safehillclient.data.factory.RepositoriesFactory
 import com.safehill.safehillclient.data.threads.ThreadsRepository
 import com.safehill.safehillclient.data.user_discovery.UserDiscoveryRepository
+import com.safehill.safehillclient.module.asset.AssetModule
 import com.safehill.safehillclient.module.client.ClientModule
+import com.safehill.safehillclient.module.config.ClientOptions
 
 class SdkRepositories private constructor(
     backgroundTaskRegistry: BackgroundTasksRegistry,
     clientOptions: ClientOptions,
     controllersModule: ControllersModule,
     userProvider: UserProvider,
-    networkModule: NetworkModule
+    networkModule: NetworkModule,
+    assetModule: AssetModule
 ) : Repositories {
 
     private val repositoriesFactory: RepositoriesFactory by lazy {
@@ -26,7 +29,8 @@ class SdkRepositories private constructor(
             networkModule = networkModule,
             clientOptions = clientOptions,
             controllersModule = controllersModule,
-            userProvider = userProvider
+            userProvider = userProvider,
+            assetModule = assetModule
         )
     }
 
@@ -40,6 +44,10 @@ class SdkRepositories private constructor(
 
     override val userDiscoveryRepository: UserDiscoveryRepository by lazy {
         repositoriesFactory.createUserDiscoveryRepository()
+    }
+
+    override val activityRepository: ActivityRepository by lazy {
+        repositoriesFactory.createActivityRepository()
     }
 
     override suspend fun userLoggedIn(user: LocalUser) {
@@ -63,7 +71,8 @@ class SdkRepositories private constructor(
                     clientOptions = clientOptions,
                     controllersModule = controllersModule,
                     userProvider = userProvider,
-                    networkModule = networkModule
+                    networkModule = networkModule,
+                    assetModule = assetModule
                 )
             }
         }

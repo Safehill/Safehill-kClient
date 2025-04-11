@@ -24,6 +24,9 @@ val SafehillClient.backgroundTasksRegistry
 val SafehillClient.uploadOperation
     get() = this.backgroundTasksRegistry.uploadOperation
 
+val SafehillClient.localDownloadOperation
+    get() = this.backgroundTasksRegistry.localDownloadOperation
+
 // Network Module dependencies
 
 val SafehillClient.remoteServerEnvironment: RemoteServerEnvironment
@@ -44,6 +47,9 @@ val SafehillClient.threadsRepository
 
 val SafehillClient.userAuthorizationRepository
     get() = this.repositories.userAuthorizationRepository
+
+val SafehillClient.activityRepository
+    get() = this.repositories.activityRepository
 
 
 // Auth States
