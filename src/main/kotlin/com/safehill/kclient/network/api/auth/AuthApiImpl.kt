@@ -19,7 +19,8 @@ import java.security.PublicKey
 import java.util.Base64
 
 class AuthApiImpl(
-    baseOpenApi: BaseOpenApi
+    baseOpenApi: BaseOpenApi,
+    private val createsHiddenUser: Boolean
 ) : AuthApi, BaseOpenApi by baseOpenApi {
 
     override suspend fun signIn(user: LocalUser): AuthResponseDTO {
@@ -88,7 +89,8 @@ class AuthApiImpl(
             identifier = identifier,
             publicKey = publicKey.encoded.base64EncodedString(),
             publicSignature = signature.encoded.base64EncodedString(),
-            name = name
+            name = name,
+            role = if (createsHiddenUser) "hidden" else null
         )
         return postRequestForResponse<UserInputDTO, RemoteUser>(
             endPoint = "/users/create",

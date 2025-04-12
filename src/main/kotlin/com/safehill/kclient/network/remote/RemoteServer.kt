@@ -41,8 +41,6 @@ import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.SafehillApi
 import com.safehill.kclient.network.api.BaseApi
 import com.safehill.kclient.network.api.RequestMethod
-import com.safehill.kclient.network.api.auth.AuthApi
-import com.safehill.kclient.network.api.auth.AuthApiImpl
 import com.safehill.kclient.network.api.authorization.AuthorizationApi
 import com.safehill.kclient.network.api.authorization.AuthorizationApiImpl
 import com.safehill.kclient.network.api.fireRequest
@@ -73,7 +71,6 @@ class RemoteServer private constructor(
     GroupApi by GroupApiImpl(baseApi),
     ReactionApi by ReactionApiImpl(baseApi),
     ThreadApi by ThreadApiImpl(baseApi),
-    AuthApi by AuthApiImpl(baseApi),
     BaseApi by baseApi {
 
     constructor(
