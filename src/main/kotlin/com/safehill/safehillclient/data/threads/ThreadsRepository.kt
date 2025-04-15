@@ -9,6 +9,8 @@ import com.safehill.kclient.models.dtos.websockets.ThreadUpdatedDTO
 import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
+import com.safehill.kclient.tasks.outbound.UploadOperation
+import com.safehill.kclient.tasks.outbound.UploadOperationListener
 import com.safehill.kclient.tasks.syncing.InteractionSync
 import com.safehill.kclient.tasks.syncing.InteractionSyncListener
 import com.safehill.kclient.util.runCatchingSafe
@@ -49,8 +51,15 @@ class ThreadsRepository(
     private val userInteractionController: UserInteractionController,
     private val threadStateRegistry: ThreadStateRegistry,
     private val threadStateInteractorFactory: ThreadStateInteractorFactory,
-    private val interactionSync: InteractionSync
-) : UserObserver, InteractionSyncListener {
+    private val interactionSync: InteractionSync,
+    private val uploadOperation: UploadOperation
+) : UserObserver,
+    InteractionSyncListener,
+    UploadOperationListener {
+
+    private val userScope = clientOptions.userScope
+
+    private val safehillLogger = clientOptions.safehillLogger
 
     private val _loading = MutableStateFlow(false)
     val loading = _loading.asStateFlow()
@@ -203,14 +212,17 @@ class ThreadsRepository(
     }
 
     override suspend fun userLoggedIn(user: LocalUser) {
-        syncThreadsWithServer()
+        syncThreadsWithServer().join()
         interactionSync.addListener(this)
+        uploadOperation.listeners.add(this)
     }
 
     override fun userLoggedOut() {
         threadStateRegistry.clear()
         interactionSync.removeListener(this)
+        uploadOperation.listeners.remove(this)
     }
+
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
