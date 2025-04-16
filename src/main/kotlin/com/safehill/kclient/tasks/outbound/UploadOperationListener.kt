@@ -70,8 +70,7 @@ interface UploadOperationListener {
         localIdentifier: AssetLocalIdentifier?,
         globalIdentifier: AssetGlobalIdentifier,
         groupId: GroupId,
-        users: List<ServerUser>,
-        threadId: String?
+        users: List<ServerUser>
     ) {
     }
 
