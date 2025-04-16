@@ -25,6 +25,7 @@ class SafehillClientBuilder(
     private val userModule: UserModule,
     private val userStorage: UserStorage,
     private val deviceRegistrationStrategy: DeviceRegistrationStrategy,
+    private val createsHiddenUser: Boolean,
     private val clientOptions: ClientOptions = ClientOptions(),
     private val configureHttpClient: HttpClient.() -> Unit = { }
 ) {
@@ -59,7 +60,10 @@ class SafehillClientBuilder(
         val clientManager = ClientManager.Factory(clientModule).create()
         return SafehillClient(
             clientModule = clientModule,
-            authApi = AuthApiImpl(baseOpenApi),
+            authApi = AuthApiImpl(
+                baseOpenApi = baseOpenApi,
+                createsHiddenUser = createsHiddenUser
+            ),
             clientManager = clientManager,
             repositories = clientManager.repositories,
             authStateHolder = AuthStateHolder(),
