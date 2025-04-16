@@ -34,7 +34,8 @@ class MutableThreadState(
     invitedPhoneNumbers: Map<String, Instant>,
     name: String?,
     lastUpdatedAt: Instant
-) : ThreadState, MutableMessagesContainer() {
+) : ThreadState,
+    MutableMessagesContainer by MutableMessagesContainer() {
 
     private val _assetIdentifiers: MutableStateFlow<Set<AssetGlobalIdentifier>> =
         MutableStateFlow(setOf())
