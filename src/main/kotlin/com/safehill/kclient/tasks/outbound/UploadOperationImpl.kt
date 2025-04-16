@@ -114,7 +114,7 @@ class UploadOperationImpl(
 
     private suspend fun enqueueShareItem(
         assetQuality: AssetQuality,
-        localAsset: LocalAsset?,
+        localAsset: LocalAsset,
         globalIdentifier: AssetGlobalIdentifier,
         groupId: GroupId,
         recipients: List<ServerUser>,
@@ -136,7 +136,7 @@ class UploadOperationImpl(
 
     private suspend fun upload(outboundQueueItem: OutboundQueueItem) {
         try {
-            val globalIdentifier = outboundQueueItem.globalIdentifier ?: return
+            val globalIdentifier = outboundQueueItem.globalIdentifier
 
             // *******encrypting*******
             notifyListenersStartedEncrypting(outboundQueueItem)
@@ -282,8 +282,6 @@ class UploadOperationImpl(
     }
 
     private suspend fun share(outboundQueueItem: OutboundQueueItem) {
-        if (outboundQueueItem.globalIdentifier == null) return
-
         notifyListenersStartedSharing(outboundQueueItem)
         try {
             for (recipient in outboundQueueItem.recipients) {
@@ -318,7 +316,7 @@ class UploadOperationImpl(
     ) {
         serverProxy.share(
             ShareableEncryptedAssetImpl(
-                outboundQueueItem.globalIdentifier!!,
+                outboundQueueItem.globalIdentifier,
                 listOf(
                     ShareableEncryptedAssetVersionImpl(
                         outboundQueueItem.assetQuality,
@@ -337,8 +335,8 @@ class UploadOperationImpl(
     private fun notifyListenersFinishedSharing(outboundQueueItem: OutboundQueueItem) {
         listeners.forEach {
             it.finishedSharing(
-                outboundQueueItem.localAsset?.localIdentifier,
-                outboundQueueItem.globalIdentifier!!,
+                outboundQueueItem.localAsset.localIdentifier,
+                outboundQueueItem.globalIdentifier,
                 outboundQueueItem.groupId,
                 outboundQueueItem.recipients
             )
@@ -348,8 +346,8 @@ class UploadOperationImpl(
     private fun notifyListenersFailedSharing(outboundQueueItem: OutboundQueueItem) {
         listeners.forEach {
             it.failedSharing(
-                outboundQueueItem.localAsset?.localIdentifier,
-                outboundQueueItem.globalIdentifier!!,
+                outboundQueueItem.localAsset.localIdentifier,
+                outboundQueueItem.globalIdentifier,
                 outboundQueueItem.groupId,
                 outboundQueueItem.recipients
             )
@@ -359,8 +357,8 @@ class UploadOperationImpl(
     private fun notifyListenersStartedSharing(outboundQueueItem: OutboundQueueItem) {
         listeners.forEach {
             it.startedSharing(
-                outboundQueueItem.localAsset?.localIdentifier,
-                outboundQueueItem.globalIdentifier!!,
+                outboundQueueItem.localAsset.localIdentifier,
+                outboundQueueItem.globalIdentifier,
                 outboundQueueItem.groupId,
                 outboundQueueItem.recipients
             )
