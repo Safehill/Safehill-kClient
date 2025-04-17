@@ -43,7 +43,11 @@ class HttpClientFactory(
                 level = LogLevel.ALL
                 this.logger = object : Logger {
                     override fun log(message: String) {
-                        safehillLogger.info(message)
+                        if (message.length > 500_000) {
+                            safehillLogger.info("****Message size exceeded 500_000 bytes.*****")
+                        } else {
+                            safehillLogger.info(message)
+                        }
                     }
                 }
             }
