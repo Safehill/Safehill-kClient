@@ -3,8 +3,10 @@ package com.safehill.kclient.tasks.outbound
 import com.safehill.kclient.SafehillCypher
 import com.safehill.kclient.models.SymmetricKey
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
+import com.safehill.kclient.models.assets.AssetLocalIdentifier
 import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.assets.EncryptedAssetVersion
+import com.safehill.kclient.models.assets.LocalAsset
 import com.safehill.kclient.models.bytes
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
@@ -17,8 +19,9 @@ import com.safehill.safehillclient.module.platform.UserModule
 class AssetEncrypter(
     private val resizer: ImageResizerInterface,
     private val userModule: UserModule,
-    private val userProvider: UserProvider
-) : AssetEncrypterInterface {
+    private val userProvider: UserProvider,
+    private val localAssetGetter: LocalAssetGetter
+) {
 
     private val encryptionHelper: EncryptionHelper
         get() {
@@ -26,14 +29,12 @@ class AssetEncrypter(
             return userModule.getEncryptionHelper(currentUser)
         }
 
-
-    override suspend fun encryptedAsset(
+    suspend fun encryptedAsset(
         outboundQueueItem: OutboundQueueItem,
         user: LocalUser,
         recipient: ServerUser
     ): EncryptedAsset {
         requireNotNull(outboundQueueItem.globalIdentifier)
-        requireNotNull(outboundQueueItem.localAsset)
         val (privateSecret, encryptedAssetSecret) = getSharablePayload(
             outboundQueueItem,
             user,
@@ -41,7 +42,8 @@ class AssetEncrypter(
         )
 
         val quality = outboundQueueItem.assetQuality
-        val imageBytes = outboundQueueItem.localAsset.data
+        val localAsset = localAssetGetter.getLocalAsset(outboundQueueItem.localIdentifier)
+        val imageBytes = localAsset.data
         val resizedBytes =
             resizer.resizeImageIfLarger(imageBytes, quality.dimension, quality.dimension)
 
@@ -58,13 +60,13 @@ class AssetEncrypter(
 
         return EncryptedAsset(
             globalIdentifier = outboundQueueItem.globalIdentifier,
-            localIdentifier = outboundQueueItem.localAsset.localIdentifier,
-            creationDate = outboundQueueItem.localAsset.createdAt,
+            localIdentifier = localAsset.localIdentifier,
+            creationDate = localAsset.createdAt,
             encryptedVersions = encryptedVersions
         )
     }
 
-    override suspend fun getSharablePayload(
+    suspend fun getSharablePayload(
         outboundQueueItem: OutboundQueueItem,
         user: LocalUser,
         recipient: ServerUser
@@ -85,4 +87,9 @@ class AssetEncrypter(
         encryptionHelper.saveEncryptionKey(globalIdentifier, symmetricKey)
         return symmetricKey
     }
+}
+
+
+interface LocalAssetGetter {
+    fun getLocalAsset(localIdentifier: AssetLocalIdentifier): LocalAsset
 }

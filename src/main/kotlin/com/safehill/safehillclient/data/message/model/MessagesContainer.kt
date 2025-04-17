@@ -10,8 +10,13 @@ interface MessagesContainer : Paginateable {
 }
 
 interface MutableMessagesContainer : MessagesContainer {
+
     fun upsertMessages(message: List<Message>)
+
     fun upsertMessage(message: Message)
+
     fun updateMessage(localID: String, message: Message)
+
     fun setLastUpdatedAt(instant: Instant)
+
 }

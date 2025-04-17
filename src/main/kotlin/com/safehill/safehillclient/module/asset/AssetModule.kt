@@ -21,7 +21,8 @@ class AssetModule(
         AssetEncrypter(
             resizer = platformModule.imageResizer,
             userModule = userModule,
-            userProvider = userProvider
+            userProvider = userProvider,
+            localAssetGetter = platformModule.localAssetGetter
         )
     }
 

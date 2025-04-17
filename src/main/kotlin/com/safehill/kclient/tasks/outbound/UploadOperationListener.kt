@@ -11,7 +11,8 @@ interface UploadOperationListener {
     fun enqueued(
         threadId: String,
         localIdentifier: AssetLocalIdentifier,
-        globalIdentifier: AssetGlobalIdentifier
+        globalIdentifier: AssetGlobalIdentifier,
+        groupId: String
     ) {
     }
 
@@ -80,5 +81,48 @@ interface UploadOperationListener {
         groupId: GroupId,
         users: List<ServerUser>
     ) {
+    }
+}
+
+interface UploadOperationErrorListener : UploadOperationListener {
+    fun onError(
+        localIdentifier: AssetLocalIdentifier,
+        groupId: GroupId
+    )
+
+    override fun failedEncrypting(
+        localIdentifier: AssetLocalIdentifier,
+        groupId: GroupId,
+        assetQuality: AssetQuality
+    ) {
+        onError(
+            localIdentifier = localIdentifier,
+            groupId = groupId
+        )
+    }
+
+    override fun failedUploading(
+        localIdentifier: AssetLocalIdentifier,
+        groupId: GroupId,
+        assetQuality: AssetQuality
+    ) {
+        onError(
+            localIdentifier = localIdentifier,
+            groupId = groupId
+        )
+    }
+
+    override fun failedSharing(
+        localIdentifier: AssetLocalIdentifier?,
+        globalIdentifier: AssetGlobalIdentifier,
+        groupId: GroupId,
+        users: List<ServerUser>
+    ) {
+        if (localIdentifier != null) {
+            onError(
+                localIdentifier = localIdentifier,
+                groupId = groupId
+            )
+        }
     }
 }
