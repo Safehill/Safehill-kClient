@@ -23,7 +23,7 @@ sealed class PushTokenConfig {
 
     suspend fun getToken() = when (this) {
         is Active -> pushTokenProvider.get()
-        Inactive -> ""
+        Inactive -> null
     }
 }
 
@@ -37,7 +37,7 @@ interface DeviceRegistrationCache {
 }
 
 data class DeviceRegistrationInfo(
-    val token: String = "",
+    val token: String? = null,
     val userId: String = "",
     val deviceId: String = ""
 )
