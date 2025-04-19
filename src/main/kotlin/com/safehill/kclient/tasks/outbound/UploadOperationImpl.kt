@@ -13,7 +13,6 @@ import com.safehill.kclient.models.users.UserProvider
 import com.safehill.kclient.models.users.getOrNull
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.exceptions.SafehillError
-import com.safehill.kcrypto.models.ShareablePayload
 import com.safehill.safehillclient.module.platform.UserModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -70,8 +69,8 @@ class UploadOperationImpl(
     override fun enqueueShare(
         assetQualities: List<AssetQuality>,
         globalIdentifier: AssetGlobalIdentifier,
-        groupId: GroupId,
         localIdentifier: AssetLocalIdentifier,
+        groupId: GroupId,
         recipients: List<ServerUser>,
         threadId: String?
     ) {
@@ -254,19 +253,30 @@ class UploadOperationImpl(
     private suspend fun share(outboundQueueItem: OutboundQueueItem) {
         notifyListenersStartedSharing(outboundQueueItem)
         try {
-            for (recipient in outboundQueueItem.recipients) {
+            val sharedVersions = outboundQueueItem.recipients.flatMap { recipient ->
                 val (_, sharablePayload) = encrypter.getSharablePayload(
-                    outboundQueueItem,
-                    user,
-                    recipient
+                    outboundQueueItem = outboundQueueItem,
+                    user = user,
+                    recipient = recipient
                 )
-                serverShare(
-                    outboundQueueItem,
-                    recipient,
-                    sharablePayload,
-                    outboundQueueItem.threadId!!
-                )
+                outboundQueueItem.assetQualities.map { assetQuality ->
+                    ShareableEncryptedAssetVersion(
+                        quality = assetQuality,
+                        userPublicIdentifier = recipient.identifier,
+                        encryptedSecret = sharablePayload.ciphertext,
+                        ephemeralPublicKey = sharablePayload.ephemeralPublicKeyData,
+                        publicSignature = sharablePayload.signature
+                    )
+                }
             }
+            serverProxy.share(
+                asset = ShareableEncryptedAsset(
+                    globalIdentifier = outboundQueueItem.globalIdentifier,
+                    sharedVersions = sharedVersions,
+                    groupId = outboundQueueItem.groupId
+                ),
+                threadId = outboundQueueItem.threadId!!
+            )
         } catch (e: Exception) {
             //TODO better exception handling
             println(e.localizedMessage)
@@ -277,30 +287,6 @@ class UploadOperationImpl(
         notifyListenersFinishedSharing(outboundQueueItem)
     }
 
-    private suspend fun serverShare(
-        outboundQueueItem: OutboundQueueItem,
-        recipient: ServerUser,
-        sharablePayload: ShareablePayload,
-        threadId: String
-    ) {
-        val sharedVersions = outboundQueueItem.assetQualities.map { assetQuality ->
-            ShareableEncryptedAssetVersion(
-                assetQuality,
-                recipient.identifier,
-                sharablePayload.ciphertext,
-                sharablePayload.ephemeralPublicKeyData,
-                sharablePayload.signature
-            )
-        }
-        serverProxy.share(
-            asset = ShareableEncryptedAsset(
-                globalIdentifier = outboundQueueItem.globalIdentifier,
-                sharedVersions = sharedVersions,
-                groupId = outboundQueueItem.groupId
-            ),
-            threadId = threadId
-        )
-    }
 
     private fun notifyListenersFinishedSharing(outboundQueueItem: OutboundQueueItem) {
         listeners.forEach {

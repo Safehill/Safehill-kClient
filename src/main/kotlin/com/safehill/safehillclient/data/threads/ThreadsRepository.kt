@@ -251,18 +251,16 @@ class ThreadsRepository(
     }
 
     override fun finishedSharing(
-        localIdentifier: AssetLocalIdentifier?,
+        localIdentifier: AssetLocalIdentifier,
         globalIdentifier: AssetGlobalIdentifier,
         groupId: GroupId,
         users: List<ServerUser>
     ) {
-        if (localIdentifier != null) {
-            sharingAssetsState.removeSharingAssets(
-                groupId = groupId,
-                globalIdentifier = globalIdentifier,
-                localIdentifier = localIdentifier
-            )
-        }
+        sharingAssetsState.removeSharingAssets(
+            groupId = groupId,
+            globalIdentifier = globalIdentifier,
+            localIdentifier = localIdentifier
+        )
     }
 }
 

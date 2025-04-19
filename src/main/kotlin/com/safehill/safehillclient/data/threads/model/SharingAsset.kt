@@ -34,9 +34,10 @@ data class SharingAssets(
         localIdentifier: AssetLocalIdentifier
     ): SharingAssets {
         return copy(
-            assets = assets.filter {
-                it.assetGlobalIdentifier == globalIdentifier && it.localIdentifier == localIdentifier
-            }
+            assets = assets
+                .filterNot {
+                    it.assetGlobalIdentifier == globalIdentifier && it.localIdentifier == localIdentifier
+                }
         )
     }
 }

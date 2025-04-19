@@ -78,7 +78,7 @@ class AssetsUploadPipelineStateHolder : UploadOperationListener {
     }
 
     override fun finishedSharing(
-        localIdentifier: AssetLocalIdentifier?,
+        localIdentifier: AssetLocalIdentifier,
         globalIdentifier: AssetGlobalIdentifier,
         groupId: GroupId,
         users: List<ServerUser>

@@ -61,7 +61,7 @@ interface UploadOperationListener {
     }
 
     fun finishedSharing(
-        localIdentifier: AssetLocalIdentifier?,
+        localIdentifier: AssetLocalIdentifier,
         globalIdentifier: AssetGlobalIdentifier,
         groupId: GroupId,
         users: List<ServerUser>
