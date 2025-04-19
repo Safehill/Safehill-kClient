@@ -8,13 +8,12 @@ import com.safehill.kclient.models.users.ServerUser
 
 class OutboundQueueItem(
     val operationType: OperationType,
-    val assetQuality: AssetQuality,
+    val assetQualities: List<AssetQuality>,
     val globalIdentifier: AssetGlobalIdentifier,
     val localIdentifier: AssetLocalIdentifier,
     val groupId: GroupId,
     val recipients: List<ServerUser>,
-    var force: Boolean = false,
-    var threadId: String?
+    val threadId: String?
 ) {
 
     enum class OperationType {

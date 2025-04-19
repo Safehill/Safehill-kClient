@@ -2,7 +2,6 @@ package com.safehill.safehillclient.backgroundsync
 
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetLocalIdentifier
-import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.tasks.BackgroundTaskProcessor
@@ -75,14 +74,11 @@ class SafehillSyncManager(
         localIdentifier: AssetLocalIdentifier,
         globalIdentifier: AssetGlobalIdentifier,
         groupId: GroupId,
-        assetQuality: AssetQuality
     ) {
         //TODO: better scope handling
         GlobalScope.launch {
-            if (assetQuality == AssetQuality.LowResolution) {
-                singleTaskExecutor.execute {
-                    backgroundTasksRegistry.remoteDownloadOperation.run()
-                }
+            singleTaskExecutor.execute {
+                backgroundTasksRegistry.remoteDownloadOperation.run()
             }
         }
     }

@@ -5,9 +5,8 @@ import com.safehill.kclient.models.assets.AssetLocalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.assets.GroupId
-import com.safehill.kclient.models.assets.ShareableEncryptedAssetImpl
-import com.safehill.kclient.models.assets.ShareableEncryptedAssetVersionImpl
-import com.safehill.kclient.models.dtos.AssetOutputDTO
+import com.safehill.kclient.models.assets.ShareableEncryptedAsset
+import com.safehill.kclient.models.assets.ShareableEncryptedAssetVersion
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserProvider
@@ -47,31 +46,29 @@ class UploadOperationImpl(
 
     override fun enqueueUpload(
         localIdentifier: AssetLocalIdentifier,
-        assetQualities: Array<AssetQuality>,
+        assetQualities: List<AssetQuality>,
         groupId: GroupId,
         recipients: List<ServerUser>,
         threadId: String?
     ) {
         scope.launch {
             val globalIdentifier = UUID.randomUUID().toString()
-            assetQualities.forEach {
-                val item = OutboundQueueItem(
-                    operationType = OutboundQueueItem.OperationType.Upload,
-                    assetQuality = it,
-                    localIdentifier = localIdentifier,
-                    globalIdentifier = globalIdentifier,
-                    groupId = groupId,
-                    recipients = recipients,
-                    threadId = threadId
-                )
-                sendToChannelAndNotifyListeners(item)
-                outboundQueueItemManager?.addOutboundQueueItem(item)
-            }
+            val item = OutboundQueueItem(
+                operationType = OutboundQueueItem.OperationType.Upload,
+                assetQualities = assetQualities,
+                localIdentifier = localIdentifier,
+                globalIdentifier = globalIdentifier,
+                groupId = groupId,
+                recipients = recipients,
+                threadId = threadId
+            )
+            sendToChannelAndNotifyListeners(item)
+            outboundQueueItemManager?.addOutboundQueueItem(item)
         }
     }
 
     override fun enqueueShare(
-        assetQualities: Array<AssetQuality>,
+        assetQualities: List<AssetQuality>,
         globalIdentifier: AssetGlobalIdentifier,
         groupId: GroupId,
         localIdentifier: AssetLocalIdentifier,
@@ -79,16 +76,14 @@ class UploadOperationImpl(
         threadId: String?
     ) {
         scope.launch {
-            assetQualities.forEach {
-                enqueueShareItem(
-                    assetQuality = it,
-                    globalIdentifier = globalIdentifier,
-                    groupId = groupId,
-                    recipients = recipients,
-                    threadId = threadId,
-                    localIdentifier = localIdentifier
-                )
-            }
+            enqueueShareItem(
+                globalIdentifier = globalIdentifier,
+                groupId = groupId,
+                recipients = recipients,
+                threadId = threadId,
+                assetQualities = assetQualities,
+                localIdentifier = localIdentifier
+            )
         }
     }
 
@@ -114,7 +109,7 @@ class UploadOperationImpl(
         if (outboundQueueItem.recipients.isNotEmpty()) {
             scope.launch {
                 enqueueShareItem(
-                    assetQuality = outboundQueueItem.assetQuality,
+                    assetQualities = outboundQueueItem.assetQualities,
                     globalIdentifier = globalIdentifier,
                     groupId = outboundQueueItem.groupId,
                     recipients = outboundQueueItem.recipients,
@@ -126,7 +121,7 @@ class UploadOperationImpl(
     }
 
     private suspend fun enqueueShareItem(
-        assetQuality: AssetQuality,
+        assetQualities: List<AssetQuality>,
         globalIdentifier: AssetGlobalIdentifier,
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
@@ -139,8 +134,8 @@ class UploadOperationImpl(
             groupId = groupId,
             recipients = recipients,
             threadId = threadId,
-            assetQuality = assetQuality,
             localIdentifier = localIdentifier,
+            assetQualities = assetQualities
         )
         sendToChannelAndNotifyListeners(item)
         outboundQueueItemManager?.addOutboundQueueItem(item)
@@ -165,9 +160,7 @@ class UploadOperationImpl(
             // *******uploading********
             notifyListenersStartedUploading(outboundQueueItem)
 
-            val serverAssets = createServerAssets(outboundQueueItem, encryptedAsset)
-
-            uploadEncryptedDataToS3(serverAssets, encryptedAsset, outboundQueueItem.assetQuality)
+            uploadAsset(outboundQueueItem, encryptedAsset)
 
             notifyListenersFinishedUploading(outboundQueueItem, globalIdentifier)
             // #######uploading########
@@ -183,8 +176,7 @@ class UploadOperationImpl(
         listeners.forEach {
             it.startedEncrypting(
                 outboundQueueItem.localIdentifier,
-                outboundQueueItem.groupId,
-                outboundQueueItem.assetQuality
+                outboundQueueItem.groupId
             )
         }
     }
@@ -193,8 +185,7 @@ class UploadOperationImpl(
         listeners.forEach {
             it.finishedEncrypting(
                 outboundQueueItem.localIdentifier,
-                outboundQueueItem.groupId,
-                outboundQueueItem.assetQuality
+                outboundQueueItem.groupId
             )
         }
     }
@@ -203,8 +194,7 @@ class UploadOperationImpl(
         listeners.forEach {
             it.startedUploading(
                 outboundQueueItem.localIdentifier,
-                outboundQueueItem.groupId,
-                outboundQueueItem.assetQuality
+                outboundQueueItem.groupId
             )
         }
     }
@@ -217,8 +207,7 @@ class UploadOperationImpl(
             it.finishedUploading(
                 outboundQueueItem.localIdentifier,
                 globalIdentifier,
-                outboundQueueItem.groupId,
-                outboundQueueItem.assetQuality
+                outboundQueueItem.groupId
             )
         }
     }
@@ -227,52 +216,27 @@ class UploadOperationImpl(
         listeners.forEach {
             it.failedUploading(
                 outboundQueueItem.localIdentifier,
-                outboundQueueItem.groupId,
-                outboundQueueItem.assetQuality
+                outboundQueueItem.groupId
             )
         }
     }
 
-    private suspend fun createServerAssets(
+    private suspend fun uploadAsset(
         outboundQueueItem: OutboundQueueItem,
         encryptedAsset: EncryptedAsset,
-    ): List<AssetOutputDTO> {
-        return serverProxy.create(
-            listOf(encryptedAsset),
-            outboundQueueItem.groupId,
-            listOf(outboundQueueItem.assetQuality)
-        )
-    }
-
-    private suspend fun uploadEncryptedDataToS3(
-        serverAssets: List<AssetOutputDTO>,
-        encryptedAsset: EncryptedAsset,
-        quality: AssetQuality
     ) {
-        for (index in serverAssets.indices) {
-            serverProxy.upload(
-                serverAssets[index],
-                encryptedAsset,
-                listOf(quality)
-            )
-        }
+        serverProxy.remoteServer.upload(
+            listOf(encryptedAsset),
+            outboundQueueItem.groupId
+        )
     }
 
     private fun handleUploadException(
         outboundQueueItem: OutboundQueueItem,
         exception: Exception
     ) {
-        println(exception.localizedMessage)
         when (exception) {
-            is SafehillError.ClientError.Conflict -> {
-                if (!outboundQueueItem.force) {
-                    outboundQueueItem.force = true
-                } else {
-                    notifyListenersFailedUploading(outboundQueueItem)
-                    return
-                }
-            }
-
+            is SafehillError.ClientError.Conflict,
             is SafehillError.ClientError.BadRequest,
             SafehillError.ClientError.Unauthorized,
             SafehillError.ClientError.PaymentRequired -> {
@@ -319,21 +283,22 @@ class UploadOperationImpl(
         sharablePayload: ShareablePayload,
         threadId: String
     ) {
+        val sharedVersions = outboundQueueItem.assetQualities.map { assetQuality ->
+            ShareableEncryptedAssetVersion(
+                assetQuality,
+                recipient.identifier,
+                sharablePayload.ciphertext,
+                sharablePayload.ephemeralPublicKeyData,
+                sharablePayload.signature
+            )
+        }
         serverProxy.share(
-            ShareableEncryptedAssetImpl(
-                outboundQueueItem.globalIdentifier,
-                listOf(
-                    ShareableEncryptedAssetVersionImpl(
-                        outboundQueueItem.assetQuality,
-                        recipient.identifier,
-                        sharablePayload.ciphertext,
-                        sharablePayload.ephemeralPublicKeyData,
-                        sharablePayload.signature
-                    )
-                ),
-                outboundQueueItem.groupId
+            asset = ShareableEncryptedAsset(
+                globalIdentifier = outboundQueueItem.globalIdentifier,
+                sharedVersions = sharedVersions,
+                groupId = outboundQueueItem.groupId
             ),
-            threadId
+            threadId = threadId
         )
     }
 
@@ -376,10 +341,7 @@ class UploadOperationImpl(
         coroutineScope {
             launch {
                 launch {
-                    println("ABCD sending ")
-
                     outboundQueueItemManager?.loadOutboundQueueItems()?.forEach {
-                        println("ABCD sending $it")
                         sendToChannelAndNotifyListeners(it)
                     }
                 }

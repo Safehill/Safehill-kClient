@@ -18,76 +18,70 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 
-class S3Proxy {
-
-    companion object {
-
-        suspend fun BaseApi.upload(
-            data: ByteArray,
-            url: String
-        ) {
-            client
-                .put {
-                    url(urlString = url)
-                    setBody(data)
-                }
-                .getOrThrow<ByteArray>()
-        }
-
-        suspend fun BaseApi.fetchAssets(serverAssets: List<AssetOutputDTO>): Map<AssetGlobalIdentifier, EncryptedAsset> {
-            return withContext(Dispatchers.IO) {
-                val deferredResults = coroutineScope {
-                    serverAssets.map { serverAsset ->
-                        async {
-                            fetchAsset(serverAsset)
-                        }
-                    }
-                }
-
-                deferredResults
-                    .awaitAll()
-                    .associateBy { it.globalIdentifier }
+object S3Proxy {
+    suspend fun BaseApi.upload(
+        data: ByteArray,
+        url: String
+    ) {
+        client
+            .put {
+                url(urlString = url)
+                setBody(data)
             }
-        }
+            .getOrThrow<ByteArray>()
+    }
 
-        private suspend fun BaseApi.fetchAsset(
-            asset: AssetOutputDTO
-        ): EncryptedAsset {
+    suspend fun BaseApi.fetchAssets(serverAssets: List<AssetOutputDTO>): Map<AssetGlobalIdentifier, EncryptedAsset> {
+        return withContext(Dispatchers.IO) {
             val deferredResults = coroutineScope {
-                asset.versions.map { serverAssetVersion ->
+                serverAssets.map { serverAsset ->
                     async {
-                        fetchAssetVersion(serverAssetVersion)
+                        fetchAsset(serverAsset)
                     }
                 }
             }
 
-            val encryptedVersions = deferredResults
+            deferredResults
                 .awaitAll()
+                .associateBy { it.globalIdentifier }
+        }
+    }
 
-
-            return EncryptedAsset(
-                asset.globalIdentifier,
-                asset.localIdentifier,
-                asset.creationDate,
-                encryptedVersions.associateBy { version -> version.quality }
-            )
+    private suspend fun BaseApi.fetchAsset(
+        asset: AssetOutputDTO
+    ): EncryptedAsset {
+        val deferredResults = coroutineScope {
+            asset.versions.map { serverAssetVersion ->
+                async {
+                    fetchAssetVersion(serverAssetVersion)
+                }
+            }
         }
 
-        private suspend fun BaseApi.fetchAssetVersion(assetVersion: AssetVersionOutputDTO): EncryptedAssetVersion {
-            return EncryptedAssetVersion(
-                quality = AssetQuality.entries.first { it.value == assetVersion.versionName },
-                encryptedData = fetchData(assetVersion.presignedURL),
-                encryptedSecret = assetVersion.encryptedSecret,
-                publicKeyData = assetVersion.publicKeyData,
-                publicSignatureData = assetVersion.publicSignatureData
-            )
+        val encryptedVersions = deferredResults
+            .awaitAll()
 
-        }
 
-        private suspend fun BaseApi.fetchData(preSignedURL: String): ByteArray {
-            return client.get(preSignedURL).getOrThrow<ByteArray>()
-        }
+        return EncryptedAsset(
+            globalIdentifier = asset.globalIdentifier,
+            localIdentifier = asset.localIdentifier,
+            creationDate = asset.creationDate,
+            encryptedVersions = encryptedVersions.associateBy { version -> version.quality }
+        )
+    }
+
+    private suspend fun BaseApi.fetchAssetVersion(assetVersion: AssetVersionOutputDTO): EncryptedAssetVersion {
+        return EncryptedAssetVersion(
+            quality = AssetQuality.entries.first { it.versionName == assetVersion.versionName },
+            encryptedData = fetchData(assetVersion.presignedURL),
+            encryptedSecret = assetVersion.encryptedSecret,
+            publicKeyData = assetVersion.publicKeyData,
+            publicSignatureData = assetVersion.publicSignatureData
+        )
 
     }
 
+    private suspend fun BaseApi.fetchData(preSignedURL: String): ByteArray {
+        return client.get(preSignedURL).getOrThrow<ByteArray>()
+    }
 }

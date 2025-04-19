@@ -40,23 +40,23 @@ class AssetEncrypter(
             user,
             recipient
         )
-
-        val quality = outboundQueueItem.assetQuality
         val localAsset = localAssetGetter.getLocalAsset(outboundQueueItem.localIdentifier)
-        val imageBytes = localAsset.data
-        val resizedBytes =
-            resizer.resizeImageIfLarger(imageBytes, quality.dimension, quality.dimension)
 
-        val encryptedData = SafehillCypher.encrypt(resizedBytes, privateSecret)
+        val encryptedVersions = outboundQueueItem.assetQualities.associateWith { quality ->
+            val imageBytes = localAsset.data
+            val resizedBytes =
+                resizer.resizeImageIfLarger(imageBytes, quality.dimension, quality.dimension)
 
-        val encryptedAssetVersion = EncryptedAssetVersion(
-            quality = quality,
-            encryptedData = encryptedData,
-            encryptedSecret = encryptedAssetSecret.ciphertext,
-            publicKeyData = encryptedAssetSecret.ephemeralPublicKeyData,
-            publicSignatureData = encryptedAssetSecret.signature
-        )
-        val encryptedVersions = mapOf(quality to encryptedAssetVersion)
+            val encryptedData = SafehillCypher.encrypt(resizedBytes, privateSecret)
+
+            EncryptedAssetVersion(
+                quality = quality,
+                encryptedData = encryptedData,
+                encryptedSecret = encryptedAssetSecret.ciphertext,
+                publicKeyData = encryptedAssetSecret.ephemeralPublicKeyData,
+                publicSignatureData = encryptedAssetSecret.signature
+            )
+        }
 
         return EncryptedAsset(
             globalIdentifier = outboundQueueItem.globalIdentifier,

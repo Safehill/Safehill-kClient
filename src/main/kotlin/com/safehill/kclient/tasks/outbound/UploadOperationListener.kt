@@ -2,7 +2,6 @@ package com.safehill.kclient.tasks.outbound
 
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetLocalIdentifier
-import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.users.ServerUser
 
@@ -19,28 +18,24 @@ interface UploadOperationListener {
     fun startedEncrypting(
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
-        assetQuality: AssetQuality
     ) {
     }
 
     fun finishedEncrypting(
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
-        assetQuality: AssetQuality
     ) {
     }
 
     fun failedEncrypting(
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
-        assetQuality: AssetQuality
     ) {
     }
 
     fun startedUploading(
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
-        assetQuality: AssetQuality
     ) {
     }
 
@@ -48,14 +43,12 @@ interface UploadOperationListener {
         localIdentifier: AssetLocalIdentifier,
         globalIdentifier: AssetGlobalIdentifier,
         groupId: GroupId,
-        assetQuality: AssetQuality
     ) {
     }
 
     fun failedUploading(
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
-        assetQuality: AssetQuality
     ) {
     }
 
@@ -93,7 +86,6 @@ interface UploadOperationErrorListener : UploadOperationListener {
     override fun failedEncrypting(
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
-        assetQuality: AssetQuality
     ) {
         onError(
             localIdentifier = localIdentifier,
@@ -104,7 +96,6 @@ interface UploadOperationErrorListener : UploadOperationListener {
     override fun failedUploading(
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
-        assetQuality: AssetQuality
     ) {
         onError(
             localIdentifier = localIdentifier,

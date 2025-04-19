@@ -3,7 +3,6 @@ package com.safehill.kclient.network.remote
 import com.safehill.kclient.base64.base64EncodedString
 import com.safehill.kclient.logging.SafehillLogger
 import com.safehill.kclient.models.assets.AssetDescriptor
-import com.safehill.kclient.models.assets.AssetDescriptorUploadState
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAsset
@@ -41,6 +40,8 @@ import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.network.SafehillApi
 import com.safehill.kclient.network.api.BaseApi
 import com.safehill.kclient.network.api.RequestMethod
+import com.safehill.kclient.network.api.asset.AssetApi
+import com.safehill.kclient.network.api.asset.AssetApiImpl
 import com.safehill.kclient.network.api.authorization.AuthorizationApi
 import com.safehill.kclient.network.api.authorization.AuthorizationApiImpl
 import com.safehill.kclient.network.api.fireRequest
@@ -52,16 +53,10 @@ import com.safehill.kclient.network.api.reaction.ReactionApi
 import com.safehill.kclient.network.api.reaction.ReactionApiImpl
 import com.safehill.kclient.network.api.thread.ThreadApi
 import com.safehill.kclient.network.api.thread.ThreadApiImpl
-import com.safehill.kclient.network.remote.S3Proxy.Companion.fetchAssets
+import com.safehill.kclient.network.remote.S3Proxy.fetchAssets
 import com.safehill.kclient.util.Provider
 import io.ktor.client.HttpClient
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import java.time.Instant
-import java.time.OffsetDateTime
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
-import java.util.Base64
 
 class RemoteServer private constructor(
     private val baseApi: BaseApi,
@@ -71,7 +66,8 @@ class RemoteServer private constructor(
     GroupApi by GroupApiImpl(baseApi),
     ReactionApi by ReactionApiImpl(baseApi),
     ThreadApi by ThreadApiImpl(baseApi),
-    BaseApi by baseApi {
+    BaseApi by baseApi,
+    AssetApi by AssetApiImpl(baseApi, safehillLogger) {
 
     constructor(
         userProvider: Provider<LocalUser>,
@@ -223,7 +219,7 @@ class RemoteServer private constructor(
     ): Map<AssetGlobalIdentifier, EncryptedAsset> {
         val assetFilterCriteriaDTO = AssetSearchCriteriaDTO(
             globalIdentifiers = globalIdentifiers,
-            versionNames = versions.map { it.value }
+            versionNames = versions.map { it.versionName }
         )
 
         val assetOutputDTOs =
@@ -234,60 +230,17 @@ class RemoteServer private constructor(
         return fetchAssets(assetOutputDTOs)
     }
 
-    @Throws
-    override suspend fun create(
-        assets: List<EncryptedAsset>,
-        groupId: GroupId,
-        filterVersions: List<AssetQuality>?,
-    ): List<AssetOutputDTO> {
-        if (assets.size > 1) {
-            throw NotImplementedError("Current API only supports creating one asset per request")
-        }
-        val asset = assets.first()
-
-
-        val assetCreatedAt = asset.creationDate ?: run { Instant.MIN }
-        val dateTime = OffsetDateTime.ofInstant(assetCreatedAt, ZoneOffset.UTC)
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX")
-        val requestBody = com.safehill.kclient.models.dtos.AssetInputDTO(
-            asset.globalIdentifier,
-            asset.localIdentifier,
-            dateTime.format(formatter),
-            groupId,
-            asset.encryptedVersions.map {
-                com.safehill.kclient.models.dtos.AssetVersionInputDTO(
-                    versionName = it.key.value,
-                    senderEncryptedSecret = it.value.encryptedSecret.base64EncodedString(),
-                    ephemeralPublicKey = it.value.publicKeyData.base64EncodedString(),
-                    publicSignature = it.value.publicSignatureData.base64EncodedString(),
-                )
-            },
-            forceUpdateVersions = true
-        )
-        val shOutput: AssetOutputDTO = postRequestForResponse(
-            endPoint = "/assets/create",
-            request = requestBody
-        )
-        return listOf(shOutput)
-    }
 
     override suspend fun share(asset: ShareableEncryptedAsset, threadId: String) {
-        if (asset.sharedVersions.isEmpty() || asset.sharedVersions.size > 1) {
-            throw NotImplementedError("Current API only supports share one asset per request")
-        }
 
-
-        val versions = mutableListOf<ShareVersionDetails>()
-        for (version in asset.sharedVersions) {
-            val versionDetails = ShareVersionDetails(
-                versionName = version.quality.value,
+        val versions = asset.sharedVersions.map { version ->
+            ShareVersionDetails(
+                versionName = version.quality.versionName,
                 recipientUserIdentifier = version.userPublicIdentifier,
-                recipientEncryptedSecret = Base64.getEncoder()
-                    .encodeToString(version.encryptedSecret),
-                ephemeralPublicKey = Base64.getEncoder().encodeToString(version.ephemeralPublicKey),
-                publicSignature = Base64.getEncoder().encodeToString(version.publicSignature)
+                recipientEncryptedSecret = version.encryptedSecret.base64EncodedString(),
+                ephemeralPublicKey = version.ephemeralPublicKey.base64EncodedString(),
+                publicSignature = version.publicSignature.base64EncodedString()
             )
-            versions.add(versionDetails)
         }
 
         val requestBody = AssetShareDTO(
@@ -316,62 +269,6 @@ class RemoteServer private constructor(
         )
     }
 
-    override suspend fun upload(
-        serverAsset: AssetOutputDTO,
-        asset: EncryptedAsset,
-        filterVersions: List<AssetQuality>,
-    ) {
-        val encryptedVersionByPresignedURL =
-            asset.encryptedVersions.values.filter { filterVersions.contains(it.quality) }
-                .mapNotNull { encryptedVersion ->
-                    try {
-                        val serverAssetVersion = serverAsset.versions.first {
-                            it.versionName == encryptedVersion.quality.value
-                        }
-                        serverAssetVersion.presignedURL to encryptedVersion
-                    } catch (_: NoSuchElementException) {
-                        safehillLogger.log(
-                            "no server asset provided for version ${encryptedVersion.quality.value}"
-                        )
-                        null
-                    }
-                }.toMap()
-
-        val remoteServer = this
-        coroutineScope {
-            encryptedVersionByPresignedURL.map { (presignedURL, encryptedVersion) ->
-                launch {
-                    try {
-                        with(S3Proxy) {
-                            upload(encryptedVersion.encryptedData, presignedURL)
-                        }
-                        remoteServer.markAsset(
-                            asset.globalIdentifier,
-                            encryptedVersion.quality,
-                            AssetDescriptorUploadState.Completed
-                        )
-                    } catch (exception: Exception) {
-                        safehillLogger.error(
-                            exception.message
-                                ?: "Error while marking asset ${asset.globalIdentifier} ${encryptedVersion.quality}"
-                        )
-                        throw exception
-                    }
-                }
-            }
-        }
-    }
-
-    override suspend fun markAsset(
-        assetGlobalIdentifier: AssetGlobalIdentifier,
-        quality: AssetQuality,
-        asState: AssetDescriptorUploadState,
-    ) {
-        postRequest(
-            endPoint = "assets/$assetGlobalIdentifier/versions/${quality.value}/uploaded",
-            request = null
-        )
-    }
 
     @Throws
     override suspend fun deleteAssets(globalIdentifiers: List<AssetGlobalIdentifier>): List<AssetGlobalIdentifier> {
@@ -388,7 +285,6 @@ class RemoteServer private constructor(
         groupId: GroupId,
         recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>,
     ) {
-        TODO("Not yet implemented")
     }
 
 

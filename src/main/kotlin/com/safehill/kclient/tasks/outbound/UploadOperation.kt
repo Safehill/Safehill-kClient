@@ -16,14 +16,14 @@ interface UploadOperation : BackgroundTask {
 
     fun enqueueUpload(
         localIdentifier: AssetLocalIdentifier,
-        assetQualities: Array<AssetQuality> = AssetQuality.entries.toTypedArray(),
+        assetQualities: List<AssetQuality> = AssetQuality.entries,
         groupId: GroupId,
         recipients: List<ServerUser> = listOf(),
         threadId: String? = null
     )
 
     fun enqueueShare(
-        assetQualities: Array<AssetQuality>,
+        assetQualities: List<AssetQuality>,
         globalIdentifier: AssetGlobalIdentifier,
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
