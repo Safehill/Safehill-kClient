@@ -66,7 +66,7 @@ class LocalAssetsStoreController(
         val identifier = assetDescriptor.globalIdentifier
         return serverProxy.getAsset(
             globalIdentifier = identifier,
-            quality = quality,
+            qualities = listOf(quality),
             cacheAfterFetch = cacheAfterFetch
         )
     }

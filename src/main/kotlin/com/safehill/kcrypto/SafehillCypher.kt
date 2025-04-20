@@ -3,9 +3,9 @@ package com.safehill.kclient
 import at.favre.lib.hkdf.HKDF
 import com.safehill.kclient.models.SafehillPublicKey
 import com.safehill.kclient.models.SafehillSignature
-import com.safehill.kcrypto.models.ShareablePayload
 import com.safehill.kclient.models.SignatureVerificationError
 import com.safehill.kclient.models.SymmetricKey
+import com.safehill.kcrypto.models.ShareablePayload
 import java.security.KeyPair
 import java.security.PrivateKey
 import java.security.PublicKey
@@ -32,8 +32,6 @@ class SafehillCypher {
             sr.nextBytes(iv)
             return iv
         }
-
-
 
 
         fun encrypt(message: ByteArray, key: SymmetricKey, iv: ByteArray? = null): ByteArray {
@@ -94,7 +92,12 @@ class SafehillCypher {
                 senderSignatureKey.private
             )
 
-            return ShareablePayload(ephemeralKey.public.encoded, cypher, signature, null)
+            return ShareablePayload(
+                ephemeralPublicKeyData = ephemeralKey.public.encoded,
+                ciphertext = cypher,
+                signature = signature,
+                recipient = null
+            )
         }
 
         fun decrypt(cipherText: ByteArray, key: SymmetricKey, iv: ByteArray? = null) =
@@ -139,12 +142,12 @@ class SafehillCypher {
             iv: ByteArray? = null,
         ): ByteArray {
             return this.decrypt(
-                sealedMessage,
-                encryptionKey.private,
-                encryptionKey.public,
-                protocolSalt,
-                iv,
-                signedBy
+                sealedMessage = sealedMessage,
+                userPrivateKey = encryptionKey.private,
+                userPublicKey = encryptionKey.public,
+                protocolSalt = protocolSalt,
+                iv = iv,
+                signedBy = signedBy
             )
         }
 

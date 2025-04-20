@@ -2,8 +2,6 @@ package com.safehill.kclient.network
 
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
-import com.safehill.kclient.models.assets.AssetQuality
-import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.assets.ShareableEncryptedAsset
 import com.safehill.kclient.models.dtos.ConversationThreadAssetsDTO
@@ -19,13 +17,14 @@ import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.RemoteUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.models.users.UserIdentifier
+import com.safehill.kclient.network.api.asset.AssetApi
 import com.safehill.kclient.network.api.authorization.AuthorizationApi
 import com.safehill.kclient.network.api.group.GroupApi
 import com.safehill.kclient.network.api.reaction.ReactionApi
 import com.safehill.kclient.network.api.thread.ThreadApi
 import java.time.Instant
 
-interface SafehillApi : AuthorizationApi, GroupApi, ReactionApi, ThreadApi {
+interface SafehillApi : AuthorizationApi, GroupApi, ReactionApi, ThreadApi, AssetApi {
 
     val requestor: LocalUser
 
@@ -110,17 +109,6 @@ interface SafehillApi : AuthorizationApi, GroupApi, ReactionApi, ThreadApi {
         threadId: String
     ): ConversationThreadAssetsDTO
 
-
-    /// Retrieve assets data and metadata
-    /// - Parameters:
-    ///   - withGlobalIdentifiers: filtering by global identifier
-    ///   - versions: filtering by version
-    /// - Returns:
-    ///   - the encrypted assets from the server
-    suspend fun getAssets(
-        globalIdentifiers: List<AssetGlobalIdentifier>,
-        versions: List<AssetQuality>
-    ): Map<AssetGlobalIdentifier, EncryptedAsset>
 
     /// Shares one or more assets with a set of users
     /// - Parameters:

@@ -214,7 +214,7 @@ class ServerProxyImpl(
             globalIdentifiersAndQualities.map { (globalIdentifier, assetQualities) ->
                 async {
                     runCatchingSafe {
-                        remoteServer.getAssets(
+                        remoteServer.getEncryptedAssets(
                             globalIdentifiers = listOf(globalIdentifier),
                             versions = assetQualities
                         )[globalIdentifier]
@@ -259,11 +259,11 @@ class ServerProxyImpl(
         return remoteAssets
     }
 
-    override suspend fun getAssets(
+    override suspend fun getEncryptedAssets(
         globalIdentifiers: List<AssetGlobalIdentifier>,
         versions: List<AssetQuality>
     ): Map<AssetGlobalIdentifier, EncryptedAsset> {
-        val localAssets = localServer.getAssets(
+        val localAssets = localServer.getEncryptedAssets(
             globalIdentifiers = globalIdentifiers,
             versions = versions
         )
@@ -363,18 +363,23 @@ class ServerProxyImpl(
 
     override suspend fun getAsset(
         globalIdentifier: GlobalIdentifier,
-        quality: AssetQuality,
+        qualities: List<AssetQuality>,
         cacheAfterFetch: Boolean
     ): EncryptedAsset {
-        return localServer.getAssets(
+        val localEncryptedAsset = localServer.getEncryptedAssets(
             globalIdentifiers = listOf(globalIdentifier),
-            versions = listOf(quality)
-        )[globalIdentifier]?.takeIf {
-            it.encryptedVersions.containsKey(quality)
-        } ?: run {
-            val remoteAsset = remoteServer.getAssets(
+            versions = qualities
+        )[globalIdentifier]
+
+        val localVersions = localEncryptedAsset?.encryptedVersions ?: mapOf()
+
+        val remainingQualities = qualities - localVersions.keys
+        return if (localEncryptedAsset != null && remainingQualities.isEmpty()) {
+            localEncryptedAsset
+        } else {
+            val remoteAsset = remoteServer.getEncryptedAssets(
                 globalIdentifiers = listOf(globalIdentifier),
-                versions = listOf(quality)
+                versions = remainingQualities
             )[globalIdentifier] ?: throw SafehillError.ClientError.NotFound
             if (cacheAfterFetch) {
                 val remoteDescriptor = getAssetDescriptors(
@@ -385,7 +390,9 @@ class ServerProxyImpl(
                     encryptedAssetsWithDescriptor = mapOf(remoteDescriptor to remoteAsset)
                 )
             }
-            remoteAsset
+            remoteAsset.copy(
+                encryptedVersions = remoteAsset.encryptedVersions + localVersions
+            )
         }
     }
 
@@ -427,7 +434,7 @@ class ServerProxyImpl(
         // An asset with `.lowResolution` only will trigger the loading of the next quality version in the background
         versionsToRetrieve.add(AssetQuality.LowResolution)
 
-        val map = localServer.getAssets(globalIdentifiers, versions)
+        val map = localServer.getEncryptedAssets(globalIdentifiers, versions)
 
         // Always cache the `.midResolution` if the `.lowResolution` is the only version available
         map.forEach { (globalIdentifier, encryptedAsset) ->

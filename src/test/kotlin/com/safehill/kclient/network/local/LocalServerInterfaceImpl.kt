@@ -154,7 +154,7 @@ class LocalServerInterfaceImpl : LocalServerInterface {
         TODO("Not yet implemented")
     }
 
-    override suspend fun getAssets(
+    override suspend fun getEncryptedAssets(
         globalIdentifiers: List<AssetGlobalIdentifier>,
         versions: List<AssetQuality>
     ): Map<AssetGlobalIdentifier, EncryptedAsset> {

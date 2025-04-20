@@ -1,5 +1,6 @@
 package com.safehill.kclient.tasks.outbound
 
+import com.safehill.kclient.controllers.UserController
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetLocalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
@@ -13,6 +14,7 @@ import com.safehill.kclient.models.users.UserProvider
 import com.safehill.kclient.models.users.getOrNull
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.exceptions.SafehillError
+import com.safehill.kcrypto.models.ShareablePayload
 import com.safehill.safehillclient.module.platform.UserModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,7 +29,8 @@ class UploadOperationImpl(
     override val listeners: MutableList<UploadOperationListener>,
     private val encrypter: AssetEncrypter,
     private val userModule: UserModule,
-    private val userProvider: UserProvider
+    private val userProvider: UserProvider,
+    private val userController: UserController
 ) : UploadOperation {
 
     private val outboundQueueItemManager: OutboundQueueItemManagerInterface?
@@ -149,8 +152,7 @@ class UploadOperationImpl(
 
             val encryptedAsset = encrypter.encryptedAsset(
                 outboundQueueItem = outboundQueueItem,
-                user = user,
-                recipient = user
+                user = user
             )
 
             notifyListenersFinishedEncrypting(outboundQueueItem)
@@ -253,22 +255,10 @@ class UploadOperationImpl(
     private suspend fun share(outboundQueueItem: OutboundQueueItem) {
         notifyListenersStartedSharing(outboundQueueItem)
         try {
-            val sharedVersions = outboundQueueItem.recipients.flatMap { recipient ->
-                val (_, sharablePayload) = encrypter.getSharablePayload(
-                    outboundQueueItem = outboundQueueItem,
-                    user = user,
-                    recipient = recipient
-                )
-                outboundQueueItem.assetQualities.map { assetQuality ->
-                    ShareableEncryptedAssetVersion(
-                        quality = assetQuality,
-                        userPublicIdentifier = recipient.identifier,
-                        encryptedSecret = sharablePayload.ciphertext,
-                        ephemeralPublicKey = sharablePayload.ephemeralPublicKeyData,
-                        publicSignature = sharablePayload.signature
-                    )
-                }
-            }
+            val sharedVersions = getShareableEncryptedAssetVersions(
+                outboundQueueItem = outboundQueueItem,
+                recipients = outboundQueueItem.recipients
+            )
             serverProxy.share(
                 asset = ShareableEncryptedAsset(
                     globalIdentifier = outboundQueueItem.globalIdentifier,
@@ -285,6 +275,45 @@ class UploadOperationImpl(
         }
 
         notifyListenersFinishedSharing(outboundQueueItem)
+    }
+
+    private suspend fun getShareableEncryptedAssetVersions(
+        outboundQueueItem: OutboundQueueItem,
+        recipients: List<ServerUser>
+    ): List<ShareableEncryptedAssetVersion> {
+        val encryptedAsset = serverProxy.getAsset(
+            globalIdentifier = outboundQueueItem.globalIdentifier,
+            qualities = outboundQueueItem.assetQualities,
+            cacheAfterFetch = true
+        )
+        return recipients.flatMap { recipient ->
+            outboundQueueItem.assetQualities.mapNotNull { quality ->
+                val encryptedVersion =
+                    encryptedAsset.encryptedVersions[quality] ?: return@mapNotNull null
+                val sharedSecret = user.decryptSecret(
+                    sealedMessage = ShareablePayload(
+                        ephemeralPublicKeyData = encryptedVersion.publicKeyData,
+                        ciphertext = encryptedVersion.encryptedSecret,
+                        signature = encryptedVersion.publicSignatureData,
+                        recipient = recipient
+                    ),
+                    protocolSalt = user.encryptionSalt,
+                    sender = user
+                )
+                val encryptedSharedSecretForRecipient = user.shareable(
+                    data = sharedSecret,
+                    with = recipient,
+                    protocolSalt = user.encryptionSalt
+                )
+                ShareableEncryptedAssetVersion(
+                    quality = quality,
+                    userPublicIdentifier = recipient.identifier,
+                    encryptedSecret = encryptedSharedSecretForRecipient.ciphertext,
+                    ephemeralPublicKey = encryptedSharedSecretForRecipient.ephemeralPublicKeyData,
+                    publicSignature = encryptedSharedSecretForRecipient.signature
+                )
+            }
+        }
     }
 
 

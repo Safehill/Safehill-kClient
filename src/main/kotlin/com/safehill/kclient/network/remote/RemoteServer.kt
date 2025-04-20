@@ -4,15 +4,11 @@ import com.safehill.kclient.base64.base64EncodedString
 import com.safehill.kclient.logging.SafehillLogger
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
-import com.safehill.kclient.models.assets.AssetQuality
-import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.assets.ShareableEncryptedAsset
 import com.safehill.kclient.models.dtos.AssetDeleteCriteriaDTO
 import com.safehill.kclient.models.dtos.AssetDescriptorDTO
 import com.safehill.kclient.models.dtos.AssetDescriptorFilterCriteriaDTO
-import com.safehill.kclient.models.dtos.AssetOutputDTO
-import com.safehill.kclient.models.dtos.AssetSearchCriteriaDTO
 import com.safehill.kclient.models.dtos.AssetShareDTO
 import com.safehill.kclient.models.dtos.ConversationThreadAssetsDTO
 import com.safehill.kclient.models.dtos.FCM_TOKEN_TYPE
@@ -53,7 +49,6 @@ import com.safehill.kclient.network.api.reaction.ReactionApi
 import com.safehill.kclient.network.api.reaction.ReactionApiImpl
 import com.safehill.kclient.network.api.thread.ThreadApi
 import com.safehill.kclient.network.api.thread.ThreadApiImpl
-import com.safehill.kclient.network.remote.S3Proxy.fetchAssets
 import com.safehill.kclient.util.Provider
 import io.ktor.client.HttpClient
 import java.time.Instant
@@ -210,24 +205,6 @@ class RemoteServer private constructor(
             endPoint = "/threads/retrieve/$threadId/assets",
             request = null
         )
-    }
-
-    @Throws
-    override suspend fun getAssets(
-        globalIdentifiers: List<AssetGlobalIdentifier>,
-        versions: List<AssetQuality>,
-    ): Map<AssetGlobalIdentifier, EncryptedAsset> {
-        val assetFilterCriteriaDTO = AssetSearchCriteriaDTO(
-            globalIdentifiers = globalIdentifiers,
-            versionNames = versions.map { it.versionName }
-        )
-
-        val assetOutputDTOs =
-            postRequestForResponse<AssetSearchCriteriaDTO, List<AssetOutputDTO>>(
-                endPoint = "/assets/retrieve",
-                request = assetFilterCriteriaDTO
-            )
-        return fetchAssets(assetOutputDTOs)
     }
 
 

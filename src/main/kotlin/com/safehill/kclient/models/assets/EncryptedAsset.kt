@@ -23,7 +23,7 @@ fun EncryptedAsset.toDecryptedAsset(
         currentUser.decrypted(
             data = encryptedVersion.encryptedData,
             encryptedSecret = sharedSecret,
-            receivedFrom = senderUser,
+            sender = senderUser,
             protocolSalt = currentUser.encryptionSalt
         )
     }

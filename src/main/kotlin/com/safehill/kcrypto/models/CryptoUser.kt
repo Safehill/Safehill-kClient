@@ -1,7 +1,5 @@
 package com.safehill.kclient.models
 
-import com.safehill.kclient.SafehillCypher
-import com.safehill.kcrypto.models.ShareablePayload
 import java.security.KeyPair
 import java.security.PublicKey
 
@@ -69,45 +67,4 @@ class LocalCryptoUser(val key: KeyPair, val signature: KeyPair) : CryptoUser {
         return SafehillSignature.sign(data, this.signature.private)
     }
 
-}
-
-
-class SHUserContext(private val user: LocalCryptoUser) {
-
-    fun shareable(
-        data: ByteArray,
-        with: CryptoUser,
-        protocolSalt: ByteArray
-    ): ShareablePayload {
-
-        val ephemeralKey = SafehillKeyPair.generate()
-        val encrypted = SafehillCypher.encrypt(
-            data,
-            with.publicKey,
-            ephemeralKey,
-            protocolSalt,
-            this.user.signature
-        )
-        return ShareablePayload(
-            ephemeralKey.public.encoded,
-            encrypted.ciphertext,
-            encrypted.signature,
-            with
-        )
-    }
-
-    fun decrypt(
-        data: ByteArray,
-        encryptedSecret: ShareablePayload,
-        protocolSalt: ByteArray,
-        sender: CryptoUser
-    ): ByteArray {
-        val secretData = SafehillCypher.decrypt(
-            encryptedSecret,
-            this.user.key,
-            protocolSalt,
-            sender.publicSignature
-        )
-        return SafehillCypher.decrypt(data, secretData)
-    }
 }
