@@ -16,5 +16,5 @@ data class AssetInputDTO(
     val groupId: String?,
     val versions: List<AssetVersionInputDTO>,
     // If set to true destroys all sharing information for the existing asset version, if one with the same name exists
-    val force: Boolean? = false
+    val force: Boolean
 )

@@ -7,6 +7,7 @@ import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.assets.EncryptedAssetVersion
 import com.safehill.kclient.models.assets.GroupId
+import com.safehill.kclient.models.dtos.AssetInputDTO
 import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.dtos.AssetVersionInputDTO
 import com.safehill.kclient.models.dtos.AssetVersionOutputDTO
@@ -38,7 +39,7 @@ class AssetUploader(
         val dateTime = OffsetDateTime.ofInstant(assetCreatedAt, ZoneOffset.UTC)
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX")
 
-        val requestBody = com.safehill.kclient.models.dtos.AssetInputDTO(
+        val requestBody = AssetInputDTO(
             globalIdentifier = asset.globalIdentifier,
             localIdentifier = asset.localIdentifier,
             creationDate = dateTime.format(formatter),
@@ -50,7 +51,8 @@ class AssetUploader(
                     ephemeralPublicKey = it.value.publicKeyData.base64EncodedString(),
                     publicSignature = it.value.publicSignatureData.base64EncodedString(),
                 )
-            }
+            },
+            force = true
         )
         val shOutput: AssetOutputDTO = postRequestForResponse(
             endPoint = "/assets/create",
