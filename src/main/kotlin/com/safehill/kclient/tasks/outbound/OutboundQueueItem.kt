@@ -4,7 +4,7 @@ import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetLocalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.GroupId
-import com.safehill.kclient.models.users.ServerUser
+import com.safehill.kclient.models.users.UserIdentifier
 
 class OutboundQueueItem(
     val operationType: OperationType,
@@ -12,7 +12,7 @@ class OutboundQueueItem(
     val globalIdentifier: AssetGlobalIdentifier,
     val localIdentifier: AssetLocalIdentifier,
     val groupId: GroupId,
-    val recipients: List<ServerUser>,
+    val recipientIds: List<UserIdentifier>,
     val threadId: String?
 ) {
 

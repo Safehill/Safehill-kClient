@@ -1,5 +1,6 @@
 package com.safehill.kclient.tasks.outbound
 
+import com.safehill.kclient.controllers.LocalAssetsStoreController
 import com.safehill.kclient.controllers.UserController
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetLocalIdentifier
@@ -10,6 +11,7 @@ import com.safehill.kclient.models.assets.ShareableEncryptedAsset
 import com.safehill.kclient.models.assets.ShareableEncryptedAssetVersion
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
+import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.models.users.UserProvider
 import com.safehill.kclient.models.users.getOrNull
 import com.safehill.kclient.network.ServerProxy
@@ -30,7 +32,8 @@ class UploadOperationImpl(
     private val encrypter: AssetEncrypter,
     private val userModule: UserModule,
     private val userProvider: UserProvider,
-    private val userController: UserController
+    private val userController: UserController,
+    private val localAssetsStoreController: LocalAssetsStoreController
 ) : UploadOperation {
 
     private val outboundQueueItemManager: OutboundQueueItemManagerInterface?
@@ -50,7 +53,7 @@ class UploadOperationImpl(
         localIdentifier: AssetLocalIdentifier,
         assetQualities: List<AssetQuality>,
         groupId: GroupId,
-        recipients: List<ServerUser>,
+        recipientIds: List<UserIdentifier>,
         threadId: String?
     ) {
         scope.launch {
@@ -61,7 +64,7 @@ class UploadOperationImpl(
                 localIdentifier = localIdentifier,
                 globalIdentifier = globalIdentifier,
                 groupId = groupId,
-                recipients = recipients,
+                recipientIds = recipientIds,
                 threadId = threadId
             )
             sendToChannelAndNotifyListeners(item)
@@ -74,14 +77,14 @@ class UploadOperationImpl(
         globalIdentifier: AssetGlobalIdentifier,
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
-        recipients: List<ServerUser>,
+        recipientIds: List<UserIdentifier>,
         threadId: String?
     ) {
         scope.launch {
             enqueueShareItem(
                 globalIdentifier = globalIdentifier,
                 groupId = groupId,
-                recipients = recipients,
+                recipientIds = recipientIds,
                 threadId = threadId,
                 assetQualities = assetQualities,
                 localIdentifier = localIdentifier
@@ -108,13 +111,13 @@ class UploadOperationImpl(
         outboundQueueItem: OutboundQueueItem,
         globalIdentifier: String
     ) {
-        if (outboundQueueItem.recipients.isNotEmpty()) {
+        if (outboundQueueItem.recipientIds.isNotEmpty()) {
             scope.launch {
                 enqueueShareItem(
                     assetQualities = outboundQueueItem.assetQualities,
                     globalIdentifier = globalIdentifier,
                     groupId = outboundQueueItem.groupId,
-                    recipients = outboundQueueItem.recipients,
+                    recipientIds = outboundQueueItem.recipientIds,
                     threadId = outboundQueueItem.threadId,
                     localIdentifier = outboundQueueItem.localIdentifier
                 )
@@ -127,14 +130,14 @@ class UploadOperationImpl(
         globalIdentifier: AssetGlobalIdentifier,
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
-        recipients: List<ServerUser>,
+        recipientIds: List<UserIdentifier>,
         threadId: String?
     ) {
         val item = OutboundQueueItem(
             operationType = OutboundQueueItem.OperationType.Share,
             globalIdentifier = globalIdentifier,
             groupId = groupId,
-            recipients = recipients,
+            recipientIds = recipientIds,
             threadId = threadId,
             localIdentifier = localIdentifier,
             assetQualities = assetQualities
@@ -253,11 +256,13 @@ class UploadOperationImpl(
     }
 
     private suspend fun share(outboundQueueItem: OutboundQueueItem) {
-        notifyListenersStartedSharing(outboundQueueItem)
+        val (sender, recipients) = getSenderAndRecipients(outboundQueueItem)
         try {
+            notifyListenersStartedSharing(outboundQueueItem, recipients)
             val sharedVersions = getShareableEncryptedAssetVersions(
                 outboundQueueItem = outboundQueueItem,
-                recipients = outboundQueueItem.recipients
+                sender = sender,
+                recipients = recipients
             )
             serverProxy.share(
                 asset = ShareableEncryptedAsset(
@@ -267,18 +272,29 @@ class UploadOperationImpl(
                 ),
                 threadId = outboundQueueItem.threadId!!
             )
-        } catch (e: Exception) {
-            //TODO better exception handling
-            println(e.localizedMessage)
+            notifyListenersFinishedSharing(outboundQueueItem, recipients)
+        } catch (_: Exception) {
             notifyListenersFailedSharing(outboundQueueItem)
-            return
         }
 
-        notifyListenersFinishedSharing(outboundQueueItem)
+    }
+
+    private suspend fun getSenderAndRecipients(outboundQueueItem: OutboundQueueItem): Pair<ServerUser, List<ServerUser>> {
+        val assetDescriptor = localAssetsStoreController.getAssetDescriptor(
+            globalIdentifier = outboundQueueItem.globalIdentifier
+        )
+        val recipientIds = outboundQueueItem.recipientIds
+        val senderUserIdentifier = assetDescriptor.sharingInfo.sharedByUserIdentifier
+        val toFetchUsers = recipientIds + senderUserIdentifier
+        val usersMap = userController.getUsers(toFetchUsers).getOrThrow()
+        val sender = usersMap[senderUserIdentifier] ?: error("Asset Owner not found.")
+        val recipients = recipientIds.mapNotNull { usersMap[it] }
+        return sender to recipients
     }
 
     private suspend fun getShareableEncryptedAssetVersions(
         outboundQueueItem: OutboundQueueItem,
+        sender: ServerUser,
         recipients: List<ServerUser>
     ): List<ShareableEncryptedAssetVersion> {
         val encryptedAsset = serverProxy.getAsset(
@@ -298,7 +314,7 @@ class UploadOperationImpl(
                         recipient = recipient
                     ),
                     protocolSalt = user.encryptionSalt,
-                    sender = user
+                    sender = sender
                 )
                 val encryptedSharedSecretForRecipient = user.shareable(
                     data = sharedSecret,
@@ -316,36 +332,43 @@ class UploadOperationImpl(
         }
     }
 
-
-    private fun notifyListenersFinishedSharing(outboundQueueItem: OutboundQueueItem) {
+    private fun notifyListenersFinishedSharing(
+        outboundQueueItem: OutboundQueueItem,
+        recipients: List<ServerUser>
+    ) {
         listeners.forEach {
             it.finishedSharing(
-                outboundQueueItem.localIdentifier,
-                outboundQueueItem.globalIdentifier,
-                outboundQueueItem.groupId,
-                outboundQueueItem.recipients
+                localIdentifier = outboundQueueItem.localIdentifier,
+                globalIdentifier = outboundQueueItem.globalIdentifier,
+                groupId = outboundQueueItem.groupId,
+                users = recipients
             )
         }
     }
 
-    private fun notifyListenersFailedSharing(outboundQueueItem: OutboundQueueItem) {
+    private fun notifyListenersFailedSharing(
+        outboundQueueItem: OutboundQueueItem
+    ) {
         listeners.forEach {
             it.failedSharing(
-                outboundQueueItem.localIdentifier,
-                outboundQueueItem.globalIdentifier,
-                outboundQueueItem.groupId,
-                outboundQueueItem.recipients
+                localIdentifier = outboundQueueItem.localIdentifier,
+                globalIdentifier = outboundQueueItem.globalIdentifier,
+                groupId = outboundQueueItem.groupId,
+                users = listOf()
             )
         }
     }
 
-    private fun notifyListenersStartedSharing(outboundQueueItem: OutboundQueueItem) {
+    private fun notifyListenersStartedSharing(
+        outboundQueueItem: OutboundQueueItem,
+        recipients: List<ServerUser>
+    ) {
         listeners.forEach {
             it.startedSharing(
-                outboundQueueItem.localIdentifier,
-                outboundQueueItem.globalIdentifier,
-                outboundQueueItem.groupId,
-                outboundQueueItem.recipients
+                localIdentifier = outboundQueueItem.localIdentifier,
+                globalIdentifier = outboundQueueItem.globalIdentifier,
+                groupId = outboundQueueItem.groupId,
+                users = recipients
             )
         }
     }
