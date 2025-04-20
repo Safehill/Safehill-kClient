@@ -380,19 +380,23 @@ class ServerProxyImpl(
             val remoteAsset = remoteServer.getEncryptedAssets(
                 globalIdentifiers = listOf(globalIdentifier),
                 versions = remainingQualities
-            )[globalIdentifier] ?: throw SafehillError.ClientError.NotFound
-            if (cacheAfterFetch) {
-                val remoteDescriptor = getAssetDescriptors(
-                    assetGlobalIdentifiers = listOf(globalIdentifier),
-                    groupIds = null, after = null
-                ).first()
-                localServer.storeAssetsWithDescriptor(
-                    encryptedAssetsWithDescriptor = mapOf(remoteDescriptor to remoteAsset)
+            )[globalIdentifier]
+            if (remoteAsset == null) {
+                localEncryptedAsset ?: throw SafehillError.ClientError.NotFound
+            } else {
+                if (cacheAfterFetch) {
+                    val remoteDescriptor = getAssetDescriptors(
+                        assetGlobalIdentifiers = listOf(globalIdentifier),
+                        groupIds = null, after = null
+                    ).first()
+                    localServer.storeAssetsWithDescriptor(
+                        encryptedAssetsWithDescriptor = mapOf(remoteDescriptor to remoteAsset)
+                    )
+                }
+                remoteAsset.copy(
+                    encryptedVersions = remoteAsset.encryptedVersions + localVersions
                 )
             }
-            remoteAsset.copy(
-                encryptedVersions = remoteAsset.encryptedVersions + localVersions
-            )
         }
     }
 
