@@ -95,25 +95,17 @@ class UserInteractionController internal constructor(
     ): ConversationThreadOutputDTO {
         val currentUser = userProvider.get()
         val usersAndSelf = (withUsers + currentUser).distinctBy { it.identifier }
-
-        val existingThread = serverProxy.retrieveThread(
-            usersIdentifiers = usersAndSelf.map { it.identifier },
+        val encryptionDetails = encryptionDetailsController.getRecipientEncryptionDetails(
+            users = usersAndSelf,
+            secretKey = SymmetricKey()
+        )
+        // If the thread already exists, there is no change in the encryptionDetails.
+        // Therefor it is safe to call this method again.
+        return serverProxy.createOrUpdateThread(
+            name = null,
+            recipientsEncryptionDetails = encryptionDetails,
             phoneNumbers = withPhoneNumbers
         )
-
-        return if (existingThread != null) {
-            existingThread
-        } else {
-            val encryptionDetails = encryptionDetailsController.getRecipientEncryptionDetails(
-                users = usersAndSelf,
-                secretKey = SymmetricKey()
-            )
-            serverProxy.createOrUpdateThread(
-                name = null,
-                recipientsEncryptionDetails = encryptionDetails,
-                phoneNumbers = withPhoneNumbers
-            )
-        }
     }
 
 
