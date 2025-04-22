@@ -91,7 +91,8 @@ class SharingAssetsState {
             val newEntry = groupId to sharingAssets.upsertSharingAsset(
                 globalIdentifier = globalIdentifier,
                 localIdentifier = localIdentifier,
-                state = state
+                state = state,
+                groupId = groupId
             )
             it + newEntry
         }

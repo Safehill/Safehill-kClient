@@ -2,6 +2,7 @@ package com.safehill.safehillclient.data.threads.model
 
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetLocalIdentifier
+import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.network.GlobalIdentifier
 import com.safehill.kclient.tasks.outbound.UploadFailure
 import java.time.Instant
@@ -19,12 +20,14 @@ data class SharingAssets(
     fun upsertSharingAsset(
         globalIdentifier: GlobalIdentifier,
         localIdentifier: AssetLocalIdentifier,
-        state: SharingAsset.State
+        state: SharingAsset.State,
+        groupId: GroupId
     ): SharingAssets {
         val newSharingAsset = SharingAsset(
             assetGlobalIdentifier = globalIdentifier,
             localIdentifier = localIdentifier,
-            state = state
+            state = state,
+            groupId = groupId
         )
         val updatedSharingAssets = listOf(newSharingAsset) + assets
         return copy(
@@ -51,7 +54,8 @@ data class SharingAssets(
 data class SharingAsset(
     val assetGlobalIdentifier: AssetGlobalIdentifier,
     val localIdentifier: AssetLocalIdentifier,
-    val state: State
+    val state: State,
+    val groupId: String
 ) {
     sealed class State {
         data object Uploading : State()
