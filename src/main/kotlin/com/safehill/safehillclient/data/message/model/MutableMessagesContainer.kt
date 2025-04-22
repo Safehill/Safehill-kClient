@@ -34,6 +34,10 @@ private class MutableMessagesContainerImpl : MutableMessagesContainer,
         }
     }
 
+    override fun modifyMessages(update: (Map<String, Message>) -> Map<String, Message>) {
+        _messages.update(update)
+    }
+
     override fun setLastUpdatedAt(instant: Instant) {
         _lastActiveDate.update { instant }
     }
@@ -43,11 +47,11 @@ private class MutableMessagesContainerImpl : MutableMessagesContainer,
     }
 
     override fun updateMessage(localID: String, message: Message) {
-        setMessages(
-            messages.value.map {
-                if (it.id == localID) message else it
+        _messages.update { initial ->
+            initial.mapValues { (_, value) ->
+                if (value.id == localID) message else value
             }
-        )
+        }
     }
 
     private fun setMessages(messages: List<Message>) {

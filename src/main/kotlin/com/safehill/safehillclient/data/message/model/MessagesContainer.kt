@@ -19,4 +19,5 @@ interface MutableMessagesContainer : MessagesContainer {
 
     fun setLastUpdatedAt(instant: Instant)
 
+    fun modifyMessages(update: (Map<String, Message>) -> Map<String, Message>)
 }

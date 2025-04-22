@@ -6,6 +6,7 @@ import com.safehill.kclient.models.dtos.ConversationThreadAssetDTO
 import com.safehill.kclient.models.dtos.ConversationThreadAssetsDTO
 import com.safehill.kclient.models.dtos.websockets.ThreadUpdatedDTO
 import com.safehill.kclient.models.interactions.InteractionAnchor
+import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.UserProvider
 import com.safehill.kclient.models.users.getOrNull
 import com.safehill.kclient.network.ServerProxy
@@ -77,26 +78,36 @@ class ThreadStateInteractor(
     }
 
     private fun upsertPhotoMessages(threadAssetDtos: List<ConversationThreadAssetDTO>) {
-        val photoMessages = threadAssetDtos.groupBy {
-            it.groupId
-        }
-        mutableThreadState.upsertMessages(
-            photoMessages.mapNotNull {
-                it.toMessage()
+        val currentUser = userProvider.getOrNull() ?: return
+        mutableThreadState.modifyMessages { initialMessages ->
+            threadAssetDtos.fold(initialMessages) { transformed, threadAsset ->
+                val existingMessageWithSameGroup = transformed[threadAsset.groupId]
+                val existingAssetsInSameGroup =
+                    (existingMessageWithSameGroup?.messageType as? MessageType.Images)?.assetIdentifiers
+                val updatedMessage =
+                    if (existingMessageWithSameGroup != null && existingAssetsInSameGroup != null) {
+                        existingMessageWithSameGroup.copy(
+                            messageType = MessageType.Images(
+                                assetIdentifiers = (existingAssetsInSameGroup + threadAsset.globalIdentifier).distinct()
+                            )
+                        )
+                    } else {
+                        threadAsset.toMessage(currentUser = currentUser)
+                    }
+                transformed + (updatedMessage.id to updatedMessage)
             }
-        )
+        }
     }
 
-    private fun Map.Entry<String, List<ConversationThreadAssetDTO>>.toMessage(): Message? {
-        val currentUser = userProvider.getOrNull() ?: return null
+    private fun ConversationThreadAssetDTO.toMessage(currentUser: LocalUser): Message {
         return Message(
-            id = this.key,
+            id = this.groupId,
             userIdentifier = currentUser.identifier,
-            senderIdentifier = this.value.first().addedByUserIdentifier,
-            createdDate = this.value.first().addedAt,
+            senderIdentifier = this.addedByUserIdentifier,
+            createdDate = this.addedAt,
             status = MessageStatus.Sent,
             messageType = MessageType.Images(
-                assetIdentifiers = this.value.map { it.globalIdentifier }
+                assetIdentifiers = listOf(this.globalIdentifier)
             )
         )
     }
