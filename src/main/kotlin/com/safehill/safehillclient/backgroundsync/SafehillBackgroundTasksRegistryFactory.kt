@@ -11,6 +11,7 @@ import com.safehill.kclient.tasks.outbound.UploadOperation
 import com.safehill.kclient.tasks.outbound.UploadOperationImpl
 import com.safehill.kclient.tasks.syncing.InteractionSync
 import com.safehill.safehillclient.module.asset.AssetModule
+import com.safehill.safehillclient.module.config.ClientOptions
 import com.safehill.safehillclient.module.platform.UserModule
 
 class NetworkModule(
@@ -22,6 +23,7 @@ class NetworkModule(
 class SafehillBackgroundTasksRegistryFactory(
     private val assetModule: AssetModule,
     private val userModule: UserModule,
+    private val clientOptions: ClientOptions,
     private val networkModule: NetworkModule,
     private val userProvider: UserProvider,
     private val controllersModule: ControllersModule
@@ -57,7 +59,9 @@ class SafehillBackgroundTasksRegistryFactory(
             userModule = userModule,
             userProvider = userProvider,
             userController = controllersModule.userController,
-            localAssetsStoreController = controllersModule.localAssetsStoreController
+            localAssetsStoreController = controllersModule.localAssetsStoreController,
+            clientScope = clientOptions.clientScope,
+            safehillLogger = clientOptions.safehillLogger
         )
     }
 

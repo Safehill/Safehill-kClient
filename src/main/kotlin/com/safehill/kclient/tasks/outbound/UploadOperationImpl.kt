@@ -2,6 +2,7 @@ package com.safehill.kclient.tasks.outbound
 
 import com.safehill.kclient.controllers.LocalAssetsStoreController
 import com.safehill.kclient.controllers.UserController
+import com.safehill.kclient.logging.SafehillLogger
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetLocalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
@@ -17,10 +18,8 @@ import com.safehill.kclient.models.users.getOrNull
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.exceptions.SafehillError
 import com.safehill.kcrypto.models.ShareablePayload
+import com.safehill.safehillclient.ClientScope
 import com.safehill.safehillclient.module.platform.UserModule
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -33,9 +32,12 @@ class UploadOperationImpl(
     private val userModule: UserModule,
     private val userProvider: UserProvider,
     private val userController: UserController,
-    private val localAssetsStoreController: LocalAssetsStoreController
+    private val localAssetsStoreController: LocalAssetsStoreController,
+    private val clientScope: ClientScope,
+    private val safehillLogger: SafehillLogger
 ) : UploadOperation {
 
+    private val listenerRegistry = UploadListenersRegistry(listeners)
     private val outboundQueueItemManager: OutboundQueueItemManagerInterface?
         get() {
             val currentUser = userProvider.getOrNull() ?: return null
@@ -43,8 +45,6 @@ class UploadOperationImpl(
         }
 
     private val outboundQueueItems: Channel<OutboundQueueItem> = Channel(Channel.UNLIMITED)
-    private val job = Job()
-    private val scope = CoroutineScope(Dispatchers.Default + job)
 
     override val user: LocalUser
         get() = serverProxy.requestor
@@ -56,7 +56,7 @@ class UploadOperationImpl(
         recipientIds: List<UserIdentifier>,
         threadId: String?
     ) {
-        scope.launch {
+        clientScope.launch {
             val globalIdentifier = UUID.randomUUID().toString()
             val item = OutboundQueueItem(
                 operationType = OutboundQueueItem.OperationType.Upload,
@@ -81,7 +81,7 @@ class UploadOperationImpl(
         recipientIds: List<UserIdentifier>,
         threadId: String?
     ) {
-        scope.launch {
+        clientScope.launch {
             enqueueShareItem(
                 globalIdentifier = globalIdentifier,
                 groupId = groupId,
@@ -95,17 +95,7 @@ class UploadOperationImpl(
 
     private suspend fun sendToChannelAndNotifyListeners(outboundQueueItem: OutboundQueueItem) {
         outboundQueueItems.send(outboundQueueItem)
-        val threadId = outboundQueueItem.threadId
-        if (threadId != null) {
-            listeners.forEach {
-                it.enqueued(
-                    threadId = threadId,
-                    localIdentifier = outboundQueueItem.localIdentifier,
-                    globalIdentifier = outboundQueueItem.globalIdentifier,
-                    groupId = outboundQueueItem.groupId
-                )
-            }
-        }
+        listenerRegistry.notifyOfEnqueuing(outboundQueueItem)
     }
 
     private fun shareIfRecipientsExist(
@@ -113,7 +103,7 @@ class UploadOperationImpl(
         globalIdentifier: String
     ) {
         if (outboundQueueItem.recipientIds.isNotEmpty()) {
-            scope.launch {
+            clientScope.launch {
                 enqueueShareItem(
                     assetQualities = outboundQueueItem.assetQualities,
                     globalIdentifier = globalIdentifier,
@@ -153,80 +143,40 @@ class UploadOperationImpl(
             val globalIdentifier = outboundQueueItem.globalIdentifier
 
             // *******encrypting*******
-            notifyListenersStartedEncrypting(outboundQueueItem)
+            listenerRegistry.notifyListenersStartedEncrypting(outboundQueueItem)
 
             val encryptedAsset = encrypter.encryptedAsset(
                 outboundQueueItem = outboundQueueItem,
                 user = user
             )
 
-            notifyListenersFinishedEncrypting(outboundQueueItem)
+            listenerRegistry.notifyListenersFinishedEncrypting(outboundQueueItem)
             // #######encrypting#######
 
             // *******uploading********
-            notifyListenersStartedUploading(outboundQueueItem)
+            listenerRegistry.notifyListenersStartedUploading(outboundQueueItem)
 
             uploadAsset(outboundQueueItem, encryptedAsset)
 
-            notifyListenersFinishedUploading(outboundQueueItem)
+            listenerRegistry.notifyListenersFinishedUploading(outboundQueueItem)
             // #######uploading########
 
             shareIfRecipientsExist(outboundQueueItem, globalIdentifier)
-
+            outboundQueueItemManager?.removeOutboundQueueItem(outboundQueueItem)
         } catch (exception: Exception) {
-            handleUploadException(outboundQueueItem, exception)
-            throw exception
+            reEnqueueItemOrElse(outboundQueueItem, exception) {
+                outboundQueueItemManager?.addOutboundQueueItem(
+                    queueItem = outboundQueueItem.copy(
+                        operationState = OutboundQueueItem.OperationState.Failed(
+                            UploadFailure.UPLOAD
+                        )
+                    )
+                )
+                listenerRegistry.notifyListenersFailedUploading(outboundQueueItem)
+            }
         }
     }
 
-    private fun notifyListenersStartedEncrypting(outboundQueueItem: OutboundQueueItem) {
-        listeners.forEach {
-            it.startedEncrypting(
-                outboundQueueItem.localIdentifier,
-                outboundQueueItem.groupId
-            )
-        }
-    }
-
-    private fun notifyListenersFinishedEncrypting(outboundQueueItem: OutboundQueueItem) {
-        listeners.forEach {
-            it.finishedEncrypting(
-                outboundQueueItem.localIdentifier,
-                outboundQueueItem.groupId
-            )
-        }
-    }
-
-    private fun notifyListenersStartedUploading(outboundQueueItem: OutboundQueueItem) {
-        listeners.forEach {
-            it.startedUploading(
-                outboundQueueItem.localIdentifier,
-                outboundQueueItem.groupId
-            )
-        }
-    }
-
-    private fun notifyListenersFinishedUploading(
-        outboundQueueItem: OutboundQueueItem,
-    ) {
-        listeners.forEach {
-            it.finishedUploading(
-                localIdentifier = outboundQueueItem.localIdentifier,
-                globalIdentifier = outboundQueueItem.globalIdentifier,
-                groupId = outboundQueueItem.groupId
-            )
-        }
-    }
-
-    private fun notifyListenersFailedUploading(outboundQueueItem: OutboundQueueItem) {
-        listeners.forEach {
-            it.failedUploading(
-                globalIdentifier = outboundQueueItem.globalIdentifier,
-                localIdentifier = outboundQueueItem.localIdentifier,
-                groupId = outboundQueueItem.groupId
-            )
-        }
-    }
 
     private suspend fun uploadAsset(
         outboundQueueItem: OutboundQueueItem,
@@ -238,39 +188,37 @@ class UploadOperationImpl(
         )
     }
 
-    private suspend fun handleUploadException(
+    private fun reEnqueueItemOrElse(
         outboundQueueItem: OutboundQueueItem,
-        exception: Exception
+        exception: Exception,
+        elseBlock: suspend () -> Unit
     ) {
-        when (exception) {
-            is SafehillError.ClientError.Conflict,
-            is SafehillError.ClientError.BadRequest,
-            SafehillError.ClientError.Unauthorized,
-            SafehillError.ClientError.PaymentRequired -> {
-                outboundQueueItemManager?.addOutboundQueueItem(
-                    queueItem = outboundQueueItem.copy(
-                        operationState = OutboundQueueItem.OperationState.Failed(
-                            UploadFailure.UPLOAD
-                        )
-                    )
-                )
-                notifyListenersFailedUploading(outboundQueueItem)
-            }
-
-            else -> {
-                scope.launch {
-                    sendToChannelAndNotifyListeners(outboundQueueItem)
-                    outboundQueueItemManager?.addOutboundQueueItem(outboundQueueItem)
-                }
+        clientScope.launch {
+            if (!exception.isFatal) {
+                sendToChannelAndNotifyListeners(outboundQueueItem)
+                outboundQueueItemManager?.addOutboundQueueItem(outboundQueueItem)
+            } else {
+                elseBlock()
             }
         }
+
     }
+
+    private val Exception.isFatal: Boolean
+        get() = when (this) {
+            is SafehillError.ClientError.Conflict,
+            is SafehillError.ClientError.BadRequest,
+            SafehillError.ClientError.MethodNotAllowed,
+            SafehillError.ClientError.PaymentRequired -> true
+
+            else -> false
+        }
 
 
     private suspend fun share(outboundQueueItem: OutboundQueueItem) {
         val (sender, recipients) = getSenderAndRecipients(outboundQueueItem)
         try {
-            notifyListenersStartedSharing(outboundQueueItem, recipients)
+            listenerRegistry.notifyListenersStartedSharing(outboundQueueItem, recipients)
             val sharedVersions = getShareableEncryptedAssetVersions(
                 outboundQueueItem = outboundQueueItem,
                 sender = sender,
@@ -284,19 +232,23 @@ class UploadOperationImpl(
                 ),
                 threadId = outboundQueueItem.threadId!!
             )
-            notifyListenersFinishedSharing(outboundQueueItem, recipients)
+            listenerRegistry.notifyListenersFinishedSharing(outboundQueueItem, recipients)
+            outboundQueueItemManager?.removeOutboundQueueItem(outboundQueueItem)
         } catch (exception: Exception) {
-            outboundQueueItemManager?.addOutboundQueueItem(
-                queueItem = outboundQueueItem.copy(
-                    operationState = OutboundQueueItem.OperationState.Failed(
-                        UploadFailure.SHARING
+            reEnqueueItemOrElse(
+                outboundQueueItem = outboundQueueItem,
+                exception = exception
+            ) {
+                outboundQueueItemManager?.addOutboundQueueItem(
+                    queueItem = outboundQueueItem.copy(
+                        operationState = OutboundQueueItem.OperationState.Failed(
+                            UploadFailure.SHARING
+                        )
                     )
                 )
-            )
-            notifyListenersFailedSharing(outboundQueueItem)
-            throw exception
+                listenerRegistry.notifyListenersFailedSharing(outboundQueueItem)
+            }
         }
-
     }
 
     private suspend fun getSenderAndRecipients(outboundQueueItem: OutboundQueueItem): Pair<ServerUser, List<ServerUser>> {
@@ -352,110 +304,72 @@ class UploadOperationImpl(
         }
     }
 
-    private fun notifyListenersFinishedSharing(
-        outboundQueueItem: OutboundQueueItem,
-        recipients: List<ServerUser>
-    ) {
-        listeners.forEach {
-            it.finishedSharing(
-                localIdentifier = outboundQueueItem.localIdentifier,
-                globalIdentifier = outboundQueueItem.globalIdentifier,
-                groupId = outboundQueueItem.groupId,
-                users = recipients
-            )
-        }
-    }
-
-    private fun notifyListenersFailedSharing(
-        outboundQueueItem: OutboundQueueItem
-    ) {
-        listeners.forEach {
-            it.failedSharing(
-                localIdentifier = outboundQueueItem.localIdentifier,
-                globalIdentifier = outboundQueueItem.globalIdentifier,
-                groupId = outboundQueueItem.groupId,
-                users = listOf()
-            )
-        }
-    }
-
-    private fun notifyListenersStartedSharing(
-        outboundQueueItem: OutboundQueueItem,
-        recipients: List<ServerUser>
-    ) {
-        listeners.forEach {
-            it.startedSharing(
-                localIdentifier = outboundQueueItem.localIdentifier,
-                globalIdentifier = outboundQueueItem.globalIdentifier,
-                groupId = outboundQueueItem.groupId,
-                users = recipients
-            )
-        }
-    }
 
     override fun stop() {}
+
+
+    private suspend fun loadStoredOutboundItems() {
+        outboundQueueItemManager?.loadOutboundQueueItems()?.forEach { item ->
+            if (item.operationState is OutboundQueueItem.OperationState.Failed) {
+                listenerRegistry.notifyOfEnqueuing(item)
+                when (item.operationState.uploadFailure) {
+                    UploadFailure.ENCRYPTION -> {
+                        listenerRegistry.notifyListenersFailedUploading(
+                            outboundQueueItem = item
+                        )
+                    }
+
+                    UploadFailure.UPLOAD -> {
+                        listenerRegistry.notifyListenersFailedUploading(
+                            outboundQueueItem = item
+                        )
+                    }
+
+                    UploadFailure.SHARING -> {
+                        listenerRegistry.notifyListenersFailedSharing(
+                            outboundQueueItem = item
+                        )
+                    }
+                }
+            } else {
+                sendToChannelAndNotifyListeners(item)
+            }
+        }
+
+    }
+
+    private suspend fun processItemsInQueue(
+        concurrentExecution: Int
+    ) {
+        coroutineScope {
+            repeat(times = concurrentExecution) {
+                launch {
+                    for (queueItem in outboundQueueItems) {
+                        when (queueItem.operationType) {
+                            OutboundQueueItem.OperationType.Upload -> {
+                                upload(queueItem)
+                            }
+
+                            OutboundQueueItem.OperationType.Share -> {
+                                share(queueItem)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     override suspend fun run() {
         coroutineScope {
             launch {
                 launch {
-                    outboundQueueItemManager?.loadOutboundQueueItems()?.forEach { item ->
-                        if (item.operationState is OutboundQueueItem.OperationState.Failed) {
-                            println("ABCD ${item.operationState.uploadFailure}")
-                            val threadId = item.threadId
-                            if (threadId != null) {
-                                listeners.forEach {
-                                    it.enqueued(
-                                        threadId = threadId,
-                                        localIdentifier = item.localIdentifier,
-                                        globalIdentifier = item.globalIdentifier,
-                                        groupId = item.groupId
-                                    )
-                                }
-                            }
-
-                            when (item.operationState.uploadFailure) {
-                                UploadFailure.ENCRYPTION -> {
-                                    notifyListenersFailedUploading(
-                                        outboundQueueItem = item
-                                    )
-                                }
-
-                                UploadFailure.UPLOAD -> {
-                                    notifyListenersFailedUploading(
-                                        outboundQueueItem = item
-                                    )
-                                }
-
-                                UploadFailure.SHARING -> {
-                                    notifyListenersFailedSharing(
-                                        outboundQueueItem = item
-                                    )
-                                }
-                            }
-                        } else {
-                            sendToChannelAndNotifyListeners(item)
-                        }
-                    }
+                    loadStoredOutboundItems()
                 }
                 launch {
-                    for (queueItem in outboundQueueItems) {
-                        try {
-                            when (queueItem.operationType) {
-                                OutboundQueueItem.OperationType.Upload -> {
-                                    upload(queueItem)
-                                }
-
-                                OutboundQueueItem.OperationType.Share -> {
-                                    share(queueItem)
-                                }
-                            }
-                            outboundQueueItemManager?.removeOutboundQueueItem(queueItem)
-                        } catch (e: Exception) {
-
-                        }
-
-                    }
+                    processItemsInQueue(
+                        concurrentExecution = 5
+                    )
                 }
             }.invokeOnCompletion {
                 while (true) {

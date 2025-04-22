@@ -49,7 +49,8 @@ class ClientModule(
         networkModule = networkModule,
         userModule = userModule,
         userProvider = userProvider,
-        controllersModule = controllersModule
+        controllersModule = controllersModule,
+        clientOptions = clientOptions
     ).create()
 
     override suspend fun userLoggedIn(user: LocalUser) {
