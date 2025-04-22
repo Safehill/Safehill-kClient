@@ -65,7 +65,8 @@ class UploadOperationImpl(
                 globalIdentifier = globalIdentifier,
                 groupId = groupId,
                 recipientIds = recipientIds,
-                threadId = threadId
+                threadId = threadId,
+                operationState = OutboundQueueItem.OperationState.Enqueued
             )
             sendToChannelAndNotifyListeners(item)
             outboundQueueItemManager?.addOutboundQueueItem(item)
@@ -140,7 +141,8 @@ class UploadOperationImpl(
             recipientIds = recipientIds,
             threadId = threadId,
             localIdentifier = localIdentifier,
-            assetQualities = assetQualities
+            assetQualities = assetQualities,
+            operationState = OutboundQueueItem.OperationState.Enqueued
         )
         sendToChannelAndNotifyListeners(item)
         outboundQueueItemManager?.addOutboundQueueItem(item)
@@ -166,13 +168,14 @@ class UploadOperationImpl(
 
             uploadAsset(outboundQueueItem, encryptedAsset)
 
-            notifyListenersFinishedUploading(outboundQueueItem, globalIdentifier)
+            notifyListenersFinishedUploading(outboundQueueItem)
             // #######uploading########
 
             shareIfRecipientsExist(outboundQueueItem, globalIdentifier)
 
         } catch (exception: Exception) {
             handleUploadException(outboundQueueItem, exception)
+            throw exception
         }
     }
 
@@ -205,13 +208,12 @@ class UploadOperationImpl(
 
     private fun notifyListenersFinishedUploading(
         outboundQueueItem: OutboundQueueItem,
-        globalIdentifier: String
     ) {
         listeners.forEach {
             it.finishedUploading(
-                outboundQueueItem.localIdentifier,
-                globalIdentifier,
-                outboundQueueItem.groupId
+                localIdentifier = outboundQueueItem.localIdentifier,
+                globalIdentifier = outboundQueueItem.globalIdentifier,
+                groupId = outboundQueueItem.groupId
             )
         }
     }
@@ -219,8 +221,9 @@ class UploadOperationImpl(
     private fun notifyListenersFailedUploading(outboundQueueItem: OutboundQueueItem) {
         listeners.forEach {
             it.failedUploading(
-                outboundQueueItem.localIdentifier,
-                outboundQueueItem.groupId
+                globalIdentifier = outboundQueueItem.globalIdentifier,
+                localIdentifier = outboundQueueItem.localIdentifier,
+                groupId = outboundQueueItem.groupId
             )
         }
     }
@@ -235,7 +238,7 @@ class UploadOperationImpl(
         )
     }
 
-    private fun handleUploadException(
+    private suspend fun handleUploadException(
         outboundQueueItem: OutboundQueueItem,
         exception: Exception
     ) {
@@ -244,16 +247,25 @@ class UploadOperationImpl(
             is SafehillError.ClientError.BadRequest,
             SafehillError.ClientError.Unauthorized,
             SafehillError.ClientError.PaymentRequired -> {
+                outboundQueueItemManager?.addOutboundQueueItem(
+                    queueItem = outboundQueueItem.copy(
+                        operationState = OutboundQueueItem.OperationState.Failed(
+                            UploadFailure.UPLOAD
+                        )
+                    )
+                )
                 notifyListenersFailedUploading(outboundQueueItem)
-                return
+            }
+
+            else -> {
+                scope.launch {
+                    sendToChannelAndNotifyListeners(outboundQueueItem)
+                    outboundQueueItemManager?.addOutboundQueueItem(outboundQueueItem)
+                }
             }
         }
-        // Move the item to the end of the queue and reduce the number of remaining retries
-        scope.launch {
-            sendToChannelAndNotifyListeners(outboundQueueItem)
-            outboundQueueItemManager?.addOutboundQueueItem(outboundQueueItem)
-        }
     }
+
 
     private suspend fun share(outboundQueueItem: OutboundQueueItem) {
         val (sender, recipients) = getSenderAndRecipients(outboundQueueItem)
@@ -273,8 +285,16 @@ class UploadOperationImpl(
                 threadId = outboundQueueItem.threadId!!
             )
             notifyListenersFinishedSharing(outboundQueueItem, recipients)
-        } catch (_: Exception) {
+        } catch (exception: Exception) {
+            outboundQueueItemManager?.addOutboundQueueItem(
+                queueItem = outboundQueueItem.copy(
+                    operationState = OutboundQueueItem.OperationState.Failed(
+                        UploadFailure.SHARING
+                    )
+                )
+            )
             notifyListenersFailedSharing(outboundQueueItem)
+            throw exception
         }
 
     }
@@ -379,22 +399,62 @@ class UploadOperationImpl(
         coroutineScope {
             launch {
                 launch {
-                    outboundQueueItemManager?.loadOutboundQueueItems()?.forEach {
-                        sendToChannelAndNotifyListeners(it)
+                    outboundQueueItemManager?.loadOutboundQueueItems()?.forEach { item ->
+                        if (item.operationState is OutboundQueueItem.OperationState.Failed) {
+                            println("ABCD ${item.operationState.uploadFailure}")
+                            val threadId = item.threadId
+                            if (threadId != null) {
+                                listeners.forEach {
+                                    it.enqueued(
+                                        threadId = threadId,
+                                        localIdentifier = item.localIdentifier,
+                                        globalIdentifier = item.globalIdentifier,
+                                        groupId = item.groupId
+                                    )
+                                }
+                            }
+
+                            when (item.operationState.uploadFailure) {
+                                UploadFailure.ENCRYPTION -> {
+                                    notifyListenersFailedUploading(
+                                        outboundQueueItem = item
+                                    )
+                                }
+
+                                UploadFailure.UPLOAD -> {
+                                    notifyListenersFailedUploading(
+                                        outboundQueueItem = item
+                                    )
+                                }
+
+                                UploadFailure.SHARING -> {
+                                    notifyListenersFailedSharing(
+                                        outboundQueueItem = item
+                                    )
+                                }
+                            }
+                        } else {
+                            sendToChannelAndNotifyListeners(item)
+                        }
                     }
                 }
                 launch {
                     for (queueItem in outboundQueueItems) {
-                        when (queueItem.operationType) {
-                            OutboundQueueItem.OperationType.Upload -> {
-                                upload(queueItem)
-                            }
+                        try {
+                            when (queueItem.operationType) {
+                                OutboundQueueItem.OperationType.Upload -> {
+                                    upload(queueItem)
+                                }
 
-                            OutboundQueueItem.OperationType.Share -> {
-                                share(queueItem)
+                                OutboundQueueItem.OperationType.Share -> {
+                                    share(queueItem)
+                                }
                             }
+                            outboundQueueItemManager?.removeOutboundQueueItem(queueItem)
+                        } catch (e: Exception) {
+
                         }
-                        outboundQueueItemManager?.removeOutboundQueueItem(queueItem)
+
                     }
                 }
             }.invokeOnCompletion {

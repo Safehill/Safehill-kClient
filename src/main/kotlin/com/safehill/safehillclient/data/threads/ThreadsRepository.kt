@@ -12,8 +12,9 @@ import com.safehill.kclient.models.dtos.websockets.ThreadUpdatedDTO
 import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
+import com.safehill.kclient.tasks.outbound.UploadFailure
 import com.safehill.kclient.tasks.outbound.UploadOperation
-import com.safehill.kclient.tasks.outbound.UploadOperationListener
+import com.safehill.kclient.tasks.outbound.UploadOperationErrorListener
 import com.safehill.kclient.tasks.syncing.InteractionSync
 import com.safehill.kclient.tasks.syncing.InteractionSyncListener
 import com.safehill.kclient.util.runCatchingSafe
@@ -60,7 +61,7 @@ class ThreadsRepository(
     private val uploadOperation: UploadOperation
 ) : UserObserver,
     InteractionSyncListener,
-    UploadOperationListener {
+    UploadOperationErrorListener {
 
     private val userScope = clientOptions.userScope
 
@@ -260,6 +261,20 @@ class ThreadsRepository(
             groupId = groupId,
             globalIdentifier = globalIdentifier,
             localIdentifier = localIdentifier
+        )
+    }
+
+    override fun onError(
+        globalIdentifier: AssetGlobalIdentifier,
+        localIdentifier: AssetLocalIdentifier,
+        groupId: GroupId,
+        uploadFailure: UploadFailure
+    ) {
+        sharingAssetsState.setError(
+            globalIdentifier = globalIdentifier,
+            localIdentifier = localIdentifier,
+            groupId = groupId,
+            uploadFailure = uploadFailure
         )
     }
 }

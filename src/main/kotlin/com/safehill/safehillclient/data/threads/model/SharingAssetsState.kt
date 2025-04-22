@@ -3,6 +3,7 @@ package com.safehill.safehillclient.data.threads.model
 import com.safehill.kclient.models.assets.AssetLocalIdentifier
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.network.GlobalIdentifier
+import com.safehill.kclient.tasks.outbound.UploadFailure
 import com.safehill.utils.flow.combineStates
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -57,6 +58,20 @@ class SharingAssetsState {
                     ?: (initial - groupId)
             }
         }
+    }
+
+    fun setError(
+        globalIdentifier: GlobalIdentifier,
+        localIdentifier: AssetLocalIdentifier,
+        groupId: GroupId,
+        uploadFailure: UploadFailure
+    ) {
+        upsertSharingAssets(
+            globalIdentifier = globalIdentifier,
+            localIdentifier = localIdentifier,
+            groupId = groupId,
+            state = SharingAsset.State.Failed(uploadFailure)
+        )
     }
 
     fun upsertSharingAssets(

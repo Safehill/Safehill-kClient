@@ -28,6 +28,7 @@ interface UploadOperationListener {
     }
 
     fun failedEncrypting(
+        globalIdentifier: AssetGlobalIdentifier,
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
     ) {
@@ -47,6 +48,7 @@ interface UploadOperationListener {
     }
 
     fun failedUploading(
+        globalIdentifier: AssetGlobalIdentifier,
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
     ) {
@@ -78,28 +80,37 @@ interface UploadOperationListener {
 }
 
 interface UploadOperationErrorListener : UploadOperationListener {
+
     fun onError(
+        globalIdentifier: AssetGlobalIdentifier,
         localIdentifier: AssetLocalIdentifier,
-        groupId: GroupId
+        groupId: GroupId,
+        uploadFailure: UploadFailure
     )
 
     override fun failedEncrypting(
+        globalIdentifier: AssetGlobalIdentifier,
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
     ) {
         onError(
             localIdentifier = localIdentifier,
-            groupId = groupId
+            groupId = groupId,
+            uploadFailure = UploadFailure.ENCRYPTION,
+            globalIdentifier = globalIdentifier
         )
     }
 
     override fun failedUploading(
+        globalIdentifier: AssetGlobalIdentifier,
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
     ) {
         onError(
             localIdentifier = localIdentifier,
-            groupId = groupId
+            groupId = groupId,
+            uploadFailure = UploadFailure.UPLOAD,
+            globalIdentifier = globalIdentifier
         )
     }
 
@@ -112,7 +123,9 @@ interface UploadOperationErrorListener : UploadOperationListener {
         if (localIdentifier != null) {
             onError(
                 localIdentifier = localIdentifier,
-                groupId = groupId
+                groupId = groupId,
+                uploadFailure = UploadFailure.SHARING,
+                globalIdentifier = globalIdentifier
             )
         }
     }

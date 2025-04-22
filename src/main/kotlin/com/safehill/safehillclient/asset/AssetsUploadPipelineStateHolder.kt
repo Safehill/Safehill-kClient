@@ -38,6 +38,7 @@ class AssetsUploadPipelineStateHolder : UploadOperationListener {
     }
 
     override fun failedEncrypting(
+        globalIdentifier: AssetGlobalIdentifier,
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId
     ) {
@@ -60,6 +61,7 @@ class AssetsUploadPipelineStateHolder : UploadOperationListener {
     }
 
     override fun failedUploading(
+        globalIdentifier: AssetGlobalIdentifier,
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
     ) {
