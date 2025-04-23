@@ -9,5 +9,6 @@ data class UserUpdateDTO(
     val email: String?,
     val phoneNumber: String?,
     val publicKey: String?,
-    val publicSignature: String?
+    val publicSignature: String?,
+    val forcePhoneNumberLinking: Boolean
 )

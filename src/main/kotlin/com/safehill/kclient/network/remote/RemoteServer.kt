@@ -100,6 +100,7 @@ class RemoteServer private constructor(
         name: String?,
         phoneNumber: String?,
         email: String?,
+        forcePhoneNumberLink: Boolean
     ): ServerUser {
         val requestBody = UserUpdateDTO(
             identifier = null,
@@ -107,7 +108,8 @@ class RemoteServer private constructor(
             phoneNumber = phoneNumber,
             email = email,
             publicKey = null,
-            publicSignature = null
+            publicSignature = null,
+            forcePhoneNumberLinking = forcePhoneNumberLink
         )
         return postRequestForResponse<UserUpdateDTO, RemoteUser>(
             endPoint = "/users/update",

@@ -49,7 +49,12 @@ interface SafehillApi : AuthorizationApi, GroupApi, ReactionApi, ThreadApi, Asse
     ///   - email: the new email
     /// - Returns:
     ///   - the user just created
-    suspend fun updateUser(name: String?, phoneNumber: String?, email: String?): ServerUser
+    suspend fun updateUser(
+        name: String?,
+        phoneNumber: String?,
+        email: String?,
+        forcePhoneNumberLink: Boolean
+    ): ServerUser
 
     /// Delete the user making the request and all related assets, metadata and sharing information
     suspend fun deleteAccount()
