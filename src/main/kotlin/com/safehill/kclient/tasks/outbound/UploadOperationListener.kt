@@ -2,128 +2,131 @@ package com.safehill.kclient.tasks.outbound
 
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetLocalIdentifier
-import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.users.ServerUser
 
-public interface UploadOperationListener {
+interface UploadOperationListener {
+
+    fun enqueued(
+        threadId: String,
+        localIdentifier: AssetLocalIdentifier,
+        globalIdentifier: AssetGlobalIdentifier,
+        groupId: String
+    ) {
+    }
 
     fun startedEncrypting(
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
-        assetQuality: AssetQuality
-    )
+    ) {
+    }
 
     fun finishedEncrypting(
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
-        assetQuality: AssetQuality
-    )
+    ) {
+    }
 
     fun failedEncrypting(
+        globalIdentifier: AssetGlobalIdentifier,
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
-        assetQuality: AssetQuality
-    )
+    ) {
+    }
 
     fun startedUploading(
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
-        assetQuality: AssetQuality
-    )
+    ) {
+    }
 
     fun finishedUploading(
         localIdentifier: AssetLocalIdentifier,
         globalIdentifier: AssetGlobalIdentifier,
         groupId: GroupId,
-        assetQuality: AssetQuality
-    )
+    ) {
+    }
 
     fun failedUploading(
+        globalIdentifier: AssetGlobalIdentifier,
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
-        assetQuality: AssetQuality
-    )
+    ) {
+    }
 
     fun startedSharing(
         localIdentifier: AssetLocalIdentifier?,
         globalIdentifier: AssetGlobalIdentifier,
         groupId: GroupId,
         users: List<ServerUser>
-    )
+    ) {
+    }
 
     fun finishedSharing(
-        localIdentifier: AssetLocalIdentifier?,
+        localIdentifier: AssetLocalIdentifier,
         globalIdentifier: AssetGlobalIdentifier,
         groupId: GroupId,
         users: List<ServerUser>
-    )
+    ) {
+    }
 
     fun failedSharing(
         localIdentifier: AssetLocalIdentifier?,
         globalIdentifier: AssetGlobalIdentifier,
         groupId: GroupId,
         users: List<ServerUser>
-    )
-
+    ) {
+    }
 }
 
-public abstract class UploadOperationListenerAbstract: UploadOperationListener {
-    override fun startedEncrypting(
-        localIdentifier: AssetLocalIdentifier,
-        groupId: GroupId,
-        assetQuality: AssetQuality
-    ) {}
+interface UploadOperationErrorListener : UploadOperationListener {
 
-    override fun finishedEncrypting(
+    fun onError(
+        globalIdentifier: AssetGlobalIdentifier,
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
-        assetQuality: AssetQuality
-    ) {}
+        uploadFailure: UploadFailure
+    )
 
     override fun failedEncrypting(
-        localIdentifier: AssetLocalIdentifier,
-        groupId: GroupId,
-        assetQuality: AssetQuality
-    ) {}
-
-    override fun startedUploading(
-        localIdentifier: AssetLocalIdentifier,
-        groupId: GroupId,
-        assetQuality: AssetQuality
-    ) {}
-
-    override fun finishedUploading(
-        localIdentifier: AssetLocalIdentifier,
         globalIdentifier: AssetGlobalIdentifier,
+        localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
-        assetQuality: AssetQuality
-    ) {}
+    ) {
+        onError(
+            localIdentifier = localIdentifier,
+            groupId = groupId,
+            uploadFailure = UploadFailure.ENCRYPTION,
+            globalIdentifier = globalIdentifier
+        )
+    }
 
     override fun failedUploading(
+        globalIdentifier: AssetGlobalIdentifier,
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
-        assetQuality: AssetQuality
-    ) {}
-
-    override fun startedSharing(
-        localIdentifier: AssetLocalIdentifier?,
-        globalIdentifier: AssetGlobalIdentifier,
-        groupId: GroupId,
-        users: List<ServerUser>
-    ) {}
-
-    override fun finishedSharing(
-        localIdentifier: AssetLocalIdentifier?,
-        globalIdentifier: AssetGlobalIdentifier,
-        groupId: GroupId,
-        users: List<ServerUser>
-    ) {}
+    ) {
+        onError(
+            localIdentifier = localIdentifier,
+            groupId = groupId,
+            uploadFailure = UploadFailure.UPLOAD,
+            globalIdentifier = globalIdentifier
+        )
+    }
 
     override fun failedSharing(
         localIdentifier: AssetLocalIdentifier?,
         globalIdentifier: AssetGlobalIdentifier,
         groupId: GroupId,
         users: List<ServerUser>
-    ) {}
+    ) {
+        if (localIdentifier != null) {
+            onError(
+                localIdentifier = localIdentifier,
+                groupId = groupId,
+                uploadFailure = UploadFailure.SHARING,
+                globalIdentifier = globalIdentifier
+            )
+        }
+    }
 }

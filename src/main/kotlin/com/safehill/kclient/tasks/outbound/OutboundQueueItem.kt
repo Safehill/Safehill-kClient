@@ -1,24 +1,34 @@
 package com.safehill.kclient.tasks.outbound
 
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
+import com.safehill.kclient.models.assets.AssetLocalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.GroupId
-import com.safehill.kclient.models.assets.LocalAsset
-import com.safehill.kclient.models.users.ServerUser
+import com.safehill.kclient.models.users.UserIdentifier
 
-class OutboundQueueItem(
+data class OutboundQueueItem(
     val operationType: OperationType,
-    val assetQuality: AssetQuality,
-    val localAsset: LocalAsset?,
-    val globalIdentifier: AssetGlobalIdentifier?,
+    val assetQualities: List<AssetQuality>,
+    val globalIdentifier: AssetGlobalIdentifier,
+    val localIdentifier: AssetLocalIdentifier,
     val groupId: GroupId,
-    val recipients: List<ServerUser>,
-    val uri: String?,
-    var force: Boolean = false,
-    var threadId: String?
+    val operationState: OperationState,
+    val recipientIds: List<UserIdentifier>,
+    val threadId: String?
 ) {
 
     enum class OperationType {
         Upload, Share
     }
+
+    sealed class OperationState {
+        data class Failed(val uploadFailure: UploadFailure) : OperationState()
+        data object Enqueued : OperationState()
+    }
+}
+
+enum class UploadFailure {
+    ENCRYPTION,
+    UPLOAD,
+    SHARING
 }

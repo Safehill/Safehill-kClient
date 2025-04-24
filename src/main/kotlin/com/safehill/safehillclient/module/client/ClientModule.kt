@@ -32,13 +32,11 @@ class ClientModule(
         currentUser.get() ?: throw LocalUserError.UnAvailable()
     }
 
+    val networkModule = networkModuleFactory.create(userProvider = userProvider)
+
     val assetModule = AssetModule(
         platformModule = platformModule,
-        userModule = userModule,
-        userProvider = userProvider
     )
-
-    val networkModule = networkModuleFactory.create(userProvider = userProvider)
 
     val controllersModule = ControllersModule(
         userProvider = userProvider,
@@ -50,7 +48,9 @@ class ClientModule(
         assetModule = assetModule,
         networkModule = networkModule,
         userModule = userModule,
-        userProvider = userProvider
+        userProvider = userProvider,
+        controllersModule = controllersModule,
+        clientOptions = clientOptions
     ).create()
 
     override suspend fun userLoggedIn(user: LocalUser) {

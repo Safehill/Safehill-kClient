@@ -2,7 +2,6 @@ package com.safehill.safehillclient.backgroundsync
 
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetLocalIdentifier
-import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.tasks.BackgroundTaskProcessor
@@ -10,7 +9,7 @@ import com.safehill.kclient.tasks.RepeatMode
 import com.safehill.kclient.tasks.inbound.LocalDownloadOperation
 import com.safehill.kclient.tasks.inbound.RemoteDownloadOperation
 import com.safehill.kclient.tasks.outbound.UploadOperation
-import com.safehill.kclient.tasks.outbound.UploadOperationListenerAbstract
+import com.safehill.kclient.tasks.outbound.UploadOperationListener
 import com.safehill.kclient.tasks.syncing.InteractionSync
 import com.safehill.kclient.tasks.syncing.SingleTaskExecutor
 import com.safehill.safehillclient.manager.dependencies.UserObserver
@@ -22,7 +21,7 @@ import kotlin.time.Duration.Companion.seconds
 class SafehillSyncManager(
     private val backgroundTasksRegistry: BackgroundTasksRegistry,
     private val userScope: UserScope
-) : UploadOperationListenerAbstract(), UserObserver {
+) : UploadOperationListener, UserObserver {
 
     private val singleTaskExecutor = SingleTaskExecutor()
 
@@ -75,14 +74,11 @@ class SafehillSyncManager(
         localIdentifier: AssetLocalIdentifier,
         globalIdentifier: AssetGlobalIdentifier,
         groupId: GroupId,
-        assetQuality: AssetQuality
     ) {
         //TODO: better scope handling
         GlobalScope.launch {
-            if (assetQuality == AssetQuality.LowResolution) {
-                singleTaskExecutor.execute {
-                    backgroundTasksRegistry.remoteDownloadOperation.run()
-                }
+            singleTaskExecutor.execute {
+                backgroundTasksRegistry.remoteDownloadOperation.run()
             }
         }
     }

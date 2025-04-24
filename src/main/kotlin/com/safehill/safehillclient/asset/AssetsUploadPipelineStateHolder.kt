@@ -2,7 +2,6 @@ package com.safehill.safehillclient.asset
 
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetLocalIdentifier
-import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.tasks.outbound.UploadOperationListener
@@ -17,63 +16,56 @@ class AssetsUploadPipelineStateHolder : UploadOperationListener {
 
     private fun updateAssetState(
         localIdentifier: AssetLocalIdentifier,
-        assetQuality: AssetQuality,
         state: UploadPipelineState
     ) {
-        if (assetQuality == AssetQuality.LowResolution) {
-            val updatedMap = _uploadingAssets.value.toMutableMap()
-                .apply { this[localIdentifier] = state }
-            _uploadingAssets.value = updatedMap
-        }
+        val updatedMap = _uploadingAssets.value.toMutableMap()
+            .apply { this[localIdentifier] = state }
+        _uploadingAssets.value = updatedMap
     }
 
     override fun startedEncrypting(
         localIdentifier: AssetLocalIdentifier,
-        groupId: GroupId,
-        assetQuality: AssetQuality
+        groupId: GroupId
     ) {
-        updateAssetState(localIdentifier, assetQuality, UploadPipelineState.Encrypting)
+        updateAssetState(localIdentifier, UploadPipelineState.Encrypting)
     }
 
     override fun finishedEncrypting(
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
-        assetQuality: AssetQuality
     ) {
-        updateAssetState(localIdentifier, assetQuality, UploadPipelineState.Encrypted)
+        updateAssetState(localIdentifier, UploadPipelineState.Encrypted)
     }
 
     override fun failedEncrypting(
+        globalIdentifier: AssetGlobalIdentifier,
         localIdentifier: AssetLocalIdentifier,
-        groupId: GroupId,
-        assetQuality: AssetQuality
+        groupId: GroupId
     ) {
-        updateAssetState(localIdentifier, assetQuality, UploadPipelineState.FailedEncrypting)
+        updateAssetState(localIdentifier, UploadPipelineState.FailedEncrypting)
     }
 
     override fun startedUploading(
         localIdentifier: AssetLocalIdentifier,
-        groupId: GroupId,
-        assetQuality: AssetQuality
+        groupId: GroupId
     ) {
-        updateAssetState(localIdentifier, assetQuality, UploadPipelineState.Uploading)
+        updateAssetState(localIdentifier, UploadPipelineState.Uploading)
     }
 
     override fun finishedUploading(
         localIdentifier: AssetLocalIdentifier,
         globalIdentifier: AssetGlobalIdentifier,
         groupId: GroupId,
-        assetQuality: AssetQuality
     ) {
-        updateAssetState(localIdentifier, assetQuality, UploadPipelineState.Uploaded)
+        updateAssetState(localIdentifier, UploadPipelineState.Uploaded)
     }
 
     override fun failedUploading(
+        globalIdentifier: AssetGlobalIdentifier,
         localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
-        assetQuality: AssetQuality
     ) {
-        updateAssetState(localIdentifier, assetQuality, UploadPipelineState.FailedUploading)
+        updateAssetState(localIdentifier, UploadPipelineState.FailedUploading)
     }
 
     override fun startedSharing(
@@ -88,7 +80,7 @@ class AssetsUploadPipelineStateHolder : UploadOperationListener {
     }
 
     override fun finishedSharing(
-        localIdentifier: AssetLocalIdentifier?,
+        localIdentifier: AssetLocalIdentifier,
         globalIdentifier: AssetGlobalIdentifier,
         groupId: GroupId,
         users: List<ServerUser>

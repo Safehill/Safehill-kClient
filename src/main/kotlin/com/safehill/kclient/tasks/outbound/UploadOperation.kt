@@ -1,11 +1,11 @@
 package com.safehill.kclient.tasks.outbound
 
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
+import com.safehill.kclient.models.assets.AssetLocalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.GroupId
-import com.safehill.kclient.models.assets.LocalAsset
 import com.safehill.kclient.models.users.LocalUser
-import com.safehill.kclient.models.users.ServerUser
+import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.tasks.BackgroundTask
 
 interface UploadOperation : BackgroundTask {
@@ -15,20 +15,19 @@ interface UploadOperation : BackgroundTask {
     val user: LocalUser
 
     fun enqueueUpload(
-        localAsset: LocalAsset,
-        assetQualities: Array<AssetQuality> = AssetQuality.entries.toTypedArray(),
+        localIdentifier: AssetLocalIdentifier,
+        assetQualities: List<AssetQuality> = AssetQuality.entries,
         groupId: GroupId,
-        recipients: List<ServerUser> = listOf(),
-        uri: String? = null,
+        recipientIds: List<UserIdentifier>,
         threadId: String? = null
     )
 
     fun enqueueShare(
-        localAsset: LocalAsset,
-        assetQualities: Array<AssetQuality>,
+        assetQualities: List<AssetQuality>,
         globalIdentifier: AssetGlobalIdentifier,
+        localIdentifier: AssetLocalIdentifier,
         groupId: GroupId,
-        recipients: List<ServerUser>,
+        recipientIds: List<UserIdentifier>,
         threadId: String? = null
     )
 

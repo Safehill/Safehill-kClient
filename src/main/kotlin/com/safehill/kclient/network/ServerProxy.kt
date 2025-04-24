@@ -14,7 +14,7 @@ interface ServerProxy : SafehillApi {
 
     suspend fun getAsset(
         globalIdentifier: GlobalIdentifier,
-        quality: AssetQuality,
+        qualities: List<AssetQuality>,
         cacheAfterFetch: Boolean
     ): EncryptedAsset
 

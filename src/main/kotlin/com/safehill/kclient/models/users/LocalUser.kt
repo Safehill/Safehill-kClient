@@ -1,10 +1,11 @@
 package com.safehill.kclient.models.users
 
-import com.safehill.kclient.models.dtos.AuthResponseDTO
-import com.safehill.kclient.models.dtos.BearerToken
+import com.safehill.kclient.SafehillCypher
 import com.safehill.kclient.models.CryptoUser
 import com.safehill.kclient.models.LocalCryptoUser
-import com.safehill.kclient.models.SHUserContext
+import com.safehill.kclient.models.SafehillKeyPair
+import com.safehill.kclient.models.dtos.AuthResponseDTO
+import com.safehill.kclient.models.dtos.BearerToken
 import com.safehill.kcrypto.models.ShareablePayload
 import java.security.PublicKey
 import java.util.Base64
@@ -56,20 +57,46 @@ class LocalUser(
         with: CryptoUser,
         protocolSalt: ByteArray
     ): ShareablePayload {
-        return SHUserContext(this.shUser).shareable(data, with, protocolSalt)
+        val ephemeralKey = SafehillKeyPair.generate()
+        val encrypted = SafehillCypher.encrypt(
+            message = data,
+            receiverPublicKey = with.publicKey,
+            ephemeralKey = ephemeralKey,
+            protocolSalt = protocolSalt,
+            senderSignatureKey = shUser.signature
+        )
+        return ShareablePayload(
+            ephemeralKey.public.encoded,
+            encrypted.ciphertext,
+            encrypted.signature,
+            with
+        )
     }
 
     fun decrypted(
         data: ByteArray,
         encryptedSecret: ShareablePayload,
         protocolSalt: ByteArray,
-        receivedFrom: CryptoUser
+        sender: CryptoUser
     ): ByteArray {
-        return SHUserContext(this.shUser).decrypt(
-            data,
-            encryptedSecret,
-            protocolSalt,
-            receivedFrom
+        val secretData = decryptSecret(
+            sealedMessage = encryptedSecret,
+            protocolSalt = protocolSalt,
+            sender = sender
+        )
+        return SafehillCypher.decrypt(data, secretData)
+    }
+
+    fun decryptSecret(
+        sealedMessage: ShareablePayload,
+        protocolSalt: ByteArray,
+        sender: CryptoUser
+    ): ByteArray {
+        return SafehillCypher.decrypt(
+            sealedMessage = sealedMessage,
+            encryptionKey = shUser.key,
+            protocolSalt = protocolSalt,
+            signedBy = sender.publicSignature
         )
     }
 

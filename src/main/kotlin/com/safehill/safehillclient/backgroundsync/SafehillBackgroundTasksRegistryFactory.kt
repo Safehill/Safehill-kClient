@@ -1,5 +1,6 @@
 package com.safehill.safehillclient.backgroundsync
 
+import com.safehill.kclient.controllers.module.ControllersModule
 import com.safehill.kclient.models.users.UserProvider
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.WebSocketApi
@@ -10,6 +11,7 @@ import com.safehill.kclient.tasks.outbound.UploadOperation
 import com.safehill.kclient.tasks.outbound.UploadOperationImpl
 import com.safehill.kclient.tasks.syncing.InteractionSync
 import com.safehill.safehillclient.module.asset.AssetModule
+import com.safehill.safehillclient.module.config.ClientOptions
 import com.safehill.safehillclient.module.platform.UserModule
 
 class NetworkModule(
@@ -21,8 +23,10 @@ class NetworkModule(
 class SafehillBackgroundTasksRegistryFactory(
     private val assetModule: AssetModule,
     private val userModule: UserModule,
+    private val clientOptions: ClientOptions,
     private val networkModule: NetworkModule,
-    private val userProvider: UserProvider
+    private val userProvider: UserProvider,
+    private val controllersModule: ControllersModule
 ) : BackgroundTasksRegistryFactory {
 
 
@@ -53,7 +57,11 @@ class SafehillBackgroundTasksRegistryFactory(
             listeners = mutableListOf(assetModule.assetsUploadPipelineStateHolder),
             encrypter = assetModule.assetEncrypter,
             userModule = userModule,
-            userProvider = userProvider
+            userProvider = userProvider,
+            userController = controllersModule.userController,
+            localAssetsStoreController = controllersModule.localAssetsStoreController,
+            clientScope = clientOptions.clientScope,
+            safehillLogger = clientOptions.safehillLogger
         )
     }
 

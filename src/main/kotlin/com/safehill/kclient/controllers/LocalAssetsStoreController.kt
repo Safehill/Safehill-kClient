@@ -22,6 +22,20 @@ class LocalAssetsStoreController(
     private val userProvider: UserProvider
 ) {
 
+    suspend fun getAssetDescriptor(
+        globalIdentifier: AssetGlobalIdentifier
+    ): AssetDescriptor {
+        return assetDescriptorsCache.getDescriptor(globalIdentifier) ?: run {
+            val descriptors = serverProxy.getAssetDescriptors(
+                assetGlobalIdentifiers = listOf(globalIdentifier),
+                groupIds = null, after = null
+            )
+            descriptors
+                .firstOrNull { it.globalIdentifier == globalIdentifier }
+                ?.also(assetDescriptorsCache::upsertAssetDescriptor)
+                ?: throw DownloadError.AssetDescriptorNotFound(globalIdentifier)
+        }
+    }
 
     suspend fun getAsset(
         globalIdentifier: AssetGlobalIdentifier,
@@ -30,17 +44,7 @@ class LocalAssetsStoreController(
         cacheAfterFetch: Boolean
     ): Result<DecryptedAsset> {
         return runCatchingSafe {
-            val assetDescriptor =
-                descriptor ?: assetDescriptorsCache.getDescriptor(globalIdentifier) ?: run {
-                    val descriptors = serverProxy.getAssetDescriptors(
-                        assetGlobalIdentifiers = listOf(globalIdentifier),
-                        groupIds = null, after = null
-                    )
-                    descriptors
-                        .firstOrNull { it.globalIdentifier == globalIdentifier }
-                        ?.also(assetDescriptorsCache::upsertAssetDescriptor)
-                        ?: throw DownloadError.AssetDescriptorNotFound(globalIdentifier)
-                }
+            val assetDescriptor = descriptor ?: getAssetDescriptor(globalIdentifier)
             val currentUser = userProvider.get()
             val senderUser = getSenderUser(
                 currentUser = currentUser,
@@ -66,7 +70,7 @@ class LocalAssetsStoreController(
         val identifier = assetDescriptor.globalIdentifier
         return serverProxy.getAsset(
             globalIdentifier = identifier,
-            quality = quality,
+            qualities = listOf(quality),
             cacheAfterFetch = cacheAfterFetch
         )
     }

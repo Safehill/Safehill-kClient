@@ -6,6 +6,7 @@ import com.safehill.kclient.models.serde.WebSocketMessageDeserializer
 import com.safehill.kclient.models.users.LocalUser
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.websocket.WebSockets
@@ -47,6 +48,7 @@ class WebSocketApi(
     private val httpClient = HttpClient(CIO) {
         install(Logging) {
             this.logger = safehillClientLogger
+            this.level = LogLevel.ALL
         }
         install(WebSockets)
     }
@@ -79,7 +81,7 @@ class WebSocketApi(
                                 deserializer = WebSocketMessageDeserializer,
                                 string = frame.readText()
                             )
-                            logger.verbose("Socket message ${frame.readText()} parsed to $socketData")
+                            logger.info("Socket message ${frame.readText()} parsed to $socketData")
                             _socketMessage.emit(socketData)
                         }
                     }
@@ -137,7 +139,7 @@ class WebSocketApi(
     private val safehillClientLogger
         get() = object : Logger {
             override fun log(message: String) {
-                logger.verbose(message)
+                logger.info(message)
             }
         }
 

@@ -19,7 +19,7 @@ abstract class AbstractAssetActivity(
     val createdAt: Instant,
     assetIdentifiers: List<GlobalIdentifier>,
     shareInfo: Map<AppUser, Instant>,
-) : MutableMessagesContainer() {
+) : MutableMessagesContainer by MutableMessagesContainer() {
 
     val assetIdentifiers = MutableStateFlow(assetIdentifiers)
     val shareInfo = MutableStateFlow(shareInfo)
