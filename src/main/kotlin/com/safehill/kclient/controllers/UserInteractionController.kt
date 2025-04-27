@@ -187,7 +187,7 @@ class UserInteractionController internal constructor(
         phoneNumbersToAdd: List<String> = listOf(),
         phoneNumbersToRemove: List<String> = listOf()
     ): Result<Unit> {
-        val currentThread: ConversationThreadOutputDTO
+        var currentThread: ConversationThreadOutputDTO? = null
         return runCatchingSafe {
             val currentUser = userProvider.get()
             currentThread = serverProxy.retrieveThread(threadId = threadId)
@@ -209,7 +209,7 @@ class UserInteractionController internal constructor(
                 phoneNumbersToRemove = phoneNumbersToRemove
             )
         }.recoverCatching { exception ->
-            if (exception is SafehillError.ClientError.Conflict) {
+            if (exception is SafehillError.ClientError.Conflict && currentThread != null) {
                 with(currentThread) {
                     val newUserIdentifiers = membersPublicIdentifier.toSet()
                         .plus(usersToAdd.map { it.identifier })
