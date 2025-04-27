@@ -4,6 +4,7 @@ import com.safehill.kclient.models.LocalCryptoUser
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.api.auth.AuthApi
+import com.safehill.kclient.util.isCancellationException
 import com.safehill.kclient.util.runCatchingSafe
 import com.safehill.safehillclient.data.user.api.DefaultUserObserverRegistry
 import com.safehill.safehillclient.data.user.api.UserObserverRegistry
@@ -82,7 +83,7 @@ class SafehillClient(
     }
 
     private suspend fun signInInternal(user: LocalUser): Result<SignInResponse.Success> {
-        return runCatchingSafe {
+        return runCatching {
             authStateHolder.setAuthState(AuthState.Loading)
             val response = authApi.signIn(user = user)
             user.authenticate(response.user, response)
@@ -99,6 +100,7 @@ class SafehillClient(
             )
         }.onFailure {
             authStateHolder.setAuthState(AuthState.SignedOff)
+            if (it.isCancellationException()) throw it
         }
     }
 

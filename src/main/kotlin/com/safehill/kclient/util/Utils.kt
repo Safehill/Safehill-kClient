@@ -30,3 +30,11 @@ suspend inline fun <T> safeApiCall(crossinline invoke: suspend () -> T): Result<
         }
     }
 }
+
+@OptIn(ExperimentalContracts::class)
+fun Throwable.isCancellationException(): Boolean {
+    contract {
+        returns(true) implies (this@isCancellationException is kotlinx.coroutines.CancellationException)
+    }
+    return (this is CancellationException)
+}
