@@ -40,6 +40,8 @@ import com.safehill.kclient.network.api.asset.AssetApi
 import com.safehill.kclient.network.api.asset.AssetApiImpl
 import com.safehill.kclient.network.api.authorization.AuthorizationApi
 import com.safehill.kclient.network.api.authorization.AuthorizationApiImpl
+import com.safehill.kclient.network.api.event_report.EventReportApi
+import com.safehill.kclient.network.api.event_report.EventReportApiImpl
 import com.safehill.kclient.network.api.fireRequest
 import com.safehill.kclient.network.api.group.GroupApi
 import com.safehill.kclient.network.api.group.GroupApiImpl
@@ -62,7 +64,8 @@ class RemoteServer private constructor(
     ReactionApi by ReactionApiImpl(baseApi),
     ThreadApi by ThreadApiImpl(baseApi),
     BaseApi by baseApi,
-    AssetApi by AssetApiImpl(baseApi, safehillLogger) {
+    AssetApi by AssetApiImpl(baseApi, safehillLogger),
+    EventReportApi by EventReportApiImpl(baseApi) {
 
     constructor(
         userProvider: Provider<LocalUser>,
