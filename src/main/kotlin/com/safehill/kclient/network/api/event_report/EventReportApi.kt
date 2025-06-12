@@ -1,7 +1,7 @@
 package com.safehill.kclient.network.api.event_report
 
 import com.safehill.kclient.network.api.event_report.enum.HelpSeekingSource
-import com.safehill.kclient.network.api.event_report.enum.ViolenceSolutions
+import com.safehill.kclient.network.api.event_report.enum.ViolenceSolution
 import com.safehill.kclient.network.api.event_report.enum.ViolenceType
 
 typealias EventIdentifier = String
@@ -13,7 +13,7 @@ interface EventReportApi {
         severity: Int,
         victimAskedHelpFrom: HelpSeekingSource,
         victimTalkedAboutItWith: HelpSeekingSource,
-        victimThought: ViolenceSolutions,
+        victimThought: ViolenceSolution,
         otherDetails: String
     ): EventIdentifier
 

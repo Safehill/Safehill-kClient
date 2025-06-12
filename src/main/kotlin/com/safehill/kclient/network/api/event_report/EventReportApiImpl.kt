@@ -3,7 +3,7 @@ package com.safehill.kclient.network.api.event_report
 import com.safehill.kclient.network.api.BaseApi
 import com.safehill.kclient.network.api.event_report.dtos.EventReportInputDTO
 import com.safehill.kclient.network.api.event_report.enum.HelpSeekingSource
-import com.safehill.kclient.network.api.event_report.enum.ViolenceSolutions
+import com.safehill.kclient.network.api.event_report.enum.ViolenceSolution
 import com.safehill.kclient.network.api.event_report.enum.ViolenceType
 import com.safehill.kclient.network.api.postRequestForResponse
 
@@ -16,7 +16,7 @@ class EventReportApiImpl(
         severity: Int,
         victimAskedHelpFrom: HelpSeekingSource,
         victimTalkedAboutItWith: HelpSeekingSource,
-        victimThought: ViolenceSolutions,
+        victimThought: ViolenceSolution,
         otherDetails: String
     ): EventIdentifier {
         return baseApi.postRequestForResponse(
@@ -47,10 +47,10 @@ class EventReportApiImpl(
         HelpSeekingSource.Other -> "Other"
     }
 
-    private fun ViolenceSolutions.toServerValue(): String = when (this) {
-        ViolenceSolutions.MoveOut -> "Move Out"
-        ViolenceSolutions.Divorce -> "Divorce"
-        ViolenceSolutions.DenounceToAuthorities -> "Denounce to Authorities"
-        ViolenceSolutions.Nothing -> "Nothing"
+    private fun ViolenceSolution.toServerValue(): String = when (this) {
+        ViolenceSolution.MoveOut -> "Move Out"
+        ViolenceSolution.Divorce -> "Divorce"
+        ViolenceSolution.DenounceToAuthorities -> "Denounce to Authorities"
+        ViolenceSolution.Nothing -> "Nothing"
     }
 }

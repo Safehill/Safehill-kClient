@@ -1,6 +1,6 @@
 package com.safehill.kclient.network.api.event_report.enum
 
-enum class ViolenceSolutions {
+enum class ViolenceSolution {
     MoveOut,
     Divorce,
     DenounceToAuthorities,
