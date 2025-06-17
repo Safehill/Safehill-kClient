@@ -38,6 +38,9 @@ val SafehillClient.serverProxy
 val SafehillClient.webSocketApi
     get() = this.networkModule.webSocketApi
 
+val SafehillClient.remoteServer
+    get() = this.networkModule.serverProxy.remoteServer
+
 // Repositories
 val SafehillClient.userDiscoveryRepository
     get() = this.repositories.userDiscoveryRepository
