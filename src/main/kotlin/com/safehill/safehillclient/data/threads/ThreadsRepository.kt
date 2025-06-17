@@ -12,6 +12,7 @@ import com.safehill.kclient.models.dtos.websockets.ThreadUpdatedDTO
 import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
+import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.tasks.outbound.UploadFailure
 import com.safehill.kclient.tasks.outbound.UploadOperation
 import com.safehill.kclient.tasks.outbound.UploadOperationErrorListener
@@ -58,7 +59,8 @@ class ThreadsRepository(
     private val threadStateRegistry: ThreadStateRegistry,
     private val threadStateInteractorFactory: ThreadStateInteractorFactory,
     private val interactionSync: InteractionSync,
-    private val uploadOperation: UploadOperation
+    private val uploadOperation: UploadOperation,
+    private val serverProxy: ServerProxy
 ) : UserObserver,
     InteractionSyncListener,
     UploadOperationErrorListener {
@@ -191,9 +193,18 @@ class ThreadsRepository(
     }
 
     override suspend fun didUpdateThread(threadUpdatedDTO: ThreadUpdatedDTO) {
-        getThreadStateInteractor(threadUpdatedDTO.threadId)?.update(
-            threadUpdatedDTO = threadUpdatedDTO
-        )
+        userScope.launch {
+            getThreadStateInteractor(threadUpdatedDTO.threadId)?.update(
+                threadUpdatedDTO = threadUpdatedDTO
+            ) ?: run {
+                val threadDTO = serverProxy.retrieveThread(
+                    threadId = threadUpdatedDTO.threadId
+                )
+                if (threadDTO != null) {
+                    threadStateRegistry.upsertThreadStates(listOf(threadDTO))
+                }
+            }
+        }
     }
 
     override suspend fun didReceivePhotoMessages(
