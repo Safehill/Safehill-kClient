@@ -11,7 +11,7 @@ inline fun <T> runCatchingSafe(
     block: () -> T
 ): Result<T> {
     contract {
-        callsInPlace(block, kotlin.contracts.InvocationKind.EXACTLY_ONCE)
+        callsInPlace(block, kotlin.contracts.InvocationKind.AT_MOST_ONCE)
     }
     return try {
         Result.success(block())
@@ -29,4 +29,12 @@ suspend inline fun <T> safeApiCall(crossinline invoke: suspend () -> T): Result<
             invoke()
         }
     }
+}
+
+@OptIn(ExperimentalContracts::class)
+fun Throwable.isCancellationException(): Boolean {
+    contract {
+        returns(true) implies (this@isCancellationException is kotlinx.coroutines.CancellationException)
+    }
+    return (this is CancellationException)
 }
