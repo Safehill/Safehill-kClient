@@ -33,8 +33,12 @@ class EventReportApiImpl(
     }
 
     private fun ViolenceType.toServerValue(): Int = when (this) {
-        ViolenceType.Physical -> 0
-        ViolenceType.Psychological -> 1
+        ViolenceType.Physical -> 1
+        ViolenceType.Psychological -> 2
+        ViolenceType.Economical -> 3
+        ViolenceType.Sexual -> 4
+        ViolenceType.Stalking -> 5
+        ViolenceType.Other -> 0
     }
 
     private fun HelpSeekingSource.toServerValue(): String = when (this) {
