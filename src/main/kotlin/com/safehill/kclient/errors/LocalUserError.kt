@@ -18,5 +18,7 @@ sealed class LocalUserError : Exception() {
         fun getLocalizedMessage() = "you need to be authenticated to perform this operation"
     }
 
-    class UnAvailable : LocalUserError()
+    class UnAvailable : LocalUserError() {
+        override val message: String = "User not available."
+    }
 }
