@@ -25,7 +25,7 @@ dependencies {
     api(libs.ktor.client.cio)
     api(libs.ktor.client.logging)
     api(libs.ktor.client.websockets)
-    api(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.ktor.serialization.kotlinx.json)
     api(libs.ktor.client.content.negotiation)
 
     implementation(kotlin("stdlib"))
