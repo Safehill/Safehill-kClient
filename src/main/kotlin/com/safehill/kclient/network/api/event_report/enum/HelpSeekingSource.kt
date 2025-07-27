@@ -6,6 +6,7 @@ enum class HelpSeekingSource {
     SocialServices,
     HealthServices,
     FamilyRelativesFriends,
+    Pharmacy,
     Nobody,
     Other
 }

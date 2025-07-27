@@ -47,6 +47,7 @@ class EventReportApiImpl(
         HelpSeekingSource.SocialServices -> "Social Service"
         HelpSeekingSource.HealthServices -> "Health Services"
         HelpSeekingSource.FamilyRelativesFriends -> "Family, Relatives and Friends"
+        HelpSeekingSource.Pharmacy -> "Pharmacy"
         HelpSeekingSource.Nobody -> "Nobody"
         HelpSeekingSource.Other -> "Other"
     }
