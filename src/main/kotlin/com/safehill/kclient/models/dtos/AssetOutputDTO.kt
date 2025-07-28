@@ -9,6 +9,6 @@ data class AssetOutputDTO(
     val globalIdentifier: String,
     val localIdentifier: String,
     @Serializable(with = InstantSerializer::class) val creationDate: Instant,
-    val groupId: String,
+    val groupId: String?,
     val versions: List<AssetVersionOutputDTO>,
 )
