@@ -13,7 +13,7 @@ import io.ktor.client.plugins.logging.Logging
 import io.ktor.http.ContentType
 import io.ktor.http.URLBuilder
 import io.ktor.http.URLProtocol
-import io.ktor.http.contentType
+import io.ktor.http.content.OutgoingContent
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
@@ -40,6 +40,15 @@ class HttpClientFactory(
             }
             install(Logging) {
                 level = LogLevel.ALL
+                filter {
+                    val outgoingContent = it.body as? OutgoingContent
+                    val shouldBeLogged =
+                        outgoingContent?.contentType != ContentType.Application.OctetStream
+                    if (!shouldBeLogged) {
+                        safehillLogger.info("The request to ${it.url} is being skipped because it is a octet stream.")
+                    }
+                    shouldBeLogged
+                }
                 this.logger = object : Logger {
                     override fun log(message: String) {
                         if (message.length > 500_000) {
