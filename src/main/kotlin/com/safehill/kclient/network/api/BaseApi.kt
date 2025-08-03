@@ -13,7 +13,9 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsBytes
+import io.ktor.http.ContentType
 import io.ktor.http.HeadersBuilder
+import io.ktor.http.contentType
 import io.ktor.http.path
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -91,6 +93,7 @@ inline fun <reified Req> BaseOpenApi.getRequestBuilder(
 
     return HttpRequestBuilder()
         .apply {
+            contentType(ContentType.Application.Json)
             url {
                 path(endPoint)
                 if (requestMethod is RequestMethod.Get) {
