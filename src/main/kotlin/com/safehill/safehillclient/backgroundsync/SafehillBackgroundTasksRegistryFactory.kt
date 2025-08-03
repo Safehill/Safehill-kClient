@@ -54,7 +54,6 @@ class SafehillBackgroundTasksRegistryFactory(
     private fun uploadOperation(): UploadOperation {
         return UploadOperationImpl(
             serverProxy = networkModule.serverProxy,
-            listeners = mutableListOf(assetModule.assetsUploadPipelineStateHolder),
             encrypter = assetModule.assetEncrypter,
             userModule = userModule,
             userProvider = userProvider,
@@ -62,7 +61,9 @@ class SafehillBackgroundTasksRegistryFactory(
             localAssetsStoreController = controllersModule.localAssetsStoreController,
             clientScope = clientOptions.clientScope,
             safehillLogger = clientOptions.safehillLogger
-        )
+        ).also {
+            it.listeners.add(assetModule.assetsUploadPipelineStateHolder)
+        }
     }
 
     override fun create(): BackgroundTasksRegistry {

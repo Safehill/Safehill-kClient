@@ -23,11 +23,11 @@ import com.safehill.safehillclient.module.platform.UserModule
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import java.util.Collections
 import java.util.UUID
 
 class UploadOperationImpl(
     val serverProxy: ServerProxy,
-    override val listeners: MutableList<UploadOperationListener>,
     private val encrypter: AssetEncrypter,
     private val userModule: UserModule,
     private val userProvider: UserProvider,
@@ -36,6 +36,10 @@ class UploadOperationImpl(
     private val clientScope: ClientScope,
     private val safehillLogger: SafehillLogger
 ) : UploadOperation {
+
+
+    override val listeners: MutableList<UploadOperationListener> =
+        Collections.synchronizedList(mutableListOf())
 
     private val listenerRegistry = UploadListenersRegistry(listeners)
     private val outboundQueueItemManager: OutboundQueueItemManagerInterface?
