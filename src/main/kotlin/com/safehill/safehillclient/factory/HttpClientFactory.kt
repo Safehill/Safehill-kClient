@@ -26,7 +26,6 @@ class HttpClientFactory(
         return HttpClient(CIO) {
             defaultRequest {
                 url(buildRestApiUrl(remoteServerEnvironment).buildString())
-                contentType(ContentType.Application.Json)
             }
             install(HttpTimeout) {
                 this.connectTimeoutMillis = 10000
