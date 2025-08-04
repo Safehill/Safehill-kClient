@@ -1,5 +1,6 @@
 package com.safehill.safehillclient
 
+import com.safehill.kclient.errors.LocalUserError
 import com.safehill.kclient.models.LocalCryptoUser
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
@@ -40,11 +41,13 @@ class SafehillClient(
     private val loggedInUser = AtomicReference<LocalUser?>(null)
 
     suspend fun signIn(): Result<SignInResponse> {
-        val storedUser = userStorage.getUser()
-        return if (storedUser != null) {
-            signIn(storedUser)
-        } else {
-            "User not found to initialize.".toFailure()
+        return runCatching {
+            val storedUser = userStorage.getUser()
+            return if (storedUser != null) {
+                signIn(storedUser)
+            } else {
+                throw LocalUserError.UnAvailable()
+            }
         }
     }
 
@@ -156,6 +159,7 @@ class SafehillClient(
     class UserContextMismatch : Exception(
         "User trying to sign in is different from already signed in user. Please sign out and sign in again."
     )
+
 }
 
 fun <T> String.toFailure(): Result<T> = Result.failure(this.toError())
