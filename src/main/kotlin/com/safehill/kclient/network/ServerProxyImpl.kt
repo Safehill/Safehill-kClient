@@ -22,13 +22,9 @@ import com.safehill.kclient.network.remote.RemoteServer
 import com.safehill.kclient.util.Provider
 import com.safehill.kclient.util.runCatchingSafe
 import com.safehill.kclient.utils.setupBouncyCastle
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import java.time.Instant
 
 class ServerProxyImpl(
@@ -400,122 +396,11 @@ class ServerProxyImpl(
         }
     }
 
-    //
-    /// Retrieve asset from local server (cache).
-    ///
-    /// /// If only a `.lowResolution` version is available, this method triggers the caching of the `.midResolution` in the background.
-    /// In addition, when asking for a `.midResolution` or a `.hiResolution` version, and the `cacheHiResolution` parameter is set to `true`,
-    /// this method triggers the caching in the background of the `.hiResolution` version, unless already availeble, replacing the `.midResolution`.
-    /// Use the `cacheHiResolution` carefully, as higher resolution can take a lot of space on disk.
-    ///
-    /// - Parameters:
-    ///   - assetIdentifiers: the global identifier of the asset to retrieve
-    ///   - versions: the versions to retrieve
-    ///   - cacheHiResolution: if the `.hiResolution` isn't in the local server, then fetch it and cache it in the background. `.hiResolution` is usually a big file, so this boolean lets clients control the caching strategy. Also, this parameter only makes sense when requesting `.midResolution` or `.hiResolution` versions. It's a no-op otherwise.
-    ///   - completionHandler: the callback method returning the encrypted assets keyed by global id, or the error
-    @OptIn(DelicateCoroutinesApi::class, DelicateCoroutinesApi::class)
-    override suspend fun getLocalAssets(
-        globalIdentifiers: List<GlobalIdentifier>,
-        versions: List<AssetQuality>,
-        cacheHiResolution: Boolean
-    ): Map<String, EncryptedAsset> {
-        val versionsToRetrieve = versions.toMutableSet()
-
-        // If `.hiResolution` is explicitly requested and `.midResolution` is not requested, add `.midResolution` to versionsToRetrieve
-        if (AssetQuality.HighResolution in versionsToRetrieve && AssetQuality.MidResolution !in versionsToRetrieve) {
-            versionsToRetrieve.add(AssetQuality.MidResolution)
-        }
-
-        if (cacheHiResolution) {
-            // If `.midResolution` is requested and `.hiResolution` is not requested, add `.hiResolution` to versionsToRetrieve
-            if (AssetQuality.MidResolution in versionsToRetrieve && AssetQuality.HighResolution !in versionsToRetrieve) {
-                versionsToRetrieve.add(AssetQuality.HighResolution)
-            }
-        }
-
-        // Always add `.lowResolution`, even when not explicitly requested
-        // to distinguish between assets without any version and assets with only `.lowResolution`
-        // An asset with `.lowResolution` only will trigger the loading of the next quality version in the background
-        versionsToRetrieve.add(AssetQuality.LowResolution)
-
-        val map = localServer.getEncryptedAssets(globalIdentifiers, versions)
-
-        // Always cache the `.midResolution` if the `.lowResolution` is the only version available
-        map.forEach { (globalIdentifier, encryptedAsset) ->
-            if (versionsToRetrieve.size > 1 &&
-                encryptedAsset.encryptedVersions.size == 1 &&
-                encryptedAsset.encryptedVersions.keys.first() == AssetQuality.LowResolution
-            ) {
-                GlobalScope.launch(Dispatchers.Default) {
-                    cacheAssets(listOf(globalIdentifier), AssetQuality.MidResolution)
-                }
-            }
-        }
-
-        // Cache the `.hiResolution` if requested
-        if (cacheHiResolution) {
-            val hiResGlobalIdentifiersToLazyLoad = map.filter { (_, encryptedAsset) ->
-                versionsToRetrieve.contains(AssetQuality.HighResolution) &&
-                        !encryptedAsset.encryptedVersions.containsKey(AssetQuality.HighResolution)
-            }.keys.toList()
-
-            if (hiResGlobalIdentifiersToLazyLoad.isNotEmpty()) {
-                GlobalScope.launch(Dispatchers.Default) {
-                    cacheAssets(hiResGlobalIdentifiersToLazyLoad, AssetQuality.HighResolution)
-                }
-            }
-        }
-        return organizeAssetVersions(map, versions)
-    }
-
-    private fun organizeAssetVersions(
-        encryptedAssetsByGlobalId: Map<String, EncryptedAsset>,
-        requestedVersions: List<AssetQuality>
-    ): Map<String, EncryptedAsset> {
-        val map = encryptedAssetsByGlobalId.mapValues { (_, encryptedAsset) ->
-            val newEncryptedVersions = encryptedAsset.encryptedVersions.toMutableMap()
-
-            if (AssetQuality.HighResolution in requestedVersions &&
-                encryptedAsset.encryptedVersions.containsKey(AssetQuality.MidResolution) &&
-                AssetQuality.HighResolution !in encryptedAsset.encryptedVersions
-            ) {
-                // If `.hiResolution` was requested, use the `.midResolution` version if available under that key
-                newEncryptedVersions[AssetQuality.HighResolution] =
-                    encryptedAsset.encryptedVersions[AssetQuality.MidResolution]!!
-
-                // Populate the rest of the versions based on the `requestedVersions`
-                requestedVersions.forEach { version ->
-                    if (version != AssetQuality.HighResolution &&
-                        encryptedAsset.encryptedVersions.containsKey(version)
-                    ) {
-                        newEncryptedVersions[version] =
-                            encryptedAsset.encryptedVersions[version]!!
-                    }
-                }
-            }
-
-            return@mapValues EncryptedAsset(
-                globalIdentifier = encryptedAsset.globalIdentifier,
-                localIdentifier = encryptedAsset.localIdentifier,
-                creationDate = encryptedAsset.creationDate,
-                encryptedVersions = newEncryptedVersions
-            )
-        }
-        return map
-
-    }
-
-    override suspend fun setGroupEncryptionDetails(
-        groupId: GroupId,
-        recipientsEncryptionDetails: List<RecipientEncryptionDetailsDTO>
-    ) {
-        TODO("Not yet implemented")
-    }
 
     override suspend fun retrieveGroupUserEncryptionDetails(groupId: GroupId): RecipientEncryptionDetailsDTO {
         return try {
             localServer.retrieveGroupUserEncryptionDetails(groupId = groupId)
-        } catch (e: UserInteractionController.InteractionErrors.MissingE2EEDetails) {
+        } catch (_: UserInteractionController.InteractionErrors.MissingE2EEDetails) {
             remoteServer.retrieveGroupUserEncryptionDetails(groupId = groupId).also {
                 localServer.setGroupEncryptionDetails(
                     groupId = groupId,
@@ -523,10 +408,6 @@ class ServerProxyImpl(
                 )
             }
         }
-    }
-
-    private fun cacheAssets(globalIdentifiers: List<String>, quality: AssetQuality) {
-        //TODO("Not yet implemented")
     }
 
     override suspend fun deleteThread(threadId: String) {
