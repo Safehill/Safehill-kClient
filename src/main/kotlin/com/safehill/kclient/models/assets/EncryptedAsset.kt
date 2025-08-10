@@ -5,11 +5,20 @@ import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kcrypto.models.ShareablePayload
 import java.time.Instant
 
+typealias Embeddings = FloatArray
+typealias AssetHash = String
+
 data class EncryptedAsset(
     val globalIdentifier: AssetGlobalIdentifier,
     val localIdentifier: AssetLocalIdentifier,
     val creationDate: Instant?,
+    val fingerPrint: AssetFingerPrint?,
     val encryptedVersions: Map<AssetQuality, EncryptedAssetVersion>
+)
+
+class AssetFingerPrint(
+    val embeddings: Embeddings,
+    val assetHash: AssetHash
 )
 
 fun EncryptedAsset.toDecryptedAsset(

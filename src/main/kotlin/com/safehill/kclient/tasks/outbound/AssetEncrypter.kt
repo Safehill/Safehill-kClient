@@ -46,7 +46,8 @@ class AssetEncrypter(
             globalIdentifier = outboundQueueItem.globalIdentifier,
             localIdentifier = localAsset.localIdentifier,
             creationDate = localAsset.createdAt,
-            encryptedVersions = encryptedVersions
+            encryptedVersions = encryptedVersions,
+            fingerPrint = null
         )
     }
 

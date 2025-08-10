@@ -15,6 +15,8 @@ data class AssetInputDTO(
     // If  no groupId was provided, it was a single-asset upload, so the identifier can be safely generated on server
     val groupId: String?,
     val versions: List<AssetVersionInputDTO>,
+    val perceptualHash: String?,
+    val embeddings: String?,
     // If set to true destroys all sharing information for the existing asset version, if one with the same name exists
     val force: Boolean
 )
