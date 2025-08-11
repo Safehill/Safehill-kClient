@@ -168,6 +168,7 @@ class UploadOperationImpl(
             shareIfRecipientsExist(outboundQueueItem, globalIdentifier)
             outboundQueueItemManager?.removeOutboundQueueItem(outboundQueueItem)
         } catch (exception: Exception) {
+            safehillLogger.error("Error while uploading $exception")
             reEnqueueItemOrElse(outboundQueueItem, exception) {
                 outboundQueueItemManager?.addOutboundQueueItem(
                     queueItem = outboundQueueItem.copy(
