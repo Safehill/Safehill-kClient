@@ -36,6 +36,7 @@ class ClientModule(
 
     val assetModule = AssetModule(
         platformModule = platformModule,
+        clientOptions = clientOptions
     )
 
     val controllersModule = ControllersModule(
