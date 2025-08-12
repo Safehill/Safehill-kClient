@@ -17,9 +17,8 @@ import com.safehill.kclient.network.api.postRequestForResponse
 import com.safehill.kclient.network.remote.S3Proxy.upload
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.io.Buffer
-import kotlinx.io.readByteArray
-import kotlinx.io.writeFloat
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -70,11 +69,12 @@ class AssetUploader(
     }
 
     private fun List<Float>.toServerRepresentation(): String {
-        val byteBuffer = Buffer()
+        val byteBuffer = ByteBuffer.allocate(this.size * 4)
+        byteBuffer.order(ByteOrder.LITTLE_ENDIAN) // Match platform endianness
         this.forEach {
-            byteBuffer.writeFloat(it)
+            byteBuffer.putFloat(it)
         }
-        return byteBuffer.readByteArray().base64EncodedString()
+        return byteBuffer.array().base64EncodedString()
     }
 
 
