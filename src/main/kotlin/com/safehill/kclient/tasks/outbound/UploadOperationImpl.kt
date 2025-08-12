@@ -167,7 +167,7 @@ class UploadOperationImpl(
 
             shareIfRecipientsExist(outboundQueueItem, globalIdentifier)
             outboundQueueItemManager?.removeOutboundQueueItem(outboundQueueItem)
-        } catch (exception: Exception) {
+        } catch (exception: Throwable) {
             safehillLogger.error("Error while uploading $exception")
             reEnqueueItemOrElse(outboundQueueItem, exception) {
                 outboundQueueItemManager?.addOutboundQueueItem(
@@ -195,7 +195,7 @@ class UploadOperationImpl(
 
     private fun reEnqueueItemOrElse(
         outboundQueueItem: OutboundQueueItem,
-        exception: Exception,
+        exception: Throwable,
         elseBlock: suspend () -> Unit
     ) {
         clientScope.launch {
@@ -209,7 +209,7 @@ class UploadOperationImpl(
 
     }
 
-    private val Exception.isFatal: Boolean
+    private val Throwable.isFatal: Boolean
         get() = when (this) {
             is SafehillError.ClientError.Conflict,
             is SafehillError.ClientError.BadRequest,
