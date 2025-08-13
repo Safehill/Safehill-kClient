@@ -18,7 +18,7 @@ data class EncryptedAsset(
 
 class AssetFingerPrint(
     val embeddings: Embeddings,
-    val assetHash: AssetHash
+    val assetHash: AssetHash?
 )
 
 fun EncryptedAsset.toDecryptedAsset(

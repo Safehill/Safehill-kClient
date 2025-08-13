@@ -2,7 +2,6 @@ package com.safehill.kclient.tasks.outbound
 
 import com.safehill.kclient.SafehillCypher
 import com.safehill.kclient.logging.SafehillLogger
-import com.safehill.kclient.models.SafehillHash
 import com.safehill.kclient.models.SymmetricKey
 import com.safehill.kclient.models.assets.AssetFingerPrint
 import com.safehill.kclient.models.assets.AssetLocalIdentifier
@@ -46,7 +45,7 @@ class AssetEncrypter(
             if (quality == AssetQuality.LowResolution) {
                 assetFingerprint = AssetFingerPrint(
                     embeddings = assetEmbeddings.getEmbeddings(resizedBytes),
-                    assetHash = SafehillHash.stringDigest(resizedBytes)
+                    assetHash = null
                 )
             }
             val encryptedData = SafehillCypher.encrypt(resizedBytes, sharedSecret)
