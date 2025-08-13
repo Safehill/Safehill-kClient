@@ -4,6 +4,7 @@ import com.safehill.kclient.base64.base64EncodedString
 import com.safehill.kclient.logging.SafehillLogger
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
+import com.safehill.kclient.models.assets.Embeddings
 import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.assets.EncryptedAssetVersion
 import com.safehill.kclient.models.assets.GroupId
@@ -56,10 +57,7 @@ class AssetUploader(
             },
             force = true,
             perceptualHash = asset.fingerPrint?.assetHash,
-            embeddings = asset.fingerPrint?.embeddings
-                // Fix the model and get 512 dimension vector
-                ?.take(512)
-                ?.toServerRepresentation()
+            embeddings = asset.fingerPrint?.embeddings?.toServerRepresentation()
         )
         val shOutput: AssetOutputDTO = postRequestForResponse(
             endPoint = "/assets/create",
@@ -68,7 +66,7 @@ class AssetUploader(
         uploadEncryptedAssetToS3Bucket(serverAsset = shOutput, asset = asset)
     }
 
-    private fun List<Float>.toServerRepresentation(): String {
+    private fun Embeddings.toServerRepresentation(): String {
         val byteBuffer = ByteBuffer.allocate(this.size * 4)
         byteBuffer.order(ByteOrder.LITTLE_ENDIAN) // Match platform endianness
         this.forEach {
