@@ -2,6 +2,7 @@ package com.safehill.clip_embeddings
 
 import com.safehill.kclient.logging.DefaultSafehillLogger
 import com.safehill.kclient.logging.SafehillLogger
+import com.safehill.kclient.util.runCatchingSafe
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
@@ -114,9 +115,14 @@ class ModelFileProvider(
             return false
         }
         val hash = finalFile.sha256()
-        val hashFromServer = get(CLIP_HASH_URL).body<String>()
-        val isValid = hash.trim() == hashFromServer.trim()
-        logger.info("[ModelFileProvider] File validation result: $isValid (local: $hash, server: $hashFromServer)")
+        val hashFile = File(downloadDirectory, "TinyCLIP.onnx.sha256")
+        val expectedHash = runCatchingSafe {
+            val hashFromServer = get(CLIP_HASH_URL).body<String>()
+            hashFile.writeBytes(hashFromServer.toByteArray())
+            hashFromServer
+        }.getOrNull() ?: String(hashFile.readBytes())
+        val isValid = hash.trim() == expectedHash.trim()
+        logger.info("[ModelFileProvider] File validation result: $isValid (local: $hash, expected: $expectedHash)")
         return isValid
     }
 
