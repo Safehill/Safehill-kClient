@@ -343,23 +343,15 @@ class UploadOperationImpl(
 
     }
 
-    private suspend fun processItemsInQueue(
-        concurrentExecution: Int
-    ) {
-        coroutineScope {
-            repeat(times = concurrentExecution) {
-                launch {
-                    for (queueItem in outboundQueueItems) {
-                        when (queueItem.operationType) {
-                            OutboundQueueItem.OperationType.Upload -> {
-                                upload(queueItem)
-                            }
+    private suspend fun processItemsInQueue() {
+        for (queueItem in outboundQueueItems) {
+            when (queueItem.operationType) {
+                OutboundQueueItem.OperationType.Upload -> {
+                    upload(queueItem)
+                }
 
-                            OutboundQueueItem.OperationType.Share -> {
-                                share(queueItem)
-                            }
-                        }
-                    }
+                OutboundQueueItem.OperationType.Share -> {
+                    share(queueItem)
                 }
             }
         }
@@ -372,9 +364,7 @@ class UploadOperationImpl(
                     loadStoredOutboundItems()
                 }
                 launch {
-                    processItemsInQueue(
-                        concurrentExecution = 5
-                    )
+                    processItemsInQueue()
                 }
             }.invokeOnCompletion {
                 while (true) {
