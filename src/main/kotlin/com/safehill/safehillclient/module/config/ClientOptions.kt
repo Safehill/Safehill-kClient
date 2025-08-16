@@ -12,7 +12,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 
 class Configs(
-    val deviceRegistrationStrategy: DeviceRegistrationStrategy
+    val deviceRegistrationStrategy: DeviceRegistrationStrategy,
+    val postAssetEmbeddings: Boolean
 )
 
 class ClientOptions(

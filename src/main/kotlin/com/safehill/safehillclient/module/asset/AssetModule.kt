@@ -8,7 +8,8 @@ import com.safehill.safehillclient.module.platform.PlatformModule
 
 class AssetModule(
     private val platformModule: PlatformModule,
-    private val clientOptions: ClientOptions
+    private val clientOptions: ClientOptions,
+    private val postAssetEmbeddings: Boolean
 ) {
 
     val assetsUploadPipelineStateHolder: AssetsUploadPipelineStateHolder by lazy {
@@ -20,7 +21,8 @@ class AssetModule(
             resizer = platformModule.imageResizer,
             localAssetGetter = platformModule.localAssetGetter,
             assetEmbeddings = platformModule.assetEmbeddings,
-            safehillLogger = clientOptions.safehillLogger
+            safehillLogger = clientOptions.safehillLogger,
+            postAssetEmbeddings = postAssetEmbeddings
         )
     }
 

@@ -5,7 +5,6 @@ import com.safehill.kclient.network.api.auth.AuthApiImpl
 import com.safehill.kclient.network.remote.RemoteServerEnvironment
 import com.safehill.kclient.utils.setupBouncyCastle
 import com.safehill.safehillclient.data.user.api.UserStorage
-import com.safehill.safehillclient.device_registration.DeviceRegistrationStrategy
 import com.safehill.safehillclient.factory.HttpClientFactory
 import com.safehill.safehillclient.factory.NetworkModuleFactory
 import com.safehill.safehillclient.manager.ClientManager
@@ -24,7 +23,7 @@ class SafehillClientBuilder(
     private val platformModule: PlatformModule,
     private val userModule: UserModule,
     private val userStorage: UserStorage,
-    private val deviceRegistrationStrategy: DeviceRegistrationStrategy,
+    private val configs: Configs,
     private val createsHiddenUser: Boolean,
     private val clientOptions: ClientOptions = ClientOptions(),
     private val configureHttpClient: HttpClient.() -> Unit = { }
@@ -53,9 +52,7 @@ class SafehillClientBuilder(
             clientOptions = clientOptions,
             userModule = userModule,
             networkModuleFactory = networkModuleFactory,
-            configs = Configs(
-                deviceRegistrationStrategy = deviceRegistrationStrategy
-            )
+            configs = configs
         )
         val clientManager = ClientManager.Factory(clientModule).create()
         return SafehillClient(

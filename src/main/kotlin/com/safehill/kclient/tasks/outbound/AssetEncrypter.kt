@@ -18,6 +18,7 @@ class AssetEncrypter(
     private val resizer: ImageResizerInterface,
     private val localAssetGetter: LocalAssetGetter,
     private val assetEmbeddings: AssetEmbeddings,
+    private val postAssetEmbeddings: Boolean,
     private val safehillLogger: SafehillLogger
 ) {
 
@@ -42,7 +43,7 @@ class AssetEncrypter(
                 quality.dimension,
                 quality.dimension
             )
-            if (quality == AssetQuality.LowResolution) {
+            if (postAssetEmbeddings && quality == AssetQuality.LowResolution) {
                 assetFingerprint = AssetFingerPrint(
                     embeddings = assetEmbeddings.getEmbeddings(resizedBytes),
                     assetHash = null

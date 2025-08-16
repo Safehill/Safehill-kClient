@@ -36,7 +36,8 @@ class ClientModule(
 
     val assetModule = AssetModule(
         platformModule = platformModule,
-        clientOptions = clientOptions
+        clientOptions = clientOptions,
+        postAssetEmbeddings = configs.postAssetEmbeddings
     )
 
     val controllersModule = ControllersModule(
