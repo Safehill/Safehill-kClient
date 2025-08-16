@@ -46,7 +46,7 @@ class ModelFileProvider(
 
                 }
             }
-            val finalFile = File(downloadDirectory, "TinyCLIP.onnx.zip")
+            val finalFile = File(downloadDirectory, "TinyCLIP.onnx")
             try {
                 createDownloadDirectoryIfItDoesNotExist()
                 logger.info("[ModelFileProvider] Checking if final file is valid")
