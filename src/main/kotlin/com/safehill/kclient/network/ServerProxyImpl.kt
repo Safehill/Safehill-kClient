@@ -410,6 +410,12 @@ class ServerProxyImpl(
         }
     }
 
+    override suspend fun deleteAssets(globalIdentifiers: List<AssetGlobalIdentifier>): List<AssetGlobalIdentifier> {
+        return remoteServer.deleteAssets(globalIdentifiers).also {
+            localServer.deleteAssets(globalIdentifiers)
+        }
+    }
+
     override suspend fun deleteThread(threadId: String) {
         remoteServer.deleteThread(threadId = threadId).also {
             localServer.deleteThread(threadId = threadId)

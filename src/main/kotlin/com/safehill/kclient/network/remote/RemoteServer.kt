@@ -230,9 +230,10 @@ class RemoteServer private constructor(
 
         val requestBody = AssetShareDTO(
             globalAssetIdentifier = asset.globalIdentifier,
-            versionSharingDetails = versions,  // Puoi avere più versioni in una lista
+            versionSharingDetails = versions,
             groupId = asset.groupId,
-            asPhotoMessageInThreadId = threadId
+            asPhotoMessageInThreadId = threadId,
+            sharingOption = null
         )
         postRequest(
             endPoint = "/assets/share",
