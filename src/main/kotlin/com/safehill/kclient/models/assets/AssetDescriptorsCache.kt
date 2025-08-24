@@ -27,6 +27,12 @@ class AssetDescriptorsCache {
         return _assetDescriptors.value[globalIdentifier]
     }
 
+    fun removeDescriptor(globalIdentifiers: List<AssetGlobalIdentifier>) {
+        _assetDescriptors.update { initialMap ->
+            initialMap - globalIdentifiers
+        }
+    }
+
     fun clearAssetDescriptors() {
         _assetDescriptors.update { mapOf() }
     }
