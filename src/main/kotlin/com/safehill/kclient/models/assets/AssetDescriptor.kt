@@ -6,25 +6,26 @@ import java.time.Instant
 
 typealias GroupId = String
 
-interface AssetDescriptor : RemoteAssetIdentifiable {
-    override val globalIdentifier: AssetGlobalIdentifier
-    override val localIdentifier: AssetLocalIdentifier
-    val creationDate: Instant
-    val uploadState: UploadState
+
+data class AssetDescriptor(
+    override val globalIdentifier: AssetGlobalIdentifier,
+    override val localIdentifier: AssetLocalIdentifier,
+    val creationDate: Instant,
+    val uploadState: UploadState,
     val sharingInfo: SharingInfo
+) : RemoteAssetIdentifiable {
 
-    val createdByUserIdentifier: UserIdentifier
-        get() = sharingInfo.sharedByUserIdentifier
+    val createdByUserIdentifier: UserIdentifier = sharingInfo.sharedByUserIdentifier
+
+
 }
 
-interface SharingInfo {
-    val sharedByUserIdentifier: UserIdentifier
-
+data class SharingInfo(
+    val sharedByUserIdentifier: UserIdentifier,
     /// Maps user public identifiers to asset group identifiers
-    val groupIdsByRecipientUserIdentifier: Map<UserIdentifier, List<GroupId>>
+    val groupIdsByRecipientUserIdentifier: Map<UserIdentifier, List<GroupId>>,
     val groupInfoById: Map<GroupId, GroupInfo>
-}
-
+)
 
 data class GroupInfo(
     /// The name of the asset group (optional)

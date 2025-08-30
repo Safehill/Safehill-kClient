@@ -1,8 +1,9 @@
 package com.safehill.kclient.models.dtos
 
 import com.safehill.kclient.models.assets.AssetDescriptor
-import com.safehill.kclient.models.assets.AssetDescriptorImpl
 import com.safehill.kclient.models.assets.GroupId
+import com.safehill.kclient.models.assets.GroupInfo
+import com.safehill.kclient.models.assets.SharingInfo
 import com.safehill.kclient.models.assets.UploadState
 import com.safehill.kclient.models.serde.InstantSerializer
 import com.safehill.kclient.models.users.UserIdentifier
@@ -33,17 +34,17 @@ data class GroupInfoDTO(
 )
 
 fun AssetDescriptorDTO.toAssetDescriptor(): AssetDescriptor {
-    return AssetDescriptorImpl(
+    return AssetDescriptor(
         globalIdentifier = globalIdentifier,
         localIdentifier = localIdentifier,
         creationDate = creationDate,
         uploadState = UploadState.entries.first { it.toString() == uploadState },
-        sharingInfo = AssetDescriptorImpl.SharingInfoImpl(
+        sharingInfo = SharingInfo(
             sharedByUserIdentifier = sharingInfo.sharedByUserIdentifier,
             groupIdsByRecipientUserIdentifier = sharingInfo.groupIdsByRecipientUserIdentifier,
             groupInfoById = sharingInfo.groupInfoById.mapValues {
                 with(it.value) {
-                    AssetDescriptorImpl.SharingInfoImpl.GroupInfoImpl(
+                    GroupInfo(
                         createdAt = this.createdAt,
                         name = this.name
                     )
