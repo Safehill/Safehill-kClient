@@ -11,6 +11,9 @@ interface AssetDescriptor : RemoteAssetIdentifiable {
     val creationDate: Instant
     val uploadState: UploadState
     val sharingInfo: SharingInfo
+
+    val createdByUserIdentifier: UserIdentifier
+        get() = sharingInfo.sharedByUserIdentifier
 }
 
 interface SharingInfo {
