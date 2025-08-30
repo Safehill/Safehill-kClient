@@ -25,16 +25,15 @@ interface SharingInfo {
     val groupInfoById: Map<GroupId, GroupInfo>
 }
 
-interface GroupInfo {
+
+data class GroupInfo(
     /// The name of the asset group (optional)
-    val name: String?
-
+    val name: String?,
     /// ISO8601 formatted datetime, representing the time the asset group was created
-    val createdAt: Instant
-
+    val createdAt: Instant,
     /// Whether it's confidential, shareable or public. default to confidential
-    val permissions: AssetPermission
-}
+    val permissions: AssetPermission = AssetPermission.Confidential
+)
 
 enum class UploadState {
     NotStarted, Partial, Completed, Failed;
