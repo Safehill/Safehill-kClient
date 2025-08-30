@@ -14,26 +14,20 @@ data class AssetDescriptor(
     val uploadState: UploadState,
     val sharingInfo: SharingInfo
 ) : RemoteAssetIdentifiable {
-
     val createdByUserIdentifier: UserIdentifier = sharingInfo.sharedByUserIdentifier
-
-
 }
 
 data class SharingInfo(
     val sharedByUserIdentifier: UserIdentifier,
-    /// Maps user public identifiers to asset group identifiers
     val groupIdsByRecipientUserIdentifier: Map<UserIdentifier, List<GroupId>>,
     val groupInfoById: Map<GroupId, GroupInfo>
 )
 
 data class GroupInfo(
-    /// The name of the asset group (optional)
     val name: String?,
-    /// ISO8601 formatted datetime, representing the time the asset group was created
     val createdAt: Instant,
-    /// Whether it's confidential, shareable or public. default to confidential
-    val permissions: AssetPermission = AssetPermission.Confidential
+    val createdBy: UserIdentifier,
+    val permissions: AssetPermission
 )
 
 enum class UploadState {

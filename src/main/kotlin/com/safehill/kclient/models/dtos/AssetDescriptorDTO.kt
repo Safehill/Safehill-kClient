@@ -28,9 +28,15 @@ data class SharingInfoDTO(
 
 @Serializable
 data class GroupInfoDTO(
+    /// ISO8601 formatted datetime, representing the time the asset group was created
     @Serializable(with = InstantSerializer::class)
     val createdAt: Instant,
-    val name: String?
+    /// The name of the asset group (optional)
+    val name: String?,
+    /// The identifier of the user that created the group (introduced in Nov 2024)
+    val createdBy: UserIdentifier,
+    /// Whether it's confidential, shareable or public. null will default to confidential
+    val permissions: AssetPermission?
 )
 
 fun AssetDescriptorDTO.toAssetDescriptor(): AssetDescriptor {
@@ -46,7 +52,9 @@ fun AssetDescriptorDTO.toAssetDescriptor(): AssetDescriptor {
                 with(it.value) {
                     GroupInfo(
                         createdAt = this.createdAt,
-                        name = this.name
+                        name = this.name,
+                        createdBy = this.createdBy,
+                        permissions = this.permissions ?: AssetPermission.Confidential
                     )
                 }
             }
