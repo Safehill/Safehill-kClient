@@ -1,6 +1,6 @@
 package com.safehill.kclient.models.assets
 
-import com.safehill.kclient.models.dtos.AssetPermission
+import com.safehill.kclient.models.dtos.SharingOption
 import com.safehill.kclient.models.users.UserIdentifier
 import java.time.Instant
 
@@ -27,7 +27,7 @@ data class GroupInfo(
     val name: String?,
     val createdAt: Instant,
     val createdBy: UserIdentifier,
-    val permissions: AssetPermission
+    val permissions: SharingOption
 )
 
 enum class UploadState {

@@ -9,24 +9,24 @@ data class AssetShareDTO(
     val versionSharingDetails: List<ShareVersionDetails>,
     val groupId: String,
     val asPhotoMessageInThreadId: String?,
-    val sharingOption: AssetPermission?
+    val sharingOption: SharingOption?
 )
 
 
-@Serializable(with = AssetPermission.Companion::class)
-enum class AssetPermission(
+@Serializable(with = SharingOption.Companion::class)
+enum class SharingOption(
     val serverValue: Int
 ) {
     Confidential(0),
     Shared(1);
 
-    companion object Companion : EnumIntSerializer<AssetPermission>() {
-        override fun codeSelector(item: AssetPermission): Int {
+    companion object Companion : EnumIntSerializer<SharingOption>() {
+        override fun codeSelector(item: SharingOption): Int {
             return item.serverValue
         }
 
-        override fun fromCode(int: Int): AssetPermission {
-            return AssetPermission.entries.first { it.serverValue == int }
+        override fun fromCode(int: Int): SharingOption {
+            return SharingOption.entries.first { it.serverValue == int }
         }
     }
 }

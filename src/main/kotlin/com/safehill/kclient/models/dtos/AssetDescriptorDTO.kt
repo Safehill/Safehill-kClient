@@ -36,7 +36,7 @@ data class GroupInfoDTO(
     /// The identifier of the user that created the group (introduced in Nov 2024)
     val createdBy: UserIdentifier,
     /// Whether it's confidential, shareable or public. null will default to confidential
-    val permissions: AssetPermission?
+    val permissions: SharingOption?
 )
 
 fun AssetDescriptorDTO.toAssetDescriptor(): AssetDescriptor {
@@ -54,7 +54,7 @@ fun AssetDescriptorDTO.toAssetDescriptor(): AssetDescriptor {
                         createdAt = this.createdAt,
                         name = this.name,
                         createdBy = this.createdBy,
-                        permissions = this.permissions ?: AssetPermission.Confidential
+                        permissions = this.permissions ?: SharingOption.Confidential
                     )
                 }
             }
