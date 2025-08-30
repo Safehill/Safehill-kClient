@@ -1,5 +1,6 @@
 package com.safehill.kclient.models.assets
 
+import com.safehill.kclient.models.dtos.AssetPermission
 import com.safehill.kclient.models.users.UserIdentifier
 import java.time.Instant
 
@@ -30,6 +31,9 @@ interface GroupInfo {
 
     /// ISO8601 formatted datetime, representing the time the asset group was created
     val createdAt: Instant
+
+    /// Whether it's confidential, shareable or public. default to confidential
+    val permissions: AssetPermission
 }
 
 enum class UploadState {

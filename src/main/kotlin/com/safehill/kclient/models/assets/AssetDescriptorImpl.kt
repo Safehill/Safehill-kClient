@@ -1,5 +1,6 @@
 package com.safehill.kclient.models.assets
 
+import com.safehill.kclient.models.dtos.AssetPermission
 import com.safehill.kclient.models.users.UserIdentifier
 import java.time.Instant
 
@@ -18,7 +19,9 @@ data class AssetDescriptorImpl(
     ) : SharingInfo {
 
         data class GroupInfoImpl(
-            override val name: String?, override val createdAt: Instant
+            override val name: String?,
+            override val createdAt: Instant,
+            override val permissions: AssetPermission = AssetPermission.Confidential
         ) : GroupInfo
     }
 }
