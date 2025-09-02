@@ -9,11 +9,8 @@ class UploadListenersRegistry(
     fun notifyOfEnqueuing(
         outboundQueueItem: OutboundQueueItem
     ) {
-        val threadId = outboundQueueItem.threadId
-        if (threadId != null) {
-            listeners.forEach {
-                it.enqueued(outboundQueueItem)
-            }
+        listeners.forEach {
+            it.enqueued(outboundQueueItem)
         }
     }
 

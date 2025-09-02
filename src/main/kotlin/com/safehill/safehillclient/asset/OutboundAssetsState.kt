@@ -10,6 +10,8 @@ import com.safehill.kclient.tasks.outbound.UploadFailure
 import com.safehill.kclient.tasks.outbound.UploadOperationErrorListener
 import com.safehill.kclient.tasks.outbound.model.OutboundAsset
 import com.safehill.kclient.tasks.outbound.model.OutboundAssets
+import com.safehill.safehillclient.SafehillClient
+import com.safehill.safehillclient.utils.extensions.assetModule
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -120,3 +122,6 @@ class OutboundAssetsState : UploadOperationErrorListener {
         }
     }
 }
+
+val SafehillClient.outboundAssetsState
+    get() = this.assetModule.outboundAssetsState
