@@ -63,6 +63,7 @@ class SafehillBackgroundTasksRegistryFactory(
             safehillLogger = clientOptions.safehillLogger
         ).also {
             it.listeners.add(assetModule.assetsUploadPipelineStateHolder)
+            it.listeners.add(assetModule.outboundAssetsState)
         }
     }
 

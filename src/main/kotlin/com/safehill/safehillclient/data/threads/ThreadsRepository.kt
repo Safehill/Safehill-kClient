@@ -1,8 +1,6 @@
 package com.safehill.safehillclient.data.threads
 
 import com.safehill.kclient.controllers.UserInteractionController
-import com.safehill.kclient.models.assets.AssetGlobalIdentifier
-import com.safehill.kclient.models.assets.AssetLocalIdentifier
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.dtos.ConversationThreadAssetDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
@@ -13,16 +11,16 @@ import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.ServerProxy
-import com.safehill.kclient.tasks.outbound.UploadFailure
+import com.safehill.kclient.tasks.outbound.OutboundQueueItem
 import com.safehill.kclient.tasks.outbound.UploadOperation
-import com.safehill.kclient.tasks.outbound.UploadOperationErrorListener
+import com.safehill.kclient.tasks.outbound.UploadOperationListener
+import com.safehill.kclient.tasks.outbound.model.OutboundAssets
 import com.safehill.kclient.tasks.syncing.InteractionSync
 import com.safehill.kclient.tasks.syncing.InteractionSyncListener
 import com.safehill.kclient.util.runCatchingSafe
+import com.safehill.safehillclient.asset.OutboundAssetsState
 import com.safehill.safehillclient.data.threads.factory.ThreadStateInteractorFactory
 import com.safehill.safehillclient.data.threads.interactor.ThreadStateInteractor
-import com.safehill.safehillclient.data.threads.model.SharingAsset
-import com.safehill.safehillclient.data.threads.model.SharingAssetsState
 import com.safehill.safehillclient.data.threads.model.Thread
 import com.safehill.safehillclient.data.threads.model.ThreadState
 import com.safehill.safehillclient.data.threads.registry.ThreadStateRegistry
@@ -31,6 +29,7 @@ import com.safehill.safehillclient.data.user.model.toServerUser
 import com.safehill.safehillclient.manager.dependencies.UserObserver
 import com.safehill.safehillclient.module.config.ClientOptions
 import com.safehill.safehillclient.utils.extensions.createChildScope
+import com.safehill.utils.flow.combineStates
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -53,25 +52,37 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+typealias ThreadId = String
+
 class ThreadsRepository(
+    outboundAssetsState: OutboundAssetsState,
     private val clientOptions: ClientOptions,
     private val userInteractionController: UserInteractionController,
     private val threadStateRegistry: ThreadStateRegistry,
     private val threadStateInteractorFactory: ThreadStateInteractorFactory,
     private val interactionSync: InteractionSync,
     private val uploadOperation: UploadOperation,
-    private val serverProxy: ServerProxy
+    private val serverProxy: ServerProxy,
 ) : UserObserver,
     InteractionSyncListener,
-    UploadOperationErrorListener {
+    UploadOperationListener {
 
     private val userScope = clientOptions.userScope
 
     private val safehillLogger = clientOptions.safehillLogger
 
-    private val sharingAssetsState = SharingAssetsState()
+    private val threadToGroupMapping = MutableStateFlow<Map<ThreadId, List<GroupId>>>(mapOf())
 
-    val assetsBeingShared = sharingAssetsState.assetsBeingShared
+    val assetsBeingShared: StateFlow<Map<ThreadId, List<OutboundAssets>>> = combineStates(
+        outboundAssetsState.outboundAssets,
+        threadToGroupMapping
+    ) { outboundAssets, threadToGroupMap ->
+        threadToGroupMap.mapValues { (threadId, groupIds) ->
+            groupIds.mapNotNull { groupId ->
+                outboundAssets[groupId]
+            }
+        }
+    }
 
     private val _loading = MutableStateFlow(false)
     val loading = _loading.asStateFlow()
@@ -245,49 +256,17 @@ class ThreadsRepository(
     }
 
     override fun enqueued(
-        threadId: String,
-        localIdentifier: AssetLocalIdentifier,
-        globalIdentifier: AssetGlobalIdentifier,
-        groupId: String
+        outboundQueueItem: OutboundQueueItem
     ) {
-        sharingAssetsState.setThreadToGroupMapping(
-            threadId = threadId,
-            groupId = groupId
-        )
-        sharingAssetsState.upsertSharingAssets(
-            globalIdentifier = globalIdentifier,
-            localIdentifier = localIdentifier,
-            groupId = groupId,
-            state = SharingAsset.State.Uploading
-        )
+        val threadId = outboundQueueItem.threadId
+        if (threadId != null) {
+            threadToGroupMapping.update { initial ->
+                val threadGroups = initial.getOrElse(threadId) { listOf() }
+                initial + (threadId to (threadGroups + outboundQueueItem.groupId).distinct())
+            }
+        }
     }
 
-    override fun finishedSharing(
-        localIdentifier: AssetLocalIdentifier,
-        globalIdentifier: AssetGlobalIdentifier,
-        groupId: GroupId,
-        users: List<ServerUser>
-    ) {
-        sharingAssetsState.removeSharingAssets(
-            groupId = groupId,
-            globalIdentifier = globalIdentifier,
-            localIdentifier = localIdentifier
-        )
-    }
-
-    override fun onError(
-        globalIdentifier: AssetGlobalIdentifier,
-        localIdentifier: AssetLocalIdentifier,
-        groupId: GroupId,
-        uploadFailure: UploadFailure
-    ) {
-        sharingAssetsState.setError(
-            globalIdentifier = globalIdentifier,
-            localIdentifier = localIdentifier,
-            groupId = groupId,
-            uploadFailure = uploadFailure
-        )
-    }
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
