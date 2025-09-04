@@ -52,7 +52,7 @@ data class OutboundAssets(
 }
 
 
-class OutboundAsset(
+data class OutboundAsset(
     val assetGlobalIdentifier: AssetGlobalIdentifier,
     val localIdentifier: AssetLocalIdentifier,
     val state: State,
