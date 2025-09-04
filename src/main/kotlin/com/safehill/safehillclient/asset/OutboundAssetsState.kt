@@ -28,7 +28,7 @@ class OutboundAssetsState : UploadOperationErrorListener {
         groupId: GroupId,
         uploadFailure: UploadFailure
     ) {
-        upsertSharingAssets(
+        upsertOutboundAssets(
             globalIdentifier = globalIdentifier,
             localIdentifier = localIdentifier,
             groupId = groupId,
@@ -64,7 +64,7 @@ class OutboundAssetsState : UploadOperationErrorListener {
     override fun enqueued(
         outboundQueueItem: OutboundQueueItem
     ) {
-        upsertSharingAssets(
+        upsertOutboundAssets(
             globalIdentifier = outboundQueueItem.globalIdentifier,
             localIdentifier = outboundQueueItem.localIdentifier,
             groupId = outboundQueueItem.groupId,
@@ -78,7 +78,7 @@ class OutboundAssetsState : UploadOperationErrorListener {
     }
 
 
-    private fun upsertSharingAssets(
+    private fun upsertOutboundAssets(
         globalIdentifier: GlobalIdentifier,
         localIdentifier: AssetLocalIdentifier,
         groupId: String,
@@ -92,7 +92,7 @@ class OutboundAssetsState : UploadOperationErrorListener {
                     uploadedAt = Instant.now()
                 )
             }
-            val newEntry = groupId to outboundAsset.upsertSharingAsset(
+            val newEntry = groupId to outboundAsset.upsertOutboundAsset(
                 globalIdentifier = globalIdentifier,
                 localIdentifier = localIdentifier,
                 state = state,

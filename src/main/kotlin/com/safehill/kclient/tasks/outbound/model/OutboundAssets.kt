@@ -17,7 +17,7 @@ data class OutboundAssets(
 
     val failedAssets = outboundAssets.filter { !it.state.inProgress }
 
-    fun upsertSharingAsset(
+    fun upsertOutboundAsset(
         globalIdentifier: GlobalIdentifier,
         localIdentifier: AssetLocalIdentifier,
         state: OutboundAsset.State,
