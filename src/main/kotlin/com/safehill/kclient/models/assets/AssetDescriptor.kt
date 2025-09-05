@@ -47,3 +47,7 @@ enum class UploadState {
         NotStarted, Failed -> false
     }
 }
+
+
+val AssetDescriptor.sharedWithUserIdentifiers
+    get() = this.sharingInfo.groupIdsByRecipientUserIdentifier.keys - this.createdByUserIdentifier
