@@ -14,9 +14,9 @@ class RemoteDownloadOperation(
     override suspend fun getDescriptors(): List<AssetDescriptor> {
         val remoteDescriptors =
             serverProxy.remoteServer.getAssetDescriptors(after = null)
-        val globalIdentifiersInLocalServer = serverProxy.localServer
-            .getAssetDescriptors(after = null)
-            .map { it.globalIdentifier }
+        remoteDescriptors.forEach { descriptor ->
+            serverProxy.localServer.storeAssetDescriptor(descriptor)
+        }
         val filteredDescriptors = remoteDescriptors
             .filter { it.uploadState.isDownloadable() }
         return filteredDescriptors
