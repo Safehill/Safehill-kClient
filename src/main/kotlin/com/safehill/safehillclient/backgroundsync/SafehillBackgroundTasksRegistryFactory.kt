@@ -61,10 +61,9 @@ class SafehillBackgroundTasksRegistryFactory(
             localAssetsStoreController = controllersModule.localAssetsStoreController,
             clientScope = clientOptions.clientScope,
             safehillLogger = clientOptions.safehillLogger
-        ).also {
-            it.listeners.add(assetModule.assetsUploadPipelineStateHolder)
-            it.listeners.add(assetModule.outboundAssetsState)
-        }
+        )
+        // Note: New implementation uses state flows instead of listeners
+        // State can be observed via uploadStates flow in UploadOperationImpl
     }
 
     override fun create(): BackgroundTasksRegistry {

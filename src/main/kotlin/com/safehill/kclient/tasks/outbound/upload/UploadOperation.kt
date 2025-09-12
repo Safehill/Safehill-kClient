@@ -1,4 +1,4 @@
-package com.safehill.kclient.tasks.outbound
+package com.safehill.kclient.tasks.outbound.upload
 
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetLocalIdentifier
@@ -9,8 +9,6 @@ import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.tasks.BackgroundTask
 
 interface UploadOperation : BackgroundTask {
-
-    val listeners: MutableList<UploadOperationListener>
 
     val user: LocalUser
 
@@ -30,6 +28,4 @@ interface UploadOperation : BackgroundTask {
         recipientIds: List<UserIdentifier>,
         threadId: String? = null
     )
-
-    fun stop()
 }
