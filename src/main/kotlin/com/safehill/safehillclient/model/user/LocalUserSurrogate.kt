@@ -14,7 +14,9 @@ class LocalUserSurrogate(
     @Serializable(with = Base64DataSerializer::class) val publicKeyData: ByteArray,
     @Serializable(with = Base64DataSerializer::class) val privateKeyData: ByteArray,
     @Serializable(with = Base64DataSerializer::class) val publicSignatureData: ByteArray,
-    @Serializable(with = Base64DataSerializer::class) val privateSignatureData: ByteArray
+    @Serializable(with = Base64DataSerializer::class) val privateSignatureData: ByteArray,
+    val token: String?,
+    @Serializable(with = Base64DataSerializer::class) val encryptionSalt: ByteArray?
 )
 
 fun LocalUser.toSurrogate(): LocalUserSurrogate {
@@ -23,7 +25,9 @@ fun LocalUser.toSurrogate(): LocalUserSurrogate {
         publicKeyData = this.shUser.key.public.encoded,
         privateKeyData = this.shUser.key.private.encoded,
         publicSignatureData = this.shUser.signature.public.encoded,
-        privateSignatureData = this.shUser.signature.private.encoded
+        privateSignatureData = this.shUser.signature.private.encoded,
+        token = this.authToken,
+        encryptionSalt = this.encryptionSalt
     )
 }
 
@@ -41,5 +45,7 @@ fun LocalUserSurrogate.toLocalUser(): LocalUser {
         )
     ).apply {
         this.name = surrogate.name
+        this.authToken = surrogate.token
+        this.encryptionSalt = surrogate.encryptionSalt ?: byteArrayOf()
     }
 }
