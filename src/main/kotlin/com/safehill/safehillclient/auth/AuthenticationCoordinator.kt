@@ -45,9 +45,10 @@ class AuthenticationCoordinator(
     private suspend fun performSignIn(user: LocalUser): SignInResponse {
         try {
             authStateManager.setLoading()
-            return attemptOnlineSignIn(user).getOrElse { error ->
-                attemptOfflineSignIn(user, error).getOrThrow()
-            }
+            return attemptOnlineSignIn(user)
+                .getOrElse { error ->
+                    attemptOfflineSignIn(user, error).getOrNull() ?: throw error
+                }
         } catch (error: Throwable) {
             authStateManager.setSignedOff()
             throw error
