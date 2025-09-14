@@ -50,7 +50,9 @@ class AuthenticationCoordinator(
             authStateManager.setLoading()
             return attemptOnlineSignIn(user)
                 .getOrElse { error ->
-                    attemptOfflineSignIn(user, error).getOrNull() ?: throw error
+                    // Will enable offline sign in later.
+                    // attemptOfflineSignIn(user, error).getOrNull() ?: throw error
+                    throw error
                 }
         } catch (error: Throwable) {
             authStateManager.setSignedOff()
