@@ -29,7 +29,10 @@ class AuthenticationCoordinator(
                 }
                 val storedUser = validateAndGetStoredUser()
                 val existingSession = sessionManager.getExistingSessionForUser(storedUser)
-                existingSession ?: performSignIn(storedUser)
+                existingSession ?: performSignIn(storedUser).also {
+                    val updatedUser = it.currentUser
+                    userStorage.storeUser(updatedUser)
+                }
             } finally {
                 sessionManager.endSignInProcess()
             }
