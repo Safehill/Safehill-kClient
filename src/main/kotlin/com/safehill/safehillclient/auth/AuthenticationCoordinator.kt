@@ -77,8 +77,14 @@ class AuthenticationCoordinator(
     private suspend fun completeSignIn(
         user: LocalUser
     ) {
-        sessionManager.setLoggedInUser(user)
-        authStateManager.setSignedOn(user)
+        try {
+            sessionManager.setLoggedInUser(user)
+            authStateManager.setSignedOn(user)
+        } catch (e: Exception) {
+            // Swallow cleaning up errors
+            runCatchingSafe { logOut() }
+            throw e
+        }
     }
 
     fun getAuthState(): StateFlow<AuthState> {
