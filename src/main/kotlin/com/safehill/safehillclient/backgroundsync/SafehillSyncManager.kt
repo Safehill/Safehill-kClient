@@ -8,8 +8,8 @@ import com.safehill.kclient.tasks.BackgroundTaskProcessor
 import com.safehill.kclient.tasks.RepeatMode
 import com.safehill.kclient.tasks.inbound.LocalDownloadOperation
 import com.safehill.kclient.tasks.inbound.RemoteDownloadOperation
-import com.safehill.kclient.tasks.outbound.UploadOperation
 import com.safehill.kclient.tasks.outbound.UploadOperationListener
+import com.safehill.kclient.tasks.outbound.upload.UploadOperation
 import com.safehill.kclient.tasks.syncing.InteractionSync
 import com.safehill.kclient.tasks.syncing.SingleTaskExecutor
 import com.safehill.safehillclient.manager.dependencies.UserObserver

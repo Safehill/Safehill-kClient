@@ -7,8 +7,11 @@ import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.UserIdentifier
 import com.safehill.kclient.tasks.BackgroundTask
+import com.safehill.kclient.tasks.outbound.UploadOperationListener
 
 interface UploadOperation : BackgroundTask {
+
+    val listeners: MutableList<UploadOperationListener>
 
     val user: LocalUser
 

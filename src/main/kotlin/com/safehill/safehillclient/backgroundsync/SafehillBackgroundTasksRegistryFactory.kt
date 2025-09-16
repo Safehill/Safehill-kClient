@@ -7,8 +7,8 @@ import com.safehill.kclient.network.WebSocketApi
 import com.safehill.kclient.network.remote.RemoteServerEnvironment
 import com.safehill.kclient.tasks.inbound.LocalDownloadOperation
 import com.safehill.kclient.tasks.inbound.RemoteDownloadOperation
-import com.safehill.kclient.tasks.outbound.UploadOperation
-import com.safehill.kclient.tasks.outbound.UploadOperationImpl
+import com.safehill.kclient.tasks.outbound.upload.UploadOperation
+import com.safehill.kclient.tasks.outbound.upload.UploadOperationImpl
 import com.safehill.kclient.tasks.syncing.InteractionSync
 import com.safehill.safehillclient.module.asset.AssetModule
 import com.safehill.safehillclient.module.config.ClientOptions
@@ -62,8 +62,6 @@ class SafehillBackgroundTasksRegistryFactory(
             clientScope = clientOptions.clientScope,
             safehillLogger = clientOptions.safehillLogger
         )
-        // Note: New implementation uses state flows instead of listeners
-        // State can be observed via uploadStates flow in UploadOperationImpl
     }
 
     override fun create(): BackgroundTasksRegistry {

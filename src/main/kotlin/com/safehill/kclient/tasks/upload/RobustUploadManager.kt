@@ -6,6 +6,7 @@ import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.tasks.outbound.AssetEncrypter
 import com.safehill.kclient.tasks.outbound.OutboundQueueItem
+import com.safehill.kclient.tasks.outbound.UploadListenersRegistry
 import com.safehill.kclient.tasks.outbound.model.UploadExecutor
 import com.safehill.kclient.tasks.outbound.model.UploadRequest
 import com.safehill.kclient.tasks.outbound.model.UploadState
@@ -23,7 +24,8 @@ class RobustUploadManager(
     private val serverProxy: ServerProxy,
     private val encrypter: AssetEncrypter,
     private val localAssetsStoreController: LocalAssetsStoreController,
-    private val safehillLogger: SafehillLogger
+    private val safehillLogger: SafehillLogger,
+    private val uploadListenersRegistry: UploadListenersRegistry
 ) : UploadExecutor {
 
     private val user: LocalUser get() = serverProxy.requestor
@@ -41,11 +43,15 @@ class RobustUploadManager(
     ): Result<Unit> {
         val outboundQueueItem = convertToOutboundQueueItem(request)
         return runCatchingSafe {
+            uploadListenersRegistry.notifyListenersStartedEncrypting(request)
             val encryptedAsset = runUploadStep(
                 progressState = InProgress.Encrypting,
                 action = { encrypter.encryptedAsset(outboundQueueItem, user) }
             )
+            uploadListenersRegistry.notifyListenersFinishedEncrypting(request)
 
+
+            uploadListenersRegistry.notifyListenersStartedUploading(request)
             runUploadStep(
                 progressState = InProgress.Uploading,
                 action = {
@@ -55,6 +61,7 @@ class RobustUploadManager(
                     )
                 }
             )
+            uploadListenersRegistry.notifyListenersFinishedUploading(request)
         }
     }
 

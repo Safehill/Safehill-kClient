@@ -14,6 +14,8 @@ import com.safehill.kclient.models.users.getOrNull
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.tasks.outbound.AssetEncrypter
 import com.safehill.kclient.tasks.outbound.OutboundQueueItemManagerInterface
+import com.safehill.kclient.tasks.outbound.UploadListenersRegistry
+import com.safehill.kclient.tasks.outbound.UploadOperationListener
 import com.safehill.kclient.tasks.outbound.model.UploadRequest
 import com.safehill.kclient.tasks.outbound.sharing.AssetSharingProcessor
 import com.safehill.kclient.tasks.outbound.sharing.DefaultSharingExecutor
@@ -25,6 +27,7 @@ import com.safehill.kclient.tasks.upload.queue.ChannelQueue
 import com.safehill.safehillclient.ClientScope
 import com.safehill.safehillclient.module.platform.UserModule
 import kotlinx.coroutines.launch
+import java.util.Collections
 import java.util.UUID
 
 class UploadOperationImpl(
@@ -38,6 +41,11 @@ class UploadOperationImpl(
     private val safehillLogger: SafehillLogger
 ) : UploadOperation {
 
+    override val listeners: MutableList<UploadOperationListener> =
+        Collections.synchronizedList(mutableListOf())
+
+    private val listenerRegistry = UploadListenersRegistry(listeners)
+
     private val uploadStates = UploadStates()
     private val sharingStates = SharingStates()
 
@@ -48,9 +56,11 @@ class UploadOperationImpl(
                 encrypter = encrypter,
                 localAssetsStoreController = localAssetsStoreController,
                 safehillLogger = safehillLogger,
-                retryManager = DefaultRetryManager(ExponentialBackoffRetryPolicy())
+                retryManager = DefaultRetryManager(ExponentialBackoffRetryPolicy()),
+                uploadListenersRegistry = listenerRegistry
             ),
-            uploadStates = uploadStates
+            uploadStates = uploadStates,
+            uploadOperation = this
         ),
         scope = clientScope,
         retryPolicy = ExponentialBackoffRetryPolicy()

@@ -2,6 +2,7 @@ package com.safehill.safehillclient.module.asset
 
 import com.safehill.kclient.models.assets.AssetDescriptorsCache
 import com.safehill.kclient.tasks.outbound.AssetEncrypter
+import com.safehill.safehillclient.asset.AssetsUploadPipelineStateHolder
 import com.safehill.safehillclient.asset.OutboundAssetsState
 import com.safehill.safehillclient.module.config.ClientOptions
 import com.safehill.safehillclient.module.platform.PlatformModule

@@ -12,9 +12,9 @@ import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.tasks.outbound.OutboundQueueItem
-import com.safehill.kclient.tasks.outbound.UploadOperation
 import com.safehill.kclient.tasks.outbound.UploadOperationListener
 import com.safehill.kclient.tasks.outbound.model.OutboundAssets
+import com.safehill.kclient.tasks.outbound.upload.UploadOperation
 import com.safehill.kclient.tasks.syncing.InteractionSync
 import com.safehill.kclient.tasks.syncing.InteractionSyncListener
 import com.safehill.kclient.util.runCatchingSafe
