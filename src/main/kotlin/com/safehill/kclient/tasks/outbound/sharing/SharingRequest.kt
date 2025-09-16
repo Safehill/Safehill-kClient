@@ -27,7 +27,7 @@ data class SharingItem(
     }
 
     val isPending: Boolean get() = state is SharingState.Pending
-    val isActive: Boolean get() = state is SharingState.Sharing
+    val isActive: Boolean get() = state is SharingState.InProgress
     val isCompleted: Boolean get() = state is SharingState.Success
     val isFailed: Boolean get() = state is SharingState.Failed
     val isCancelled: Boolean get() = state is SharingState.Cancelled
