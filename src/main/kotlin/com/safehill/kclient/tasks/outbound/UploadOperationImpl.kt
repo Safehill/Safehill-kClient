@@ -23,11 +23,14 @@ import com.safehill.safehillclient.module.platform.UserModule
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import java.io.IOException
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.util.Collections
 import java.util.UUID
 
 class UploadOperationImpl(
     val serverProxy: ServerProxy,
-    override val listeners: MutableList<UploadOperationListener>,
     private val encrypter: AssetEncrypter,
     private val userModule: UserModule,
     private val userProvider: UserProvider,
@@ -36,6 +39,10 @@ class UploadOperationImpl(
     private val clientScope: ClientScope,
     private val safehillLogger: SafehillLogger
 ) : UploadOperation {
+
+
+    override val listeners: MutableList<UploadOperationListener> =
+        Collections.synchronizedList(mutableListOf())
 
     private val listenerRegistry = UploadListenersRegistry(listeners)
     private val outboundQueueItemManager: OutboundQueueItemManagerInterface?
@@ -194,7 +201,7 @@ class UploadOperationImpl(
         elseBlock: suspend () -> Unit
     ) {
         clientScope.launch {
-            if (!exception.isFatal) {
+            if (exception.isRetriableError()) {
                 sendToChannelAndNotifyListeners(outboundQueueItem)
                 outboundQueueItemManager?.addOutboundQueueItem(outboundQueueItem)
             } else {
@@ -204,15 +211,28 @@ class UploadOperationImpl(
 
     }
 
-    private val Exception.isFatal: Boolean
-        get() = when (this) {
-            is SafehillError.ClientError.Conflict,
-            is SafehillError.ClientError.BadRequest,
-            SafehillError.ClientError.MethodNotAllowed,
-            SafehillError.ClientError.PaymentRequired -> true
+    private fun Throwable.isRetriableError(): Boolean {
+        return when (this) {
+            is SocketTimeoutException -> true
+            is ConnectException -> true
+            is IOException -> true
+            is SafehillError.ServerError -> true
+            is SafehillError.TransportError -> true
+            is SafehillError.ClientError -> {
+                // Most client errors are not retriable except for specific cases
+                false
+            }
 
-            else -> false
+            else -> {
+                // Check message for common recoverable errors
+                this.message?.let { message ->
+                    message.contains("timeout", ignoreCase = true) ||
+                            message.contains("network", ignoreCase = true) ||
+                            message.contains("connection", ignoreCase = true)
+                } ?: false
+            }
         }
+    }
 
 
     private suspend fun share(outboundQueueItem: OutboundQueueItem) {
