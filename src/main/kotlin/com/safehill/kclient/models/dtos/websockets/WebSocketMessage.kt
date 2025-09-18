@@ -1,5 +1,6 @@
 package com.safehill.kclient.models.dtos.websockets
 
+import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.users.RemoteUser
 import kotlinx.serialization.Serializable
 
@@ -16,6 +17,12 @@ data class ConnectionAck(
 @Serializable
 data class NewConnectionRequest(
     val requestor: RemoteUser
+) : WebSocketMessage
+
+
+@Serializable
+data class AssetDescriptorsChanged(
+    val descriptors: List<AssetGlobalIdentifier>
 ) : WebSocketMessage
 
 data object UnknownMessage : WebSocketMessage

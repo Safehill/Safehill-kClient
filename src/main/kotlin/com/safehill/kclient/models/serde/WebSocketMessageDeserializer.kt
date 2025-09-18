@@ -1,5 +1,6 @@
 package com.safehill.kclient.models.serde
 
+import com.safehill.kclient.models.dtos.websockets.AssetDescriptorsChanged
 import com.safehill.kclient.models.dtos.websockets.ConnectionAck
 import com.safehill.kclient.models.dtos.websockets.NewConnectionRequest
 import com.safehill.kclient.models.dtos.websockets.ReactionChange
@@ -65,6 +66,11 @@ object WebSocketMessageDeserializer : DeserializationStrategy<WebSocketMessage> 
                 val thread = parseToJsonElement(this.content)
                 thread.parseThreadToRequiredFormat().toString()
             }
+
+            MessageType.ASSET_DESCRIPTOR_CHANGE -> {
+                val descriptors = parseToJsonElement(this.content)
+                descriptors.parseAssetDescriptorChangedToRequiredFormat().toString()
+            }
         }
     }
 
@@ -84,6 +90,14 @@ object WebSocketMessageDeserializer : DeserializationStrategy<WebSocketMessage> 
             )
         )
     }
+
+    private fun JsonElement.parseAssetDescriptorChangedToRequiredFormat(): JsonObject {
+        return JsonObject(
+            mapOf(
+                "descriptors" to this
+            )
+        )
+    }
 }
 
 enum class MessageType(
@@ -98,7 +112,8 @@ enum class MessageType(
     ASSETS_SHARE("thread-assets-share", ThreadAssets.serializer()),
     CONNECTION_REQUEST("connection-request", NewConnectionRequest.serializer()),
     USER_CONVERSION_MANIFEST("user-conversion-manifest", UserConversionManifestDTO.serializer()),
-    THREAD_UPDATE("thread-update", ThreadUpdatedDTO.serializer())
+    THREAD_UPDATE("thread-update", ThreadUpdatedDTO.serializer()),
+    ASSET_DESCRIPTOR_CHANGE("assets-descriptors-changed", AssetDescriptorsChanged.serializer())
 }
 
 @Serializable
