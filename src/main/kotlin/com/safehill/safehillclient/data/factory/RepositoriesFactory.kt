@@ -41,7 +41,9 @@ class RepositoriesFactory(
             interactionSync = backgroundTasksRegistry.interactionSync,
             uploadOperation = backgroundTasksRegistry.uploadOperation,
             serverProxy = networkModule.serverProxy,
-            outboundAssetsState = assetModule.outboundAssetsState
+            outboundAssetsState = assetModule.outboundAssetsState,
+            webSocketApi = networkModule.webSocketApi,
+            assetDescriptorsCache = assetModule.assetDescriptorCache
         )
     }
 

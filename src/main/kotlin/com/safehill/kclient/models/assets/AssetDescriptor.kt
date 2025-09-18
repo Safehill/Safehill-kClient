@@ -47,6 +47,8 @@ enum class UploadState {
         Partial, Completed -> true
         NotStarted, Failed -> false
     }
+
+    fun isCompleted() = this == Completed
 }
 
 

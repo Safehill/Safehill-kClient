@@ -32,7 +32,9 @@ class AssetModule(
     }
 
     val assetDescriptorCache by lazy {
-        AssetDescriptorsCache()
+        AssetDescriptorsCache(
+            clientScope = clientOptions.clientScope
+        )
     }
 
 }

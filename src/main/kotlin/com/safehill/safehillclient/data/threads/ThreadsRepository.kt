@@ -1,6 +1,8 @@
 package com.safehill.safehillclient.data.threads
 
 import com.safehill.kclient.controllers.UserInteractionController
+import com.safehill.kclient.models.assets.AssetDescriptorDiff
+import com.safehill.kclient.models.assets.AssetDescriptorsCache
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.dtos.ConversationThreadAssetDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
@@ -11,6 +13,7 @@ import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.ServerProxy
+import com.safehill.kclient.network.WebSocketApi
 import com.safehill.kclient.tasks.outbound.OutboundQueueItem
 import com.safehill.kclient.tasks.outbound.UploadOperation
 import com.safehill.kclient.tasks.outbound.UploadOperationListener
@@ -63,6 +66,8 @@ class ThreadsRepository(
     private val interactionSync: InteractionSync,
     private val uploadOperation: UploadOperation,
     private val serverProxy: ServerProxy,
+    private val webSocketApi: WebSocketApi,
+    private val assetDescriptorsCache: AssetDescriptorsCache
 ) : UserObserver,
     InteractionSyncListener,
     UploadOperationListener {
@@ -247,12 +252,27 @@ class ThreadsRepository(
         syncThreadsWithServer()
         interactionSync.addListener(this)
         uploadOperation.listeners.add(this)
+        observeRequiredSocketEvents()
     }
 
     override fun userLoggedOut() {
         threadStateRegistry.clear()
         interactionSync.removeListener(this)
         uploadOperation.listeners.remove(this)
+    }
+
+    private fun observeRequiredSocketEvents() {
+        userScope.launch {
+            launch {
+                assetDescriptorsCache.assetDescriptorDiffs.collect { diffs ->
+                    val affectedThreadIds = diffs.affectedThreads()
+                    affectedThreadIds.forEach { threadId ->
+                        getThreadStateInteractor(threadId)
+                            ?.updateAssets()
+                    }
+                }
+            }
+        }
     }
 
     override fun enqueued(
@@ -278,3 +298,15 @@ fun Flow<List<ThreadState>>.toThreads() = this
         // https://github.com/Kotlin/kotlinx.coroutines/issues/1603
         if (threads.isEmpty()) flowOf(emptyList()) else combine(threads) { it.toList() }
     }.distinctUntilChanged()
+
+
+private fun AssetDescriptorDiff.affectedThreads(): Set<String> {
+    val changedDescriptors = this.updated + this.added + this.removed
+    return changedDescriptors
+        .filter { it.uploadState.isCompleted() }
+        .fold(setOf()) { acc, descriptor ->
+            acc + descriptor.sharingInfo.groupInfoById.values.mapNotNull {
+                it.createdFromThreadId
+            }
+        }
+}
