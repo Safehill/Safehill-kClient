@@ -27,7 +27,8 @@ data class GroupInfo(
     val name: String?,
     val createdAt: Instant,
     val createdBy: UserIdentifier,
-    val permissions: SharingOption
+    val permissions: SharingOption,
+    val createdFromThreadId: String?
 )
 
 enum class UploadState {

@@ -36,7 +36,9 @@ data class GroupInfoDTO(
     /// The identifier of the user that created the group (introduced in Nov 2024)
     val createdBy: UserIdentifier,
     /// Whether it's confidential, shareable or public. null will default to confidential
-    val permissions: SharingOption?
+    val permissions: SharingOption?,
+    /// Whether or not the share group was created from a thread (namely is a photo message)
+    val createdFromThreadId: String?
 )
 
 fun AssetDescriptorDTO.toAssetDescriptor(): AssetDescriptor {
@@ -54,7 +56,8 @@ fun AssetDescriptorDTO.toAssetDescriptor(): AssetDescriptor {
                         createdAt = this.createdAt,
                         name = this.name,
                         createdBy = this.createdBy,
-                        permissions = this.permissions ?: SharingOption.Confidential
+                        permissions = this.permissions ?: SharingOption.Confidential,
+                        createdFromThreadId = this.createdFromThreadId
                     )
                 }
             }
