@@ -45,8 +45,7 @@ class SafehillSyncManager(
         userScope.launch {
             launch {
                 remoteDownloadProcessor.run(
-                    task = backgroundTasksRegistry.remoteDownloadOperation,
-                    repeatMode = RepeatMode.Repeating(interval = 5.seconds)
+                    task = backgroundTasksRegistry.remoteDownloadOperation
                 )
             }
             launch {
@@ -63,8 +62,7 @@ class SafehillSyncManager(
 
             launch {
                 localDownloadProcessor.run(
-                    task = backgroundTasksRegistry.localDownloadOperation,
-                    repeatMode = RepeatMode.Repeating(interval = 30.seconds)
+                    task = backgroundTasksRegistry.localDownloadOperation
                 )
             }
         }

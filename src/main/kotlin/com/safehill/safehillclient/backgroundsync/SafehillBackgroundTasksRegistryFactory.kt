@@ -33,7 +33,8 @@ class SafehillBackgroundTasksRegistryFactory(
     private fun createRemoteDownloadOperation(): RemoteDownloadOperation {
         return RemoteDownloadOperation(
             serverProxy = networkModule.serverProxy,
-            assetDescriptorsCache = assetModule.assetDescriptorCache
+            assetDescriptorsCache = assetModule.assetDescriptorCache,
+            webSocketApi = networkModule.webSocketApi
         )
     }
 
