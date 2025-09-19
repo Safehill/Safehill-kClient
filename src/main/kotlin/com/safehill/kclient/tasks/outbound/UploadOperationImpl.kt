@@ -292,13 +292,13 @@ class UploadOperationImpl(
     ): List<ShareableEncryptedAssetVersion> {
         val encryptedAsset = serverProxy.getAsset(
             globalIdentifier = outboundQueueItem.globalIdentifier,
-            qualities = outboundQueueItem.assetQualities,
+            qualities = listOf(AssetQuality.LowResolution),
             cacheAfterFetch = true
         )
         return recipients.flatMap { recipient ->
             outboundQueueItem.assetQualities.mapNotNull { quality ->
-                val encryptedVersion =
-                    encryptedAsset.encryptedVersions[quality] ?: return@mapNotNull null
+                val encryptedVersion = encryptedAsset.encryptedVersions[AssetQuality.LowResolution]
+                    ?: return@mapNotNull null
                 val sharedSecret = user.decryptSecret(
                     sealedMessage = ShareablePayload(
                         ephemeralPublicKeyData = encryptedVersion.publicKeyData,
