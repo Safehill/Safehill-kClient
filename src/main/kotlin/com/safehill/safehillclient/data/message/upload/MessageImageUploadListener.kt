@@ -11,9 +11,12 @@ import com.safehill.safehillclient.data.message.model.MessageImageState
 import com.safehill.safehillclient.data.threads.ThreadId
 import com.safehill.safehillclient.data.threads.interactor.ThreadStateInteractor
 import io.ktor.util.collections.ConcurrentMap
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 class MessageImageUploadListener(
-    private val getThreadInteractor: (ThreadId) -> ThreadStateInteractor?
+    private val scope: CoroutineScope,
+    private val getThreadInteractor: suspend (ThreadId) -> ThreadStateInteractor
 ) : UploadOperationErrorListener {
 
     private val threadToGroupMapping = ConcurrentMap<ThreadId, List<GroupId>>()
@@ -21,17 +24,20 @@ class MessageImageUploadListener(
     override fun enqueued(
         outboundQueueItem: OutboundQueueItem
     ) {
-        val threadId = outboundQueueItem.threadId
-        if (threadId != null) {
-            val threadGroups = threadToGroupMapping.getOrElse(threadId) { listOf() }
-            threadToGroupMapping[threadId] = (threadGroups + outboundQueueItem.groupId).distinct()
-            getThreadInteractor(threadId)?.updateImageStatus(
-                imageState = MessageImageState.Uploading(
-                    localIdentifier = outboundQueueItem.localIdentifier,
-                    globalIdentifier = outboundQueueItem.globalIdentifier
-                ),
-                groupId = outboundQueueItem.groupId
-            )
+        scope.launch {
+            val threadId = outboundQueueItem.threadId
+            if (threadId != null) {
+                val threadGroups = threadToGroupMapping.getOrElse(threadId) { listOf() }
+                threadToGroupMapping[threadId] =
+                    (threadGroups + outboundQueueItem.groupId).distinct()
+                getThreadInteractor(threadId).updateImageStatus(
+                    imageState = MessageImageState.Uploading(
+                        localIdentifier = outboundQueueItem.localIdentifier,
+                        globalIdentifier = outboundQueueItem.globalIdentifier
+                    ),
+                    groupId = outboundQueueItem.groupId
+                )
+            }
         }
     }
 
@@ -41,19 +47,21 @@ class MessageImageUploadListener(
         groupId: GroupId,
         uploadFailure: UploadFailure
     ) {
-        getThreadInteractorForGroup(groupId)?.updateImageStatus(
-            imageState = MessageImageState.Failed(
-                localIdentifier = localIdentifier,
-                error = uploadFailure,
-                groupId = groupId,
-                globalIdentifier = globalIdentifier
-            ),
-            groupId = groupId
-        )
+        scope.launch {
+            getThreadInteractorForGroup(groupId)?.updateImageStatus(
+                imageState = MessageImageState.Failed(
+                    localIdentifier = localIdentifier,
+                    error = uploadFailure,
+                    groupId = groupId,
+                    globalIdentifier = globalIdentifier
+                ),
+                groupId = groupId
+            )
+        }
     }
 
 
-    private fun getThreadInteractorForGroup(groupId: GroupId): ThreadStateInteractor? {
+    private suspend fun getThreadInteractorForGroup(groupId: GroupId): ThreadStateInteractor? {
         val threadId = threadToGroupMapping.entries
             .firstOrNull { (_, groupIds) -> groupIds.contains(groupId) }
             ?.key
@@ -66,9 +74,11 @@ class MessageImageUploadListener(
         groupId: GroupId,
         users: List<ServerUser>
     ) {
-        getThreadInteractorForGroup(groupId)?.updateImageStatus(
-            imageState = MessageImageState.Completed(globalIdentifier),
-            groupId = groupId
-        )
+        scope.launch {
+            getThreadInteractorForGroup(groupId)?.updateImageStatus(
+                imageState = MessageImageState.Completed(globalIdentifier),
+                groupId = groupId
+            )
+        }
     }
 }

@@ -20,6 +20,7 @@ import com.safehill.kclient.util.runCatchingSafe
 import com.safehill.safehillclient.data.message.upload.MessageImageUploadListener
 import com.safehill.safehillclient.data.threads.factory.ThreadStateInteractorFactory
 import com.safehill.safehillclient.data.threads.interactor.ThreadStateInteractor
+import com.safehill.safehillclient.data.threads.model.MutableThreadState
 import com.safehill.safehillclient.data.threads.model.Thread
 import com.safehill.safehillclient.data.threads.model.ThreadState
 import com.safehill.safehillclient.data.threads.registry.ThreadStateRegistry
@@ -69,9 +70,9 @@ class ThreadsRepository(
 
     private val safehillLogger = clientOptions.safehillLogger
 
-
     private val messageUploadListener = MessageImageUploadListener(
-        ::getThreadStateInteractor
+        scope = userScope.createChildScope { SupervisorJob(it) },
+        getThreadInteractor = ::getThreadStateInteractorSuspend
     )
 
     private val _loading = MutableStateFlow(false)
@@ -101,12 +102,19 @@ class ThreadsRepository(
 
     fun getThreadStateInteractor(threadId: String): ThreadStateInteractor? {
         val mutableThreadState = threadStateRegistry.getMutableThreadState(threadId) ?: return null
-        return threadStateInteractorFactory.create(
-            threadID = threadId,
-            scope = clientOptions.userScope.createChildScope { SupervisorJob(it) },
-            mutableThreadState = mutableThreadState
-        )
+        return mutableThreadState.toInteractor()
     }
+
+    suspend fun getThreadStateInteractorSuspend(threadId: String): ThreadStateInteractor {
+        val mutableThreadState = threadStateRegistry.getMutableThreadStateSuspend(threadId)
+        return mutableThreadState.toInteractor()
+    }
+
+    private fun MutableThreadState.toInteractor() = threadStateInteractorFactory.create(
+        threadID = threadId,
+        scope = clientOptions.userScope.createChildScope { SupervisorJob(it) },
+        mutableThreadState = this
+    )
 
     private suspend fun setThreads(threadOutputDTO: List<ConversationThreadOutputDTO>) {
         val threadStates = threadStateRegistry.setThreadStates(threadOutputDTO)
