@@ -34,7 +34,8 @@ class SafehillBackgroundTasksRegistryFactory(
         return RemoteDownloadOperation(
             serverProxy = networkModule.serverProxy,
             assetDescriptorsCache = assetModule.assetDescriptorCache,
-            webSocketApi = networkModule.webSocketApi
+            webSocketApi = networkModule.webSocketApi,
+            userScope = clientOptions.userScope
         )
     }
 
