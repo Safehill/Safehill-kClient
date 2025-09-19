@@ -3,7 +3,6 @@ package com.safehill.safehillclient.data.threads
 import com.safehill.kclient.controllers.UserInteractionController
 import com.safehill.kclient.models.assets.AssetDescriptorDiff
 import com.safehill.kclient.models.assets.AssetDescriptorsCache
-import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.dtos.ConversationThreadAssetDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.InteractionsThreadSummaryDTO
@@ -14,14 +13,11 @@ import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.WebSocketApi
-import com.safehill.kclient.tasks.outbound.OutboundQueueItem
 import com.safehill.kclient.tasks.outbound.UploadOperation
-import com.safehill.kclient.tasks.outbound.UploadOperationListener
-import com.safehill.kclient.tasks.outbound.model.OutboundAssets
 import com.safehill.kclient.tasks.syncing.InteractionSync
 import com.safehill.kclient.tasks.syncing.InteractionSyncListener
 import com.safehill.kclient.util.runCatchingSafe
-import com.safehill.safehillclient.asset.OutboundAssetsState
+import com.safehill.safehillclient.data.message.upload.MessageImageUploadListener
 import com.safehill.safehillclient.data.threads.factory.ThreadStateInteractorFactory
 import com.safehill.safehillclient.data.threads.interactor.ThreadStateInteractor
 import com.safehill.safehillclient.data.threads.model.Thread
@@ -32,7 +28,6 @@ import com.safehill.safehillclient.data.user.model.toServerUser
 import com.safehill.safehillclient.manager.dependencies.UserObserver
 import com.safehill.safehillclient.module.config.ClientOptions
 import com.safehill.safehillclient.utils.extensions.createChildScope
-import com.safehill.utils.flow.combineStates
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -58,7 +53,6 @@ import kotlinx.coroutines.withContext
 typealias ThreadId = String
 
 class ThreadsRepository(
-    outboundAssetsState: OutboundAssetsState,
     private val clientOptions: ClientOptions,
     private val userInteractionController: UserInteractionController,
     private val threadStateRegistry: ThreadStateRegistry,
@@ -69,25 +63,16 @@ class ThreadsRepository(
     private val webSocketApi: WebSocketApi,
     private val assetDescriptorsCache: AssetDescriptorsCache
 ) : UserObserver,
-    InteractionSyncListener,
-    UploadOperationListener {
+    InteractionSyncListener {
 
     private val userScope = clientOptions.userScope
 
     private val safehillLogger = clientOptions.safehillLogger
 
-    private val threadToGroupMapping = MutableStateFlow<Map<ThreadId, List<GroupId>>>(mapOf())
 
-    val assetsBeingShared: StateFlow<Map<ThreadId, List<OutboundAssets>>> = combineStates(
-        outboundAssetsState.outboundAssets,
-        threadToGroupMapping
-    ) { outboundAssets, threadToGroupMap ->
-        threadToGroupMap.mapValues { (threadId, groupIds) ->
-            groupIds.mapNotNull { groupId ->
-                outboundAssets[groupId]
-            }
-        }
-    }
+    private val messageUploadListener = MessageImageUploadListener(
+        ::getThreadStateInteractor
+    )
 
     private val _loading = MutableStateFlow(false)
     val loading = _loading.asStateFlow()
@@ -125,8 +110,8 @@ class ThreadsRepository(
 
     private suspend fun setThreads(threadOutputDTO: List<ConversationThreadOutputDTO>) {
         val threadStates = threadStateRegistry.setThreadStates(threadOutputDTO)
-        threadStates.forEach {
-            getThreadStateInteractor(it.threadId)?.retrieveLastMessage()
+        threadStates.forEach { threadState ->
+            getThreadStateInteractor(threadState.threadId)?.retrieveLastMessage()
         }
     }
 
@@ -251,14 +236,14 @@ class ThreadsRepository(
     override suspend fun userLoggedIn(user: LocalUser) {
         syncThreadsWithServer()
         interactionSync.addListener(this)
-        uploadOperation.listeners.add(this)
+        uploadOperation.listeners.add(messageUploadListener)
         observeRequiredSocketEvents()
     }
 
     override fun userLoggedOut() {
         threadStateRegistry.clear()
         interactionSync.removeListener(this)
-        uploadOperation.listeners.remove(this)
+        uploadOperation.listeners.remove(messageUploadListener)
     }
 
     private fun observeRequiredSocketEvents() {
@@ -275,17 +260,6 @@ class ThreadsRepository(
         }
     }
 
-    override fun enqueued(
-        outboundQueueItem: OutboundQueueItem
-    ) {
-        val threadId = outboundQueueItem.threadId
-        if (threadId != null) {
-            threadToGroupMapping.update { initial ->
-                val threadGroups = initial.getOrElse(threadId) { listOf() }
-                initial + (threadId to (threadGroups + outboundQueueItem.groupId).distinct())
-            }
-        }
-    }
 
 }
 
