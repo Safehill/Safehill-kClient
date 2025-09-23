@@ -25,11 +25,11 @@ class EventReportApiImpl(
         return baseApi.postRequestForResponse(
             endPoint = "/nova-stream-event",
             request = EventReportInputDTO(
-                type = violenceType.toServerValue(),
+                type = violenceType,
                 scale = severity,
-                victimAskedHelpFrom = victimAskedHelpFrom.toServerValue(),
-                victimTalkedAboutItWith = victimTalkedAboutItWith.toServerValue(),
-                victimThought = victimThought.toServerValue(),
+                victimAskedHelpFrom = victimAskedHelpFrom,
+                victimTalkedAboutItWith = victimTalkedAboutItWith,
+                victimThought = victimThought,
                 otherDetails = otherDetails
             )
         )
