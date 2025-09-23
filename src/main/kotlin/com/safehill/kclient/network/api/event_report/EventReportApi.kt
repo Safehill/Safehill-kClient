@@ -1,5 +1,6 @@
 package com.safehill.kclient.network.api.event_report
 
+import com.safehill.kclient.network.api.event_report.dtos.EventReportDTO
 import com.safehill.kclient.network.api.event_report.enum.HelpSeekingSource
 import com.safehill.kclient.network.api.event_report.enum.ViolenceSolution
 import com.safehill.kclient.network.api.event_report.enum.ViolenceType
@@ -16,5 +17,7 @@ interface EventReportApi {
         victimThought: ViolenceSolution,
         otherDetails: String
     ): EventIdentifier
+
+    suspend fun getEventReports(): List<EventReportDTO>
 
 }

@@ -1,10 +1,13 @@
 package com.safehill.kclient.network.api.event_report
 
 import com.safehill.kclient.network.api.BaseApi
+import com.safehill.kclient.network.api.RequestMethod
+import com.safehill.kclient.network.api.event_report.dtos.EventReportDTO
 import com.safehill.kclient.network.api.event_report.dtos.EventReportInputDTO
 import com.safehill.kclient.network.api.event_report.enum.HelpSeekingSource
 import com.safehill.kclient.network.api.event_report.enum.ViolenceSolution
 import com.safehill.kclient.network.api.event_report.enum.ViolenceType
+import com.safehill.kclient.network.api.fireRequest
 import com.safehill.kclient.network.api.postRequestForResponse
 
 class EventReportApiImpl(
@@ -32,30 +35,11 @@ class EventReportApiImpl(
         )
     }
 
-    private fun ViolenceType.toServerValue(): Int = when (this) {
-        ViolenceType.Physical -> 1
-        ViolenceType.Psychological -> 2
-        ViolenceType.Economical -> 3
-        ViolenceType.Sexual -> 4
-        ViolenceType.Stalking -> 5
-        ViolenceType.Other -> 0
+    override suspend fun getEventReports(): List<EventReportDTO> {
+        return baseApi.fireRequest<Unit, List<EventReportDTO>>(
+            requestMethod = RequestMethod.Get(emptyList()),
+            endPoint = "/nova-stream-event"
+        )
     }
 
-    private fun HelpSeekingSource.toServerValue(): String = when (this) {
-        HelpSeekingSource.Police -> "Police"
-        HelpSeekingSource.AntiViolenceCenter -> "Anti Violence Center"
-        HelpSeekingSource.SocialServices -> "Social Service"
-        HelpSeekingSource.HealthServices -> "Health Services"
-        HelpSeekingSource.FamilyRelativesFriends -> "Family, Relatives and Friends"
-        HelpSeekingSource.Pharmacy -> "Pharmacy"
-        HelpSeekingSource.Nobody -> "Nobody"
-        HelpSeekingSource.Other -> "Other"
-    }
-
-    private fun ViolenceSolution.toServerValue(): String = when (this) {
-        ViolenceSolution.MoveOut -> "Move Out"
-        ViolenceSolution.Divorce -> "Divorce"
-        ViolenceSolution.DenounceToAuthorities -> "Denounce to Authorities"
-        ViolenceSolution.Nothing -> "Nothing"
-    }
 }
