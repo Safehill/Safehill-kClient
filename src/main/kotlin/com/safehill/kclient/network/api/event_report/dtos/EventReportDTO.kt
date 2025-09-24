@@ -1,5 +1,6 @@
 package com.safehill.kclient.network.api.event_report.dtos
 
+import com.safehill.kclient.models.serde.InstantSerializer
 import com.safehill.kclient.network.api.event_report.enum.HelpSeekingSource
 import com.safehill.kclient.network.api.event_report.enum.HelpSeekingSourceSerializer
 import com.safehill.kclient.network.api.event_report.enum.ViolenceSolution
@@ -7,10 +8,11 @@ import com.safehill.kclient.network.api.event_report.enum.ViolenceSolutionSerial
 import com.safehill.kclient.network.api.event_report.enum.ViolenceType
 import com.safehill.kclient.network.api.event_report.enum.ViolenceTypeSerializer
 import kotlinx.serialization.Serializable
+import java.time.Instant
 
 @Serializable
 data class EventReportDTO(
-    val identifier: String? = null,
+    val identifier: String,
     @Serializable(with = ViolenceTypeSerializer::class)
     val type: ViolenceType,
     val scale: Int,
@@ -21,5 +23,6 @@ data class EventReportDTO(
     @Serializable(with = ViolenceSolutionSerializer::class)
     val victimThought: ViolenceSolution,
     val otherDetails: String,
-    val timeCreated: Long? = null
+    @Serializable(with = InstantSerializer::class)
+    val timeCreated: Instant
 )
