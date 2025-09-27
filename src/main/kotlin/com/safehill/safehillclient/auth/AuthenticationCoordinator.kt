@@ -28,11 +28,7 @@ class AuthenticationCoordinator(
                     throw IllegalStateException("Sign in already in progress.")
                 }
                 val storedUser = validateAndGetStoredUser()
-                val existingSession = sessionManager.getExistingSessionForUser(storedUser)
-                existingSession ?: performSignIn(storedUser).also {
-                    val updatedUser = it.currentUser
-                    userStorage.storeUser(updatedUser)
-                }
+                performSignIn(storedUser)
             } finally {
                 sessionManager.endSignInProcess()
             }
@@ -45,15 +41,21 @@ class AuthenticationCoordinator(
         return storedUser
     }
 
-    private suspend fun performSignIn(user: LocalUser): SignInResponse {
+    suspend fun performSignIn(user: LocalUser): SignInResponse {
         try {
             authStateManager.setLoading()
-            return attemptOnlineSignIn(user)
-                .getOrElse { error ->
-                    // Will enable offline sign in later.
-                    // attemptOfflineSignIn(user, error).getOrNull() ?: throw error
-                    throw error
-                }
+            val existingSession = sessionManager.getExistingSessionForUser(user)
+            return existingSession ?: run {
+                attemptOnlineSignIn(user)
+                    .getOrElse { error ->
+                        // Will enable offline sign in later.
+                        // attemptOfflineSignIn(user, error).getOrNull() ?: throw error
+                        throw error
+                    }.also {
+                        val updatedUser = it.currentUser
+                        userStorage.storeUser(updatedUser)
+                    }
+            }
         } catch (error: Throwable) {
             authStateManager.setSignedOff()
             throw error
@@ -63,7 +65,7 @@ class AuthenticationCoordinator(
     private suspend fun attemptOnlineSignIn(user: LocalUser): Result<SignInResponse> {
         return runCatchingSafe {
             val response = onlineAuthStrategy.authenticate(user)
-            completeSignIn(user)
+            completeSignIn(response.currentUser)
             response
         }
     }

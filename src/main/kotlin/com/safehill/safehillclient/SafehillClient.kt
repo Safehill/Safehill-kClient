@@ -60,8 +60,7 @@ class SafehillClient(
             }
             try {
                 val shLocalUser = Json.decodeFromString<UserQrData>(userJson).toLocalUser()
-                userStorage.storeUser(shLocalUser)
-                authenticationCoordinator.signIn().getOrThrow()
+                authenticationCoordinator.performSignIn(shLocalUser)
             } catch (e: SerializationException) {
                 throw "Invalid Data".toError()
             }
