@@ -47,7 +47,7 @@ class ThreadStateInteractor(
             assets
                 .onSuccess { conversationThreadAssetsDTO ->
                     setThreadAssetDTOs(conversationThreadAssetsDTO)
-                    mutableThreadState.updateTotalNumOfSharedPhotos()
+                    setTotalNumOfSharedPhotos(conversationThreadAssetsDTO.photoMessages.size)
                 }.onFailure {
                     safehillLogger.error("Error fetching asset of the thread $threadId")
                 }

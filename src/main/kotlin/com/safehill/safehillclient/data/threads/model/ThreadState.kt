@@ -96,10 +96,6 @@ class MutableThreadState(
     }
 
 
-    fun updateTotalNumOfSharedPhotos() {
-        setTotalNumOfAssets(assetIdentifiers.value.size)
-    }
-
     @Suppress("UNCHECKED_CAST")
     override fun toThread(): Flow<Thread> {
         return combine(
