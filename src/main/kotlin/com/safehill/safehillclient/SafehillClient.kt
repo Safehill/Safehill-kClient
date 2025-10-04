@@ -25,7 +25,7 @@ class SafehillClient(
     val clientModule: ClientModule,
     val repositories: Repositories,
     val clientManager: ClientManager,
-    private val authenticationCoordinator: AuthenticationCoordinator,
+    internal val authenticationCoordinator: AuthenticationCoordinator,
     private val userStorage: UserStorage,
     private val authApi: AuthApi
 ) {

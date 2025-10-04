@@ -9,6 +9,7 @@ import com.safehill.safehillclient.manager.ClientManager
 import com.safehill.safehillclient.model.SignInResponse
 import com.safehill.safehillclient.model.auth.state.AuthState
 import com.safehill.safehillclient.module.client.ClientModule
+import com.safehill.safehillclient.phone_number_verification.PhoneNumberVerificationStatusBroadcasterImpl
 import kotlinx.coroutines.flow.StateFlow
 
 class AuthenticationCoordinator(
@@ -19,6 +20,9 @@ class AuthenticationCoordinator(
     private val onlineAuthStrategy: OnlineAuthenticationStrategy,
     private val offlineAuthStrategy: OfflineAuthenticationStrategy
 ) {
+
+    internal val phoneNumberVerificationStatusBroadcaster =
+        PhoneNumberVerificationStatusBroadcasterImpl()
 
     suspend fun signIn(): Result<SignInResponse> {
         return runCatching {
@@ -47,6 +51,9 @@ class AuthenticationCoordinator(
             val existingSession = sessionManager.getExistingSessionForUser(user)
             return existingSession ?: run {
                 val signInResponse = attemptOnlineSignIn(user).getOrThrow()
+                phoneNumberVerificationStatusBroadcaster.broadCastVerificationStatus(
+                    signInResponse.isPhoneNumberVerified
+                )
                 val updatedUser = signInResponse.currentUser
                 userStorage.storeUser(updatedUser)
                 signInResponse
