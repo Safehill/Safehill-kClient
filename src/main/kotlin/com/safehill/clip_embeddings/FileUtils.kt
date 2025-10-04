@@ -10,15 +10,7 @@ import java.util.zip.ZipInputStream
 
 @OptIn(ExperimentalStdlibApi::class)
 fun File.sha256(): String {
-    return FileInputStream(this).use { fis ->
-        val digest = MessageDigest.getInstance("SHA-256")
-        val buffer = ByteArray(8192)
-        var bytesRead: Int
-        while (fis.read(buffer).also { bytesRead = it } != -1) {
-            digest.update(buffer, 0, bytesRead)
-        }
-        digest.digest().toHexString()
-    }
+    return FileInputStream(this).sha256()
 }
 
 
@@ -30,4 +22,15 @@ fun InputStream.unZippedStreamFirstEntry(): ZipInputStream {
         throw IllegalStateException("Zip archive does not contain a valid file entry")
     }
     return zipInputStream
+}
+
+@OptIn(ExperimentalStdlibApi::class)
+fun InputStream.sha256(): String {
+    val digest = MessageDigest.getInstance("SHA-256")
+    val buffer = ByteArray(8192)
+    var bytesRead: Int
+    while (read(buffer).also { bytesRead = it } != -1) {
+        digest.update(buffer, 0, bytesRead)
+    }
+    return digest.digest().toHexString()
 }
