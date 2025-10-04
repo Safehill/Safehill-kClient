@@ -26,15 +26,9 @@ class AuthenticationCoordinator(
 
     suspend fun signIn(): Result<SignInResponse> {
         return runCatching {
-            try {
-                val started = sessionManager.startSignInProcess()
-                if (!started) {
-                    throw IllegalStateException("Sign in already in progress.")
-                }
+            sessionManager.runLoginSession {
                 val storedUser = validateAndGetStoredUser()
                 performSignIn(storedUser)
-            } finally {
-                sessionManager.endSignInProcess()
             }
         }
     }

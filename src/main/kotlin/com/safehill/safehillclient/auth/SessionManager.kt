@@ -5,27 +5,21 @@ import com.safehill.kclient.models.users.getOrNull
 import com.safehill.safehillclient.data.user.api.UserObserverRegistry
 import com.safehill.safehillclient.model.SignInResponse
 import com.safehill.safehillclient.module.client.ClientModule
-import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 class SessionManager(
     private val clientModule: ClientModule,
     private val userObserverRegistry: UserObserverRegistry
 ) {
-    private val isSigningIn = AtomicBoolean(false)
 
-    fun getCurrentUser(): LocalUser? = clientModule.userProvider.getOrNull()
-
-    fun isUserSignedIn(): Boolean = clientModule.userProvider.getOrNull() != null
-
-    fun isSignInInProgress(): Boolean = isSigningIn.get()
-
-    fun startSignInProcess(): Boolean {
-        return isSigningIn.compareAndSet(false, true)
+    private val mutex = Mutex()
+    suspend fun <T> runLoginSession(block: suspend () -> T): T {
+        return mutex.withLock {
+            block()
+        }
     }
 
-    fun endSignInProcess() {
-        isSigningIn.set(false)
-    }
 
     fun getExistingSessionForUser(requestedUser: LocalUser): SignInResponse? {
         val currentUser = clientModule.userProvider.getOrNull() ?: return null

@@ -64,4 +64,7 @@ sealed class SafehillError(
             private fun readResolve(): Any = TimedOut
         }
     }
+
+    class NetworkUnAvailable : SafehillError("Network is unavailable.")
+
 }
