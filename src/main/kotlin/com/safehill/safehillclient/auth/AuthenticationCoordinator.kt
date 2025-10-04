@@ -46,15 +46,10 @@ class AuthenticationCoordinator(
             authStateManager.setLoading()
             val existingSession = sessionManager.getExistingSessionForUser(user)
             return existingSession ?: run {
-                attemptOnlineSignIn(user)
-                    .getOrElse { error ->
-                        // Will enable offline sign in later.
-                        // attemptOfflineSignIn(user, error).getOrNull() ?: throw error
-                        throw error
-                    }.also {
-                        val updatedUser = it.currentUser
-                        userStorage.storeUser(updatedUser)
-                    }
+                val signInResponse = attemptOnlineSignIn(user).getOrThrow()
+                val updatedUser = signInResponse.currentUser
+                userStorage.storeUser(updatedUser)
+                signInResponse
             }
         } catch (error: Throwable) {
             authStateManager.setSignedOff()
