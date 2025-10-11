@@ -26,6 +26,7 @@ object WebSocketMessageDeserializer : DeserializationStrategy<WebSocketMessage> 
     @OptIn(ExperimentalSerializationApi::class)
     private val json = Json {
         explicitNulls = false
+        ignoreUnknownKeys = true
     }
     override val descriptor: SerialDescriptor
         get() = WebSocketDataSurrogate.serializer().descriptor
