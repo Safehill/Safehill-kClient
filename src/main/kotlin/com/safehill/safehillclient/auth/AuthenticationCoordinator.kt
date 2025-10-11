@@ -42,8 +42,9 @@ class AuthenticationCoordinator(
     suspend fun performSignIn(user: LocalUser): SignInResponse {
         try {
             authStateManager.setLoading()
-            val existingSession = sessionManager.getExistingSessionForUser(user)
-            return existingSession ?: run {
+            val existingSession =
+                sessionManager.getExistingSessionForUser(user)
+            val response = existingSession ?: run {
                 val signInResponse = attemptOnlineSignIn(user).getOrThrow()
                 phoneNumberVerificationStatusBroadcaster.broadCastVerificationStatus(
                     signInResponse.isPhoneNumberVerified
@@ -52,6 +53,8 @@ class AuthenticationCoordinator(
                 userStorage.storeUser(updatedUser)
                 signInResponse
             }
+            authStateManager.setSignedOn(response.currentUser)
+            return response
         } catch (error: Throwable) {
             authStateManager.setSignedOff()
             throw error
@@ -66,23 +69,12 @@ class AuthenticationCoordinator(
         }
     }
 
-    private suspend fun attemptOfflineSignIn(
-        user: LocalUser,
-        originalError: Throwable
-    ): Result<SignInResponse> {
-        return runCatchingSafe {
-            val response = offlineAuthStrategy.authenticate(user)
-            completeSignIn(user)
-            response
-        }
-    }
 
     private suspend fun completeSignIn(
         user: LocalUser
     ) {
         try {
             sessionManager.setLoggedInUser(user)
-            authStateManager.setSignedOn(user)
         } catch (e: Exception) {
             // Swallow cleaning up errors
             runCatchingSafe { logOut() }
