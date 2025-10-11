@@ -6,6 +6,7 @@ import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.dtos.ConversationThreadAssetDTO
 import com.safehill.kclient.models.dtos.ConversationThreadAssetsDTO
 import com.safehill.kclient.models.dtos.websockets.ThreadUpdatedDTO
+import com.safehill.kclient.models.dtos.websockets.ThreadUpdatedDTO.Companion.toUpdatedDTO
 import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.UserProvider
@@ -38,6 +39,15 @@ class ThreadStateInteractor(
     interactionAnchor = InteractionAnchor.THREAD,
     mutableMessagesContainer = mutableThreadState
 ) {
+
+    fun refresh() {
+        scope.launch {
+            val threadDTO = serverProxy.retrieveThread(threadId)
+            if (threadDTO != null) {
+                update(threadDTO.toUpdatedDTO())
+            }
+        }
+    }
 
     fun updateAssets() {
         scope.launch {

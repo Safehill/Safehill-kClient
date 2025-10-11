@@ -8,6 +8,7 @@ import com.safehill.kclient.models.dtos.websockets.TextMessage
 import com.safehill.kclient.models.dtos.websockets.ThreadAssets
 import com.safehill.kclient.models.dtos.websockets.ThreadCreated
 import com.safehill.kclient.models.dtos.websockets.ThreadUpdatedDTO
+import com.safehill.kclient.models.dtos.websockets.ThreadUserConverted
 import com.safehill.kclient.models.dtos.websockets.UnknownMessage
 import com.safehill.kclient.models.dtos.websockets.UserConversionManifestDTO
 import com.safehill.kclient.models.dtos.websockets.WebSocketMessage
@@ -72,6 +73,11 @@ object WebSocketMessageDeserializer : DeserializationStrategy<WebSocketMessage> 
                 val descriptors = parseToJsonElement(this.content)
                 descriptors.parseAssetDescriptorChangedToRequiredFormat().toString()
             }
+
+            MessageType.THREAD_USER_CONVERTED -> {
+                val threadIds = parseToJsonElement(this.content)
+                threadIds.parseThreadUserConvertedToRequiredFormat().toString()
+            }
         }
     }
 
@@ -99,6 +105,14 @@ object WebSocketMessageDeserializer : DeserializationStrategy<WebSocketMessage> 
             )
         )
     }
+
+    private fun JsonElement.parseThreadUserConvertedToRequiredFormat(): JsonObject {
+        return JsonObject(
+            mapOf(
+                "threadIds" to this
+            )
+        )
+    }
 }
 
 enum class MessageType(
@@ -114,7 +128,12 @@ enum class MessageType(
     CONNECTION_REQUEST("connection-request", NewConnectionRequest.serializer()),
     USER_CONVERSION_MANIFEST("user-conversion-manifest", UserConversionManifestDTO.serializer()),
     THREAD_UPDATE("thread-update", ThreadUpdatedDTO.serializer()),
-    ASSET_DESCRIPTOR_CHANGE("assets-descriptors-changed", AssetDescriptorsChanged.serializer())
+    ASSET_DESCRIPTOR_CHANGE(
+        "assets-descriptors-changed", AssetDescriptorsChanged.serializer()
+    ),
+    THREAD_USER_CONVERTED(
+        "thread-user-converted", ThreadUserConverted.serializer()
+    )
 }
 
 @Serializable
