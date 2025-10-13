@@ -4,6 +4,7 @@ import com.safehill.kclient.base64.base64EncodedString
 import com.safehill.kclient.logging.SafehillLogger
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
 import com.safehill.kclient.models.assets.AssetQuality
+import com.safehill.kclient.models.assets.Embeddings
 import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.assets.EncryptedAssetVersion
 import com.safehill.kclient.models.assets.GroupId
@@ -17,6 +18,8 @@ import com.safehill.kclient.network.api.postRequestForResponse
 import com.safehill.kclient.network.remote.S3Proxy.upload
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -52,13 +55,24 @@ class AssetUploader(
                     publicSignature = it.value.publicSignatureData.base64EncodedString(),
                 )
             },
-            force = true
+            force = true,
+            perceptualHash = asset.fingerPrint?.assetHash,
+            embeddings = asset.fingerPrint?.embeddings?.toServerRepresentation()
         )
         val shOutput: AssetOutputDTO = postRequestForResponse(
             endPoint = "/assets/create",
             request = requestBody
         )
         uploadEncryptedAssetToS3Bucket(serverAsset = shOutput, asset = asset)
+    }
+
+    private fun Embeddings.toServerRepresentation(): String {
+        val byteBuffer = ByteBuffer.allocate(this.size * 4)
+        byteBuffer.order(ByteOrder.LITTLE_ENDIAN) // Match platform endianness
+        this.forEach {
+            byteBuffer.putFloat(it)
+        }
+        return byteBuffer.array().base64EncodedString()
     }
 
 

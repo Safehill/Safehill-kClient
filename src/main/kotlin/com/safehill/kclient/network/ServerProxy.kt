@@ -18,12 +18,5 @@ interface ServerProxy : SafehillApi {
         cacheAfterFetch: Boolean
     ): EncryptedAsset
 
-    @Throws(Exception::class)
-    suspend fun getLocalAssets(
-        globalIdentifiers: List<GlobalIdentifier>,
-        versions: List<AssetQuality>,
-        cacheHiResolution: Boolean
-    ): Map<String, EncryptedAsset>
-
 }
 

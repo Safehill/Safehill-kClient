@@ -170,7 +170,8 @@ class UploadOperationImpl(
 
             shareIfRecipientsExist(outboundQueueItem, globalIdentifier)
             outboundQueueItemManager?.removeOutboundQueueItem(outboundQueueItem)
-        } catch (exception: Exception) {
+        } catch (exception: Throwable) {
+            safehillLogger.error("Error while uploading $exception")
             reEnqueueItemOrElse(outboundQueueItem, exception) {
                 outboundQueueItemManager?.addOutboundQueueItem(
                     queueItem = outboundQueueItem.copy(
@@ -197,11 +198,11 @@ class UploadOperationImpl(
 
     private fun reEnqueueItemOrElse(
         outboundQueueItem: OutboundQueueItem,
-        exception: Exception,
+        error: Throwable,
         elseBlock: suspend () -> Unit
     ) {
         clientScope.launch {
-            if (exception.isRetriableError()) {
+            if (error.isRetriableError()) {
                 sendToChannelAndNotifyListeners(outboundQueueItem)
                 outboundQueueItemManager?.addOutboundQueueItem(outboundQueueItem)
             } else {
@@ -254,10 +255,10 @@ class UploadOperationImpl(
             )
             listenerRegistry.notifyListenersFinishedSharing(outboundQueueItem, recipients)
             outboundQueueItemManager?.removeOutboundQueueItem(outboundQueueItem)
-        } catch (exception: Exception) {
+        } catch (exception: Throwable) {
             reEnqueueItemOrElse(
                 outboundQueueItem = outboundQueueItem,
-                exception = exception
+                error = exception
             ) {
                 outboundQueueItemManager?.addOutboundQueueItem(
                     queueItem = outboundQueueItem.copy(
@@ -291,13 +292,13 @@ class UploadOperationImpl(
     ): List<ShareableEncryptedAssetVersion> {
         val encryptedAsset = serverProxy.getAsset(
             globalIdentifier = outboundQueueItem.globalIdentifier,
-            qualities = outboundQueueItem.assetQualities,
+            qualities = listOf(AssetQuality.LowResolution),
             cacheAfterFetch = true
         )
         return recipients.flatMap { recipient ->
             outboundQueueItem.assetQualities.mapNotNull { quality ->
-                val encryptedVersion =
-                    encryptedAsset.encryptedVersions[quality] ?: return@mapNotNull null
+                val encryptedVersion = encryptedAsset.encryptedVersions[AssetQuality.LowResolution]
+                    ?: return@mapNotNull null
                 val sharedSecret = user.decryptSecret(
                     sealedMessage = ShareablePayload(
                         ephemeralPublicKeyData = encryptedVersion.publicKeyData,
@@ -358,23 +359,15 @@ class UploadOperationImpl(
 
     }
 
-    private suspend fun processItemsInQueue(
-        concurrentExecution: Int
-    ) {
-        coroutineScope {
-            repeat(times = concurrentExecution) {
-                launch {
-                    for (queueItem in outboundQueueItems) {
-                        when (queueItem.operationType) {
-                            OutboundQueueItem.OperationType.Upload -> {
-                                upload(queueItem)
-                            }
+    private suspend fun processItemsInQueue() {
+        for (queueItem in outboundQueueItems) {
+            when (queueItem.operationType) {
+                OutboundQueueItem.OperationType.Upload -> {
+                    upload(queueItem)
+                }
 
-                            OutboundQueueItem.OperationType.Share -> {
-                                share(queueItem)
-                            }
-                        }
-                    }
+                OutboundQueueItem.OperationType.Share -> {
+                    share(queueItem)
                 }
             }
         }
@@ -387,9 +380,7 @@ class UploadOperationImpl(
                     loadStoredOutboundItems()
                 }
                 launch {
-                    processItemsInQueue(
-                        concurrentExecution = 5
-                    )
+                    processItemsInQueue()
                 }
             }.invokeOnCompletion {
                 while (true) {

@@ -21,7 +21,10 @@ import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -39,6 +42,9 @@ class WebSocketApi(
 ) {
 
     private val connectionMutex = Mutex()
+
+    private val _isConnected = MutableStateFlow(false)
+    val isConnected = _isConnected.asStateFlow()
 
     private val _socketMessage = MutableSharedFlow<WebSocketMessage>(
         extraBufferCapacity = 32
@@ -74,6 +80,10 @@ class WebSocketApi(
         ) {
             val socketSession = this
             coroutineScope {
+                launch {
+                    logger.info("Socket connected.")
+                    _isConnected.update { true }
+                }
                 launch {
                     socketSession.incoming.consumeEach { frame ->
                         if (frame is Frame.Text) {
@@ -129,9 +139,11 @@ class WebSocketApi(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                delay(1.seconds * retryDelay)
+                _isConnected.update { false }
+                logger.info("Socket disconnected. Connection error = $e")
                 retryDelay = minOf(MAX_RETRY_DELAY, retryDelay * 2)
-                logger.error("Socket Connection error = $e")
+                logger.info("Retrying socket connection in $retryDelay seconds")
+                delay(1.seconds * retryDelay)
             }
         }
     }

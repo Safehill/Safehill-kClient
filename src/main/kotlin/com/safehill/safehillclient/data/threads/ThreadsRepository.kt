@@ -1,9 +1,8 @@
 package com.safehill.safehillclient.data.threads
 
 import com.safehill.kclient.controllers.UserInteractionController
-import com.safehill.kclient.models.assets.AssetGlobalIdentifier
-import com.safehill.kclient.models.assets.AssetLocalIdentifier
-import com.safehill.kclient.models.assets.GroupId
+import com.safehill.kclient.models.assets.AssetDescriptorDiff
+import com.safehill.kclient.models.assets.AssetDescriptorsCache
 import com.safehill.kclient.models.dtos.ConversationThreadAssetDTO
 import com.safehill.kclient.models.dtos.ConversationThreadOutputDTO
 import com.safehill.kclient.models.dtos.InteractionsThreadSummaryDTO
@@ -13,16 +12,15 @@ import com.safehill.kclient.models.interactions.InteractionAnchor
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.ServerUser
 import com.safehill.kclient.network.ServerProxy
-import com.safehill.kclient.tasks.outbound.UploadFailure
+import com.safehill.kclient.network.WebSocketApi
 import com.safehill.kclient.tasks.outbound.UploadOperation
-import com.safehill.kclient.tasks.outbound.UploadOperationErrorListener
 import com.safehill.kclient.tasks.syncing.InteractionSync
 import com.safehill.kclient.tasks.syncing.InteractionSyncListener
 import com.safehill.kclient.util.runCatchingSafe
+import com.safehill.safehillclient.data.message.upload.MessageImageUploadListener
 import com.safehill.safehillclient.data.threads.factory.ThreadStateInteractorFactory
 import com.safehill.safehillclient.data.threads.interactor.ThreadStateInteractor
-import com.safehill.safehillclient.data.threads.model.SharingAsset
-import com.safehill.safehillclient.data.threads.model.SharingAssetsState
+import com.safehill.safehillclient.data.threads.model.MutableThreadState
 import com.safehill.safehillclient.data.threads.model.Thread
 import com.safehill.safehillclient.data.threads.model.ThreadState
 import com.safehill.safehillclient.data.threads.registry.ThreadStateRegistry
@@ -53,6 +51,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+typealias ThreadId = String
+
 class ThreadsRepository(
     private val clientOptions: ClientOptions,
     private val userInteractionController: UserInteractionController,
@@ -60,18 +60,20 @@ class ThreadsRepository(
     private val threadStateInteractorFactory: ThreadStateInteractorFactory,
     private val interactionSync: InteractionSync,
     private val uploadOperation: UploadOperation,
-    private val serverProxy: ServerProxy
+    private val serverProxy: ServerProxy,
+    private val webSocketApi: WebSocketApi,
+    private val assetDescriptorsCache: AssetDescriptorsCache
 ) : UserObserver,
-    InteractionSyncListener,
-    UploadOperationErrorListener {
+    InteractionSyncListener {
 
     private val userScope = clientOptions.userScope
 
     private val safehillLogger = clientOptions.safehillLogger
 
-    private val sharingAssetsState = SharingAssetsState()
-
-    val assetsBeingShared = sharingAssetsState.assetsBeingShared
+    private val messageUploadListener = MessageImageUploadListener(
+        scope = userScope.createChildScope { SupervisorJob(it) },
+        getThreadInteractor = ::getThreadStateInteractorSuspend
+    )
 
     private val _loading = MutableStateFlow(false)
     val loading = _loading.asStateFlow()
@@ -100,17 +102,24 @@ class ThreadsRepository(
 
     fun getThreadStateInteractor(threadId: String): ThreadStateInteractor? {
         val mutableThreadState = threadStateRegistry.getMutableThreadState(threadId) ?: return null
-        return threadStateInteractorFactory.create(
-            threadID = threadId,
-            scope = clientOptions.userScope.createChildScope { SupervisorJob(it) },
-            mutableThreadState = mutableThreadState
-        )
+        return mutableThreadState.toInteractor()
     }
+
+    suspend fun getThreadStateInteractorSuspend(threadId: String): ThreadStateInteractor {
+        val mutableThreadState = threadStateRegistry.getMutableThreadStateSuspend(threadId)
+        return mutableThreadState.toInteractor()
+    }
+
+    private fun MutableThreadState.toInteractor() = threadStateInteractorFactory.create(
+        threadID = threadId,
+        scope = clientOptions.userScope.createChildScope { SupervisorJob(it) },
+        mutableThreadState = this
+    )
 
     private suspend fun setThreads(threadOutputDTO: List<ConversationThreadOutputDTO>) {
         val threadStates = threadStateRegistry.setThreadStates(threadOutputDTO)
-        threadStates.forEach {
-            getThreadStateInteractor(it.threadId)?.retrieveLastMessage()
+        threadStates.forEach { threadState ->
+            getThreadStateInteractor(threadState.threadId)?.retrieveLastMessage()
         }
     }
 
@@ -235,59 +244,31 @@ class ThreadsRepository(
     override suspend fun userLoggedIn(user: LocalUser) {
         syncThreadsWithServer()
         interactionSync.addListener(this)
-        uploadOperation.listeners.add(this)
+        uploadOperation.listeners.add(messageUploadListener)
+        observeRequiredSocketEvents()
     }
 
     override fun userLoggedOut() {
         threadStateRegistry.clear()
         interactionSync.removeListener(this)
-        uploadOperation.listeners.remove(this)
+        uploadOperation.listeners.remove(messageUploadListener)
     }
 
-    override fun enqueued(
-        threadId: String,
-        localIdentifier: AssetLocalIdentifier,
-        globalIdentifier: AssetGlobalIdentifier,
-        groupId: String
-    ) {
-        sharingAssetsState.setThreadToGroupMapping(
-            threadId = threadId,
-            groupId = groupId
-        )
-        sharingAssetsState.upsertSharingAssets(
-            globalIdentifier = globalIdentifier,
-            localIdentifier = localIdentifier,
-            groupId = groupId,
-            state = SharingAsset.State.Uploading
-        )
+    private fun observeRequiredSocketEvents() {
+        userScope.launch {
+            launch {
+                assetDescriptorsCache.assetDescriptorDiffs.collect { diffs ->
+                    val affectedThreadIds = diffs.affectedThreads()
+                    affectedThreadIds.forEach { threadId ->
+                        getThreadStateInteractor(threadId)
+                            ?.updateAssets()
+                    }
+                }
+            }
+        }
     }
 
-    override fun finishedSharing(
-        localIdentifier: AssetLocalIdentifier,
-        globalIdentifier: AssetGlobalIdentifier,
-        groupId: GroupId,
-        users: List<ServerUser>
-    ) {
-        sharingAssetsState.removeSharingAssets(
-            groupId = groupId,
-            globalIdentifier = globalIdentifier,
-            localIdentifier = localIdentifier
-        )
-    }
 
-    override fun onError(
-        globalIdentifier: AssetGlobalIdentifier,
-        localIdentifier: AssetLocalIdentifier,
-        groupId: GroupId,
-        uploadFailure: UploadFailure
-    ) {
-        sharingAssetsState.setError(
-            globalIdentifier = globalIdentifier,
-            localIdentifier = localIdentifier,
-            groupId = groupId,
-            uploadFailure = uploadFailure
-        )
-    }
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -299,3 +280,15 @@ fun Flow<List<ThreadState>>.toThreads() = this
         // https://github.com/Kotlin/kotlinx.coroutines/issues/1603
         if (threads.isEmpty()) flowOf(emptyList()) else combine(threads) { it.toList() }
     }.distinctUntilChanged()
+
+
+private fun AssetDescriptorDiff.affectedThreads(): Set<String> {
+    val changedDescriptors = this.updated + this.added + this.removed
+    return changedDescriptors
+        .filter { it.uploadState.isCompleted() }
+        .fold(setOf()) { acc, descriptor ->
+            acc + descriptor.sharingInfo.groupInfoById.values.mapNotNull {
+                it.createdFromThreadId
+            }
+        }
+}

@@ -90,8 +90,10 @@ class UserAuthorizationRepository(
     }
 
     override suspend fun userLoggedIn(user: LocalUser) {
-        getUnAuthorizedAndBlockedUsers()
-        listenForNewAuthorizationEvents()
+        userScope.launch {
+            getUnAuthorizedAndBlockedUsers()
+            listenForNewAuthorizationEvents()
+        }
     }
 
     override fun userLoggedOut() {

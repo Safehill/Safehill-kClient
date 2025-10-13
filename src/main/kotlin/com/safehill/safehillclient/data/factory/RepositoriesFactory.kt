@@ -40,7 +40,9 @@ class RepositoriesFactory(
             ),
             interactionSync = backgroundTasksRegistry.interactionSync,
             uploadOperation = backgroundTasksRegistry.uploadOperation,
-            serverProxy = networkModule.serverProxy
+            serverProxy = networkModule.serverProxy,
+            webSocketApi = networkModule.webSocketApi,
+            assetDescriptorsCache = assetModule.assetDescriptorCache
         )
     }
 

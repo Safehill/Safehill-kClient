@@ -13,6 +13,13 @@ class UserController(
 
     private val usersCache = ConcurrentHashMap<UserIdentifier, ServerUser>(50)
 
+    suspend fun getUser(userIdentifier: UserIdentifier): Result<ServerUser> {
+        return getUsers(listOf(userIdentifier)).mapCatching {
+            it[userIdentifier]
+                ?: throw NoSuchElementException("User with identifier $userIdentifier not found")
+        }
+    }
+
     suspend fun getUsers(userIdentifiers: List<UserIdentifier>): Result<Map<UserIdentifier, ServerUser>> {
         return withContext(Dispatchers.IO) {
             runCatching {

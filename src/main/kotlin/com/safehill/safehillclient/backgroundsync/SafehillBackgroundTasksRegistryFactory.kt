@@ -33,7 +33,9 @@ class SafehillBackgroundTasksRegistryFactory(
     private fun createRemoteDownloadOperation(): RemoteDownloadOperation {
         return RemoteDownloadOperation(
             serverProxy = networkModule.serverProxy,
-            assetDescriptorsCache = assetModule.assetDescriptorCache
+            assetDescriptorsCache = assetModule.assetDescriptorCache,
+            webSocketApi = networkModule.webSocketApi,
+            userScope = clientOptions.userScope
         )
     }
 
@@ -63,6 +65,7 @@ class SafehillBackgroundTasksRegistryFactory(
             safehillLogger = clientOptions.safehillLogger
         ).also {
             it.listeners.add(assetModule.assetsUploadPipelineStateHolder)
+            it.listeners.add(assetModule.outboundAssetsState)
         }
     }
 

@@ -11,6 +11,7 @@ import com.safehill.safehillclient.data.user.model.toAppUser
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 
 class ThreadStateRegistry(
@@ -24,6 +25,10 @@ class ThreadStateRegistry(
 
     fun getMutableThreadState(threadID: String): MutableThreadState? {
         return _threadStates.value[threadID]
+    }
+
+    suspend fun getMutableThreadStateSuspend(threadId: String): MutableThreadState {
+        return _threadStates.first { it[threadId] != null }[threadId]!!
     }
 
     suspend fun upsertThreadStates(threadDtos: List<ConversationThreadOutputDTO>) {

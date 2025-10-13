@@ -8,10 +8,7 @@ import com.safehill.kclient.models.users.ServerUser
 interface UploadOperationListener {
 
     fun enqueued(
-        threadId: String,
-        localIdentifier: AssetLocalIdentifier,
-        globalIdentifier: AssetGlobalIdentifier,
-        groupId: String
+        outboundQueueItem: OutboundQueueItem
     ) {
     }
 

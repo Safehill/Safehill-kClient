@@ -51,6 +51,8 @@ import com.safehill.kclient.network.api.reaction.ReactionApi
 import com.safehill.kclient.network.api.reaction.ReactionApiImpl
 import com.safehill.kclient.network.api.thread.ThreadApi
 import com.safehill.kclient.network.api.thread.ThreadApiImpl
+import com.safehill.kclient.network.api.web_client.WebClientApi
+import com.safehill.kclient.network.api.web_client.WebClientApiImpl
 import com.safehill.kclient.util.Provider
 import io.ktor.client.HttpClient
 import java.time.Instant
@@ -65,7 +67,8 @@ class RemoteServer private constructor(
     ThreadApi by ThreadApiImpl(baseApi),
     BaseApi by baseApi,
     AssetApi by AssetApiImpl(baseApi, safehillLogger),
-    EventReportApi by EventReportApiImpl(baseApi) {
+    EventReportApi by EventReportApiImpl(baseApi),
+    WebClientApi by WebClientApiImpl(baseApi) {
 
     constructor(
         userProvider: Provider<LocalUser>,
@@ -227,9 +230,10 @@ class RemoteServer private constructor(
 
         val requestBody = AssetShareDTO(
             globalAssetIdentifier = asset.globalIdentifier,
-            versionSharingDetails = versions,  // Puoi avere più versioni in una lista
+            versionSharingDetails = versions,
             groupId = asset.groupId,
-            asPhotoMessageInThreadId = threadId
+            asPhotoMessageInThreadId = threadId,
+            sharingOption = null
         )
         postRequest(
             endPoint = "/assets/share",

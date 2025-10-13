@@ -52,10 +52,28 @@ data class ThreadUpdatedDTO(
     val membersPublicIdentifier: List<String>,
     val name: String?,
     val threadId: String
-) : InteractionSocketMessage
+) : InteractionSocketMessage {
+
+    companion object {
+
+        fun ConversationThreadOutputDTO.toUpdatedDTO() = ThreadUpdatedDTO(
+            threadId = this.threadId,
+            name = this.name,
+            lastUpdatedAt = this.lastUpdatedAt,
+            membersPublicIdentifier = this.membersPublicIdentifier,
+            invitedUsersPhoneNumbers = this.invitedUsersPhoneNumbers
+        )
+    }
+}
 
 @Serializable
 data class ThreadAssets(
     val threadId: String,
     val assets: List<ConversationThreadAssetDTO>
+) : InteractionSocketMessage
+
+
+@Serializable
+data class ThreadUserConverted(
+    val threadIds: List<String>
 ) : InteractionSocketMessage

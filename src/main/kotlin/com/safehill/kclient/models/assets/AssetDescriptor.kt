@@ -1,33 +1,35 @@
 package com.safehill.kclient.models.assets
 
+import com.safehill.kclient.models.dtos.SharingOption
 import com.safehill.kclient.models.users.UserIdentifier
 import java.time.Instant
 
 typealias GroupId = String
 
-interface AssetDescriptor : RemoteAssetIdentifiable {
-    override val globalIdentifier: AssetGlobalIdentifier
-    override val localIdentifier: AssetLocalIdentifier
-    val creationDate: Instant
-    val uploadState: UploadState
+
+data class AssetDescriptor(
+    override val globalIdentifier: AssetGlobalIdentifier,
+    override val localIdentifier: AssetLocalIdentifier,
+    val creationDate: Instant,
+    val uploadState: UploadState,
     val sharingInfo: SharingInfo
+) : RemoteAssetIdentifiable {
+    val createdByUserIdentifier: UserIdentifier = sharingInfo.sharedByUserIdentifier
 }
 
-interface SharingInfo {
-    val sharedByUserIdentifier: UserIdentifier
-
-    /// Maps user public identifiers to asset group identifiers
-    val groupIdsByRecipientUserIdentifier: Map<UserIdentifier, List<GroupId>>
+data class SharingInfo(
+    val sharedByUserIdentifier: UserIdentifier,
+    val groupIdsByRecipientUserIdentifier: Map<UserIdentifier, List<GroupId>>,
     val groupInfoById: Map<GroupId, GroupInfo>
-}
+)
 
-interface GroupInfo {
-    /// The name of the asset group (optional)
-    val name: String?
-
-    /// ISO8601 formatted datetime, representing the time the asset group was created
-    val createdAt: Instant
-}
+data class GroupInfo(
+    val name: String?,
+    val createdAt: Instant,
+    val createdBy: UserIdentifier,
+    val permissions: SharingOption,
+    val createdFromThreadId: String?
+)
 
 enum class UploadState {
     NotStarted, Partial, Completed, Failed;
@@ -45,4 +47,10 @@ enum class UploadState {
         Partial, Completed -> true
         NotStarted, Failed -> false
     }
+
+    fun isCompleted() = this == Completed
 }
+
+
+val AssetDescriptor.sharedWithUserIdentifiers
+    get() = this.sharingInfo.groupIdsByRecipientUserIdentifier.keys - this.createdByUserIdentifier

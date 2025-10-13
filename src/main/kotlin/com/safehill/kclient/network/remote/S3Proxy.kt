@@ -66,7 +66,8 @@ object S3Proxy {
             globalIdentifier = asset.globalIdentifier,
             localIdentifier = asset.localIdentifier,
             creationDate = asset.creationDate,
-            encryptedVersions = encryptedVersions.associateBy { version -> version.quality }
+            encryptedVersions = encryptedVersions.associateBy { version -> version.quality },
+            fingerPrint = null
         )
     }
 

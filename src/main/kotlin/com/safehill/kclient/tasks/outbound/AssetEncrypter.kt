@@ -1,20 +1,28 @@
 package com.safehill.kclient.tasks.outbound
 
 import com.safehill.kclient.SafehillCypher
+import com.safehill.kclient.logging.SafehillLogger
 import com.safehill.kclient.models.SymmetricKey
+import com.safehill.kclient.models.assets.AssetFingerPrint
 import com.safehill.kclient.models.assets.AssetLocalIdentifier
+import com.safehill.kclient.models.assets.AssetQuality
 import com.safehill.kclient.models.assets.EncryptedAsset
 import com.safehill.kclient.models.assets.EncryptedAssetVersion
 import com.safehill.kclient.models.assets.LocalAsset
 import com.safehill.kclient.models.bytes
 import com.safehill.kclient.models.users.LocalUser
+import com.safehill.kclient.tasks.outbound.embedding.AssetEmbeddings
 import com.safehill.kclient.utils.ImageResizerInterface
 
 class AssetEncrypter(
     private val resizer: ImageResizerInterface,
-    private val localAssetGetter: LocalAssetGetter
+    private val localAssetGetter: LocalAssetGetter,
+    private val assetEmbeddings: AssetEmbeddings,
+    private val postAssetEmbeddings: Boolean,
+    private val safehillLogger: SafehillLogger
 ) {
-    fun encryptedAsset(
+
+    suspend fun encryptedAsset(
         outboundQueueItem: OutboundQueueItem,
         user: LocalUser
     ): EncryptedAsset {
@@ -26,13 +34,22 @@ class AssetEncrypter(
         )
         val localAsset = localAssetGetter.getLocalAsset(outboundQueueItem.localIdentifier)
 
+
+        var assetFingerprint: AssetFingerPrint? = null
+
         val encryptedVersions = outboundQueueItem.assetQualities.associateWith { quality ->
-            val imageBytes = localAsset.data
-            val resizedBytes =
-                resizer.resizeImageIfLarger(imageBytes, quality.dimension, quality.dimension)
-
+            val resizedBytes = resizer.resizeImageIfLarger(
+                localAsset.data,
+                quality.dimension,
+                quality.dimension
+            )
+            if (postAssetEmbeddings && quality == AssetQuality.LowResolution) {
+                assetFingerprint = AssetFingerPrint(
+                    embeddings = assetEmbeddings.getEmbeddings(resizedBytes),
+                    assetHash = null
+                )
+            }
             val encryptedData = SafehillCypher.encrypt(resizedBytes, sharedSecret)
-
             EncryptedAssetVersion(
                 quality = quality,
                 encryptedData = encryptedData,
@@ -46,7 +63,8 @@ class AssetEncrypter(
             globalIdentifier = outboundQueueItem.globalIdentifier,
             localIdentifier = localAsset.localIdentifier,
             creationDate = localAsset.createdAt,
-            encryptedVersions = encryptedVersions
+            encryptedVersions = encryptedVersions,
+            fingerPrint = assetFingerprint
         )
     }
 

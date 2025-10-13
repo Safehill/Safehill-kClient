@@ -9,6 +9,7 @@ import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.network.GlobalIdentifier
 import com.safehill.safehillclient.data.activity.model.DownloadRequest
 import com.safehill.safehillclient.data.message.model.Message
+import com.safehill.safehillclient.data.message.model.MessageImageState
 import com.safehill.safehillclient.data.message.model.MessageStatus
 import com.safehill.safehillclient.data.message.model.MessageType
 import com.safehill.safehillclient.data.user.model.AppUser
@@ -77,7 +78,12 @@ class AssetsDownloadActivities(
                 senderIdentifier = this.eventOriginator.identifier,
                 createdDate = this.createdAt,
                 status = MessageStatus.Sent,
-                messageType = MessageType.Images(assetIdentifiers = this.assetIdentifiers.value),
+                messageType = MessageType.Images(
+                    groupId = this.groupId,
+                    messageImageStates = this.assetIdentifiers.value.map { globalId ->
+                        MessageImageState.Completed(globalId)
+                    }
+                ),
                 userIdentifier = currentUser.identifier
             )
         )

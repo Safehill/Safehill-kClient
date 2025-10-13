@@ -29,7 +29,7 @@ private class MutableMessagesContainerImpl : MutableMessagesContainer,
 
     override fun upsertMessages(message: List<Message>) {
         val newMessages = message.associateBy { it.id }
-        _messages.update { initial ->
+        modifyMessages { initial ->
             initial + newMessages
         }
     }
@@ -47,14 +47,14 @@ private class MutableMessagesContainerImpl : MutableMessagesContainer,
     }
 
     override fun updateMessage(localID: String, message: Message) {
-        _messages.update { initial ->
-            initial.mapValues { (_, value) ->
-                if (value.id == localID) message else value
-            }
+        modifyMessages { initial ->
+            initial.values
+                .map { if (it.id == localID) message else it }
+                .associateBy { it.id }
         }
     }
 
     private fun setMessages(messages: List<Message>) {
-        _messages.update { messages.associateBy { it.id } }
+        modifyMessages { messages.associateBy { it.id } }
     }
 }

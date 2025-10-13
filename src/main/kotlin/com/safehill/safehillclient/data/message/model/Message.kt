@@ -4,9 +4,12 @@ import com.safehill.kclient.SafehillCypher
 import com.safehill.kclient.base64.decodeBase64
 import com.safehill.kclient.models.SymmetricKey
 import com.safehill.kclient.models.assets.AssetGlobalIdentifier
+import com.safehill.kclient.models.assets.AssetLocalIdentifier
+import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.dtos.MessageOutputDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.models.users.UserIdentifier
+import com.safehill.kclient.tasks.outbound.UploadFailure
 import java.time.Instant
 
 data class Message(
@@ -41,8 +44,62 @@ sealed class MessageType {
     data class Text(val message: String) : MessageType()
 
     data class Images(
+        val groupId: GroupId,
+        val messageImageStates: List<MessageImageState>
+    ) : MessageType() {
+
+        val completedImages =
+            messageImageStates.filterIsInstance<MessageImageState.Completed>()
+
+        val failedImages =
+            messageImageStates.filterIsInstance<MessageImageState.Failed>()
+
+        val uploadingImages =
+            messageImageStates.filterIsInstance<MessageImageState.Uploading>()
+
         val assetIdentifiers: List<AssetGlobalIdentifier>
-    ) : MessageType()
+            get() = messageImageStates.map { it.globalIdentifier }
+
+        fun updateImageStatus(
+            newImageState: MessageImageState
+        ): Images {
+            val updatedStates = messageImageStates
+                .updateOrAdd(newItem = newImageState) {
+                    it.globalIdentifier == newImageState.globalIdentifier
+                }.distinctBy { it.globalIdentifier }
+            return copy(messageImageStates = updatedStates)
+        }
+
+    }
+}
+
+fun <T> List<T>.updateOrAdd(newItem: T, predicate: (T) -> Boolean): List<T> {
+    val index = indexOfFirst(predicate)
+    return if (index == -1) {
+        listOf(newItem) + this
+    } else {
+        mapIndexed { i, item -> if (i == index) newItem else item }
+    }
+}
+
+sealed class MessageImageState {
+    abstract val globalIdentifier: AssetGlobalIdentifier
+
+    data class Uploading(
+        val localIdentifier: AssetLocalIdentifier,
+        override val globalIdentifier: AssetGlobalIdentifier
+    ) : MessageImageState()
+
+    data class Completed(
+        override val globalIdentifier: AssetGlobalIdentifier
+    ) : MessageImageState()
+
+    data class Failed(
+        val localIdentifier: AssetLocalIdentifier,
+        val error: UploadFailure,
+        val groupId: GroupId,
+        override val globalIdentifier: AssetGlobalIdentifier
+    ) : MessageImageState()
 }
 
 sealed class MessageStatus {

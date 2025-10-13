@@ -7,6 +7,8 @@ import com.safehill.kclient.models.dtos.websockets.TextMessage
 import com.safehill.kclient.models.dtos.websockets.ThreadAssets
 import com.safehill.kclient.models.dtos.websockets.ThreadCreated
 import com.safehill.kclient.models.dtos.websockets.ThreadUpdatedDTO
+import com.safehill.kclient.models.dtos.websockets.ThreadUpdatedDTO.Companion.toUpdatedDTO
+import com.safehill.kclient.models.dtos.websockets.ThreadUserConverted
 import com.safehill.kclient.models.dtos.websockets.WebSocketMessage
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.network.WebSocketApi
@@ -56,6 +58,10 @@ class InteractionSync(
                     is ThreadUpdatedDTO -> {
                         this.handleThreadUpdate()
                     }
+
+                    is ThreadUserConverted -> {
+                        this.handleThreadUserConverted()
+                    }
                 }
             }
 
@@ -75,6 +81,19 @@ class InteractionSync(
             serverProxy.localServer.createOrUpdateThread(
                 threads = listOf(thread)
             )
+        }
+    }
+
+    private suspend fun ThreadUserConverted.handleThreadUserConverted() {
+        coroutineScope {
+            threadIds.forEach { threadId ->
+                launch {
+                    val threadDto = serverProxy.remoteServer.retrieveThread(threadId)
+                    if (threadDto != null) {
+                        interactionSyncListeners.didUpdateThread(threadDto.toUpdatedDTO())
+                    }
+                }
+            }
         }
     }
 
