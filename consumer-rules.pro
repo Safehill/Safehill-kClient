@@ -12,13 +12,19 @@
 }
 
 # ===========================
-# Bouncy Castle (loaded as security provider)
+# Cryptography & Security
 # ===========================
--keep class org.bouncycastle.jcajce.provider.digest.** { *; }
--keep class org.bouncycastle.jcajce.provider.symmetric.** { *; }
--keep class org.bouncycastle.jcajce.provider.keystore.** { *; }
--keep class org.bouncycastle.jce.provider.BouncyCastleProvider { *; }
--keep class org.bouncycastle.jsse.provider.BouncyCastleJsseProvider { *; }
--dontwarn org.bouncycastle.jsse.**
--dontwarn org.bouncycastle.x509.util.LDAPStoreHelper
--dontwarn javax.naming.**
+-keep class java.security.** { *; }
+-keep class javax.crypto.** { *; }
+-keep class sun.security.** { *; }
+-keep class com.android.org.conscrypt.** { *; }
+
+# Keep all enums
+-keep enum * { *; }
+
+# ===========================
+# Bouncy Castle - Keep Everything
+# ===========================
+-keep class org.bouncycastle.** { *; }
+-keepclassmembers class org.bouncycastle.** { *; }
+-dontwarn org.bouncycastle.**
