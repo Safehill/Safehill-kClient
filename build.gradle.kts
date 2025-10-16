@@ -47,6 +47,10 @@ tasks.withType<Jar> {
     manifest {
         attributes["Main-Class"] = "com.safehill.kclient.Main.kt"
     }
+
+    from("consumer-rules.pro") {
+        into("META-INF/proguard")
+    }
 }
 
 java {
