@@ -28,7 +28,7 @@ class ModelFileValidator(
 
 
     private suspend fun getExpectedHash(): String? {
-        val hashFile = File(downloadDirectory.getOnnxFile, "TinyCLIP.onnx.sha256")
+        val hashFile = File(downloadDirectory.file, "TinyCLIP.onnx.sha256")
         val client = HttpClient(CIO)
         return try {
             runCatchingSafe {
