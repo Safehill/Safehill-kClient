@@ -8,7 +8,7 @@ import java.time.Instant
 /**
  * Domain model for a Collection.
  * Didn't use Collection because it was conflicting
- * with the already existing [kotlin.collections.Collection] on numerous importz
+ * with the already existing [kotlin.collections.Collection] on numerous imports
  */
 data class CollectionModel(
     val id: String,

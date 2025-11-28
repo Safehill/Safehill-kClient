@@ -16,6 +16,7 @@ import com.safehill.kclient.models.dtos.collections.PriceRangeDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.util.safeApiCall
+import com.safehill.safehillclient.SafehillClient
 import com.safehill.safehillclient.data.collections.model.CollectionModel
 import com.safehill.safehillclient.data.collections.model.toCollection
 import com.safehill.safehillclient.manager.dependencies.UserObserver
@@ -385,3 +386,6 @@ class CollectionsRepository(
         _topPicks.update { emptyList() }
     }
 }
+
+val SafehillClient.collectionsRepository
+    get() = this.repositories.collectionsRepository

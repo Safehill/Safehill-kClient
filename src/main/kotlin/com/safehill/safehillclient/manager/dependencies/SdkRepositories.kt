@@ -7,6 +7,7 @@ import com.safehill.safehillclient.backgroundsync.BackgroundTasksRegistry
 import com.safehill.safehillclient.backgroundsync.NetworkModule
 import com.safehill.safehillclient.data.activity.repository.ActivityRepository
 import com.safehill.safehillclient.data.authorization.UserAuthorizationRepository
+import com.safehill.safehillclient.data.collections.CollectionsRepository
 import com.safehill.safehillclient.data.factory.RepositoriesFactory
 import com.safehill.safehillclient.data.threads.ThreadsRepository
 import com.safehill.safehillclient.data.user_discovery.UserDiscoveryRepository
@@ -49,14 +50,19 @@ class SdkRepositories private constructor(
     override val activityRepository: ActivityRepository by lazy {
         repositoriesFactory.createActivityRepository()
     }
+    override val collectionsRepository: CollectionsRepository by lazy {
+        repositoriesFactory.createCollectionsRepository()
+    }
 
     override suspend fun userLoggedIn(user: LocalUser) {
         userAuthorizationRepository.userLoggedIn(user)
         threadsRepository.userLoggedIn(user)
+        collectionsRepository.userLoggedIn(user)
     }
 
     override fun userLoggedOut() {
         userAuthorizationRepository.userLoggedOut()
+        collectionsRepository.userLoggedOut()
         threadsRepository.userLoggedOut()
     }
 

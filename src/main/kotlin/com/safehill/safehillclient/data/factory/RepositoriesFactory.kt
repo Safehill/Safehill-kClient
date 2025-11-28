@@ -8,6 +8,7 @@ import com.safehill.safehillclient.data.activity.controller.download.AssetsDownl
 import com.safehill.safehillclient.data.activity.interactor.GroupInteractionsInteractorFactory
 import com.safehill.safehillclient.data.activity.repository.ActivityRepository
 import com.safehill.safehillclient.data.authorization.UserAuthorizationRepository
+import com.safehill.safehillclient.data.collections.CollectionsRepository
 import com.safehill.safehillclient.data.threads.ThreadsRepository
 import com.safehill.safehillclient.data.threads.factory.ThreadStateInteractorFactory
 import com.safehill.safehillclient.data.threads.registry.ThreadStateRegistry
@@ -75,6 +76,14 @@ class RepositoriesFactory(
                 userProvider = userProvider
             ),
             userScope = clientOptions.userScope
+        )
+    }
+
+    fun createCollectionsRepository(): CollectionsRepository {
+        return CollectionsRepository(
+            serverProxy = networkModule.serverProxy,
+            sdkDispatchers = clientOptions.sdkDispatchers,
+            clientOptions = clientOptions
         )
     }
 }
