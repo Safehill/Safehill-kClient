@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 data class CollectionSearchDTO(
     val query: String? = null,
     val searchScope: String, // "owned" for user's owned and accessed, "all" for all discoverable collections
-    val visibility: String? = null, // Optional filter by visibility
+    val visibility: CollectionVisibility? = null, // Optional filter by visibility
     val priceRange: PriceRangeDTO? = null
 )
 

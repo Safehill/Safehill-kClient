@@ -4,8 +4,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class CollectionChangeVisibilityRequestDTO(
-    /// The new visibility for the collection ("confidential" or "public")
-    val visibility: String,
+    /// The new visibility for the collection
+    val visibility: CollectionVisibility,
     /// Decryption details for all assets in the collection, organized by asset
     /// Required when transitioning from not-shared to confidential or public
     /// Required when transitioning from confidential to public
@@ -19,7 +19,7 @@ data class CollectionChangeVisibilityResultDTO(
     /// The collection ID that was processed
     val collectionId: String,
     /// The new visibility status of the collection
-    val newVisibility: String,
+    val newVisibility: CollectionVisibility,
     /// Whether link sharing is enabled (only applicable for confidential collections)
     val linkSharingEnabled: Boolean,
     /// Number of assets found in the collection

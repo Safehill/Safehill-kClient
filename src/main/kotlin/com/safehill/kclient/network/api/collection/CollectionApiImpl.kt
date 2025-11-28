@@ -45,7 +45,7 @@ class CollectionApiImpl(
     override suspend fun searchCollections(
         query: String?,
         searchScope: String,
-        visibility: String?,
+        visibility: CollectionVisibility?,
         priceRange: PriceRangeDTO?
     ): List<CollectionOutputDTO> {
         val searchRequest = CollectionSearchDTO(

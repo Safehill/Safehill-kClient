@@ -27,13 +27,13 @@ interface CollectionApi {
     /// - Parameters:
     ///   - query: optional search query string
     ///   - searchScope: "owned" for user's owned and accessed, "all" for all discoverable collections
-    ///   - visibility: optional filter by visibility (public, confidential, not-shared)
+    ///   - visibility: optional filter by visibility
     ///   - priceRange: optional price range filter
     /// - Returns: List of collections matching the search criteria
     suspend fun searchCollections(
         query: String?,
         searchScope: String,
-        visibility: String?,
+        visibility: CollectionVisibility?,
         priceRange: PriceRangeDTO?
     ): List<CollectionOutputDTO>
 

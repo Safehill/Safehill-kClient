@@ -7,6 +7,6 @@ data class AccessCheckResultDTO(
     val status: String, // 'granted' | 'paywall' | 'denied' | 'loading'
     val message: String? = null,
     val price: Double? = null,
-    val visibility: String? = null,
+    val visibility: CollectionVisibility? = null,
     val createdBy: String? = null
 )
