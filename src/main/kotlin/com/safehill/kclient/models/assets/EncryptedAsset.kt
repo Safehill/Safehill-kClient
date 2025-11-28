@@ -10,7 +10,7 @@ typealias AssetHash = String
 
 data class EncryptedAsset(
     val globalIdentifier: AssetGlobalIdentifier,
-    val localIdentifier: AssetLocalIdentifier,
+    val localIdentifier: AssetLocalIdentifier?,
     val creationDate: Instant?,
     val fingerPrint: AssetFingerPrint?,
     val encryptedVersions: Map<AssetQuality, EncryptedAssetVersion>
