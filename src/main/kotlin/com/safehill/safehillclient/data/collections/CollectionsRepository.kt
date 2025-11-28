@@ -16,7 +16,7 @@ import com.safehill.kclient.models.dtos.collections.PriceRangeDTO
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.util.safeApiCall
-import com.safehill.safehillclient.data.collections.model.Collection
+import com.safehill.safehillclient.data.collections.model.CollectionModel
 import com.safehill.safehillclient.data.collections.model.toCollection
 import com.safehill.safehillclient.manager.dependencies.UserObserver
 import com.safehill.safehillclient.module.config.ClientOptions
@@ -45,14 +45,14 @@ class CollectionsRepository(
 
     private val _currentUserId = MutableStateFlow<String?>(null)
 
-    private val _allCollections = MutableStateFlow<List<Collection>>(emptyList())
-    val allCollections: StateFlow<List<Collection>> = _allCollections.asStateFlow()
+    private val _allCollections = MutableStateFlow<List<CollectionModel>>(emptyList())
+    val allCollections: StateFlow<List<CollectionModel>> = _allCollections.asStateFlow()
 
-    private val _topPicks = MutableStateFlow<List<Collection>>(emptyList())
-    val topPicks: StateFlow<List<Collection>> = _topPicks.asStateFlow()
+    private val _topPicks = MutableStateFlow<List<CollectionModel>>(emptyList())
+    val topPicks: StateFlow<List<CollectionModel>> = _topPicks.asStateFlow()
 
     // Derived flow: Collections owned by the current user
-    val ownedCollections: StateFlow<List<Collection>> = combine(
+    val ownedCollections: StateFlow<List<CollectionModel>> = combine(
         _allCollections,
         _currentUserId
     ) { collections, userId ->
@@ -64,7 +64,7 @@ class CollectionsRepository(
     }.stateIn(clientOptions.clientScope, SharingStarted.Eagerly, emptyList())
 
     // Derived flow: Collections accessed by the user (not owned)
-    val accessedCollections: StateFlow<List<Collection>> = combine(
+    val accessedCollections: StateFlow<List<CollectionModel>> = combine(
         _allCollections,
         _currentUserId
     ) { collections, userId ->
@@ -114,7 +114,7 @@ class CollectionsRepository(
     /**
      * Get a single collection by ID
      */
-    suspend fun getCollection(id: String): Result<Collection> {
+    suspend fun getCollection(id: String): Result<CollectionModel> {
         return withContext(sdkDispatchers.io) {
             safeApiCall {
                 serverProxy.remoteServer.retrieveCollection(id).toCollection()
@@ -141,7 +141,7 @@ class CollectionsRepository(
         searchScope: String = "all",
         visibility: CollectionVisibility? = null,
         priceRange: PriceRangeDTO? = null
-    ): Result<List<Collection>> {
+    ): Result<List<CollectionModel>> {
         return withContext(sdkDispatchers.io) {
             safeApiCall {
                 serverProxy.remoteServer.searchCollections(
@@ -160,7 +160,7 @@ class CollectionsRepository(
     suspend fun createCollection(
         name: String,
         description: String
-    ): Result<Collection> {
+    ): Result<CollectionModel> {
         return withContext(sdkDispatchers.io) {
             safeApiCall {
                 serverProxy.remoteServer.createCollection(
@@ -184,7 +184,7 @@ class CollectionsRepository(
         name: String? = null,
         description: String? = null,
         pricing: Double? = null
-    ): Result<Collection> {
+    ): Result<CollectionModel> {
         return withContext(sdkDispatchers.io) {
             safeApiCall {
                 serverProxy.remoteServer.updateCollection(
@@ -353,7 +353,7 @@ class CollectionsRepository(
     /**
      * Update a collection in all caches
      */
-    private fun updateCollectionInCache(collection: Collection) {
+    private fun updateCollectionInCache(collection: CollectionModel) {
         // Update in allCollections (owned/accessed will be derived automatically)
         _allCollections.update { collections ->
             collections.map { if (it.id == collection.id) collection else it }

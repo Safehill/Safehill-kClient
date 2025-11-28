@@ -6,9 +6,11 @@ import com.safehill.kclient.models.dtos.collections.CollectionVisibility
 import java.time.Instant
 
 /**
- * Domain model for a Collection
+ * Domain model for a Collection.
+ * Didn't use Collection because it was conflicting
+ * with the already existing [kotlin.collections.Collection] on numerous importz
  */
-data class Collection(
+data class CollectionModel(
     val id: String,
     val name: String,
     val description: String,
@@ -21,6 +23,7 @@ data class Collection(
     val createdBy: String,
     val assets: List<AssetOutputDTO>
 ) {
+
     /**
      * Whether this collection is free to access
      */
@@ -81,8 +84,8 @@ data class Collection(
 /**
  * Convert CollectionOutputDTO to domain Collection model
  */
-fun CollectionOutputDTO.toCollection(): Collection {
-    return Collection(
+fun CollectionOutputDTO.toCollection(): CollectionModel {
+    return CollectionModel(
         id = id,
         name = name,
         description = description,
