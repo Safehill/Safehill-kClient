@@ -1,6 +1,23 @@
 package com.safehill.kclient.network.api.collection
 
-import com.safehill.kclient.models.dtos.collections.*
+import com.safehill.kclient.models.dtos.collections.AccessCheckResultDTO
+import com.safehill.kclient.models.dtos.collections.CheckoutSessionDTO
+import com.safehill.kclient.models.dtos.collections.CollectionAssetAddRequestDTO
+import com.safehill.kclient.models.dtos.collections.CollectionAssetAddResultDTO
+import com.safehill.kclient.models.dtos.collections.CollectionAssetCopyRequestDTO
+import com.safehill.kclient.models.dtos.collections.CollectionAssetCopyResultDTO
+import com.safehill.kclient.models.dtos.collections.CollectionChangeVisibilityRequestDTO
+import com.safehill.kclient.models.dtos.collections.CollectionChangeVisibilityResultDTO
+import com.safehill.kclient.models.dtos.collections.CollectionCreateDTO
+import com.safehill.kclient.models.dtos.collections.CollectionOutputDTO
+import com.safehill.kclient.models.dtos.collections.CollectionSearchDTO
+import com.safehill.kclient.models.dtos.collections.CollectionUpdateDTO
+import com.safehill.kclient.models.dtos.collections.CollectionVisibility
+import com.safehill.kclient.models.dtos.collections.CreateCheckoutSessionRequestDTO
+import com.safehill.kclient.models.dtos.collections.IAPReceiptValidationRequestDTO
+import com.safehill.kclient.models.dtos.collections.IAPReceiptValidationResponseDTO
+import com.safehill.kclient.models.dtos.collections.PriceRangeDTO
+import com.safehill.kclient.models.dtos.collections.SearchScope
 import com.safehill.kclient.network.api.BaseApi
 import com.safehill.kclient.network.api.RequestMethod
 import com.safehill.kclient.network.api.fireRequest
@@ -44,7 +61,7 @@ class CollectionApiImpl(
 
     override suspend fun searchCollections(
         query: String?,
-        searchScope: String,
+        searchScope: SearchScope,
         visibility: CollectionVisibility?,
         priceRange: PriceRangeDTO?
     ): List<CollectionOutputDTO> {

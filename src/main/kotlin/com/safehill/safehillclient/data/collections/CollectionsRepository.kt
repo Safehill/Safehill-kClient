@@ -13,6 +13,7 @@ import com.safehill.kclient.models.dtos.collections.CreateCheckoutSessionRequest
 import com.safehill.kclient.models.dtos.collections.IAPReceiptValidationRequestDTO
 import com.safehill.kclient.models.dtos.collections.IAPReceiptValidationResponseDTO
 import com.safehill.kclient.models.dtos.collections.PriceRangeDTO
+import com.safehill.kclient.models.dtos.collections.SearchScope
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.util.safeApiCall
@@ -150,7 +151,7 @@ class CollectionsRepository(
      */
     suspend fun searchCollections(
         query: String?,
-        searchScope: String = "all",
+        searchScope: SearchScope = SearchScope.All,
         visibility: CollectionVisibility? = null,
         priceRange: PriceRangeDTO? = null
     ): Result<List<CollectionModel>> {

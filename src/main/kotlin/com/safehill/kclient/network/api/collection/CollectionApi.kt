@@ -1,6 +1,20 @@
 package com.safehill.kclient.network.api.collection
 
-import com.safehill.kclient.models.dtos.collections.*
+import com.safehill.kclient.models.dtos.collections.AccessCheckResultDTO
+import com.safehill.kclient.models.dtos.collections.CheckoutSessionDTO
+import com.safehill.kclient.models.dtos.collections.CollectionAssetAddRequestDTO
+import com.safehill.kclient.models.dtos.collections.CollectionAssetAddResultDTO
+import com.safehill.kclient.models.dtos.collections.CollectionAssetCopyRequestDTO
+import com.safehill.kclient.models.dtos.collections.CollectionAssetCopyResultDTO
+import com.safehill.kclient.models.dtos.collections.CollectionChangeVisibilityRequestDTO
+import com.safehill.kclient.models.dtos.collections.CollectionChangeVisibilityResultDTO
+import com.safehill.kclient.models.dtos.collections.CollectionOutputDTO
+import com.safehill.kclient.models.dtos.collections.CollectionVisibility
+import com.safehill.kclient.models.dtos.collections.CreateCheckoutSessionRequestDTO
+import com.safehill.kclient.models.dtos.collections.IAPReceiptValidationRequestDTO
+import com.safehill.kclient.models.dtos.collections.IAPReceiptValidationResponseDTO
+import com.safehill.kclient.models.dtos.collections.PriceRangeDTO
+import com.safehill.kclient.models.dtos.collections.SearchScope
 
 interface CollectionApi {
 
@@ -26,13 +40,13 @@ interface CollectionApi {
     /// Search for collections based on criteria
     /// - Parameters:
     ///   - query: optional search query string
-    ///   - searchScope: "owned" for user's owned and accessed, "all" for all discoverable collections
+    ///   - searchScope: SearchScope.Owned for user's owned and accessed, SearchScope.All for all discoverable collections
     ///   - visibility: optional filter by visibility
     ///   - priceRange: optional price range filter
     /// - Returns: List of collections matching the search criteria
     suspend fun searchCollections(
         query: String?,
-        searchScope: String,
+        searchScope: SearchScope,
         visibility: CollectionVisibility?,
         priceRange: PriceRangeDTO?
     ): List<CollectionOutputDTO>
