@@ -52,7 +52,6 @@ class CollectionsRepository(
     private val _topPicks = MutableStateFlow<List<CollectionModel>>(emptyList())
     val topPicks: StateFlow<List<CollectionModel>> = _topPicks.asStateFlow()
 
-    // Derived flow: Collections owned by the current user
     val ownedCollections: StateFlow<List<CollectionModel>> = combine(
         _allCollections,
         _currentUserId
@@ -64,7 +63,6 @@ class CollectionsRepository(
         }
     }.stateIn(clientOptions.clientScope, SharingStarted.Eagerly, emptyList())
 
-    // Derived flow: Collections accessed by the user (not owned)
     val accessedCollections: StateFlow<List<CollectionModel>> = combine(
         _allCollections,
         _currentUserId
