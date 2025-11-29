@@ -22,6 +22,7 @@ import com.safehill.safehillclient.data.collections.model.toCollection
 import com.safehill.safehillclient.manager.dependencies.UserObserver
 import com.safehill.safehillclient.module.config.ClientOptions
 import com.safehill.safehillclient.utils.api.dispatchers.SdkDispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -81,34 +82,46 @@ class CollectionsRepository(
         userScope.launch {
             _loading.update { true }
             try {
-                // Fetch all collections
-                val allResult = safeApiCall {
-                    serverProxy.remoteServer.retrieveCollections()
+                coroutineScope {
+                    launch {
+                        refreshAllCollections()
+                    }
+                    launch {
+                        refreshTopPicks()
+                    }
                 }
-
-                allResult.onSuccess { dtos ->
-                    val collections = dtos.map { it.toCollection() }
-                    _allCollections.update { collections }
-                }.onFailure { error ->
-                    safehillLogger.error("Failed to fetch collections. $error")
-                }
-
-                // Fetch top picks
-                val topPicksResult = safeApiCall {
-                    serverProxy.remoteServer.topPickCollections()
-                }
-
-                topPicksResult.onSuccess { dtos ->
-                    _topPicks.update { dtos.map { it.toCollection() } }
-                }.onFailure { error ->
-                    safehillLogger.error("Failed to fetch top picks. $error")
-                }
-
             } finally {
                 _loading.update { false }
             }
         }
     }
+
+
+    private suspend fun refreshAllCollections() {
+        val allResult = safeApiCall {
+            serverProxy.remoteServer.retrieveCollections()
+        }
+
+        allResult.onSuccess { dtos ->
+            val collections = dtos.map { it.toCollection() }
+            _allCollections.update { collections }
+        }.onFailure { error ->
+            safehillLogger.error("Failed to fetch collections. $error")
+        }
+    }
+
+    private suspend fun refreshTopPicks() {
+        val topPicksResult = safeApiCall {
+            serverProxy.remoteServer.topPickCollections()
+        }
+
+        topPicksResult.onSuccess { dtos ->
+            _topPicks.update { dtos.map { it.toCollection() } }
+        }.onFailure { error ->
+            safehillLogger.error("Failed to fetch top picks. $error")
+        }
+    }
+
 
     /**
      * Get a single collection by ID
