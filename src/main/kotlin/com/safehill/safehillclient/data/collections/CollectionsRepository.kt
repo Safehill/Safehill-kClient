@@ -16,6 +16,7 @@ import com.safehill.kclient.models.dtos.collections.PriceRangeDTO
 import com.safehill.kclient.models.dtos.collections.SearchScope
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.network.ServerProxy
+import com.safehill.kclient.util.runCatchingSafe
 import com.safehill.kclient.util.safeApiCall
 import com.safehill.safehillclient.SafehillClient
 import com.safehill.safehillclient.data.collections.model.CollectionModel
@@ -55,7 +56,7 @@ class CollectionsRepository(
     val topPicks: StateFlow<List<CollectionModel>> = _topPicks.asStateFlow()
 
     val ownedCollections: StateFlow<List<CollectionModel>> = combine(
-        _allCollections,
+        allCollections,
         _currentUserId
     ) { collections, userId ->
         if (userId == null) {
@@ -66,7 +67,7 @@ class CollectionsRepository(
     }.stateIn(clientOptions.clientScope, SharingStarted.Eagerly, emptyList())
 
     val accessedCollections: StateFlow<List<CollectionModel>> = combine(
-        _allCollections,
+        allCollections,
         _currentUserId
     ) { collections, userId ->
         if (userId == null) {
@@ -79,24 +80,18 @@ class CollectionsRepository(
     /**
      * Refresh all collections from the server
      */
-    fun refreshCollections() {
-        userScope.launch {
-            _loading.update { true }
-            try {
-                coroutineScope {
-                    launch {
-                        refreshAllCollections()
-                    }
-                    launch {
-                        refreshTopPicks()
-                    }
+    suspend fun refreshCollections(): Result<Unit> {
+        return runCatchingSafe {
+            coroutineScope {
+                launch {
+                    refreshAllCollections()
                 }
-            } finally {
-                _loading.update { false }
+                launch {
+                    refreshTopPicks()
+                }
             }
         }
     }
-
 
     private suspend fun refreshAllCollections() {
         val allResult = safeApiCall {
@@ -108,6 +103,7 @@ class CollectionsRepository(
             _allCollections.update { collections }
         }.onFailure { error ->
             safehillLogger.error("Failed to fetch collections. $error")
+            throw error
         }
     }
 
@@ -120,6 +116,7 @@ class CollectionsRepository(
             _topPicks.update { dtos.map { it.toCollection() } }
         }.onFailure { error ->
             safehillLogger.error("Failed to fetch top picks. $error")
+            throw error
         }
     }
 
