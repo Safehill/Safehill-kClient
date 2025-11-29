@@ -29,24 +29,21 @@ class CollectionApiImpl(
 ) : CollectionApi, BaseApi by baseApi {
 
     override suspend fun retrieveCollections(): List<CollectionOutputDTO> {
-        return fireRequest(
-            requestMethod = RequestMethod.Get(emptyList()),
-            endPoint = "collections",
+        return postRequestForResponse(
+            endPoint = "collections/retrieve",
             request = null
         )
     }
 
     override suspend fun topPickCollections(): List<CollectionOutputDTO> {
-        return fireRequest(
-            requestMethod = RequestMethod.Get(emptyList()),
+        return postRequestForResponse(
             endPoint = "collections/top-picks",
             request = null
         )
     }
 
     override suspend fun retrieveCollection(id: String): CollectionOutputDTO {
-        return fireRequest(
-            requestMethod = RequestMethod.Get(emptyList()),
+        return postRequestForResponse(
             endPoint = "collections/$id",
             request = null
         )
