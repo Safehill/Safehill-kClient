@@ -75,9 +75,6 @@ data class CollectionModel(
 
 }
 
-/**
- * Convert CollectionOutputDTO to domain Collection model
- */
 fun CollectionOutputDTO.toCollection(): CollectionModel {
     return CollectionModel(
         id = id,
@@ -90,6 +87,23 @@ fun CollectionOutputDTO.toCollection(): CollectionModel {
         pricing = pricing,
         lastUpdated = lastUpdated,
         createdBy = createdBy,
+        assets = assets
+    )
+}
+
+fun randomCollectionGenerator(): CollectionModel {
+    val assets = mutableListOf<AssetOutputDTO>()
+    return CollectionModel(
+        id = "coll_${System.currentTimeMillis()}",
+        name = "Fake Collection",
+        description = "This is a long and detailed description for a fake collection that is generated for preview and testing purposes.",
+        isSystemCollection = false,
+        isArchived = false,
+        assetCount = assets.size,
+        visibility = CollectionVisibility.PUBLIC,
+        pricing = 19.99,
+        lastUpdated = Instant.now(),
+        createdBy = "user_123",
         assets = assets
     )
 }
