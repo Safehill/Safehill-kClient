@@ -4,6 +4,7 @@ import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.dtos.collections.CollectionOutputDTO
 import com.safehill.kclient.models.dtos.collections.CollectionVisibility
 import java.time.Instant
+import java.util.Locale
 
 /**
  * Domain model for a Collection.
@@ -62,23 +63,16 @@ data class CollectionModel(
     }
 
     /**
-     * Get list of asset IDs (non-public assets)
-     */
-    val assetIds: List<String>
-        get() = assets.filter { it.isPublic != true }.map { it.globalIdentifier }
-
-    /**
-     * Get list of public asset IDs
-     */
-    val publicAssetIds: List<String>
-        get() = assets.filter { it.isPublic == true }.map { it.globalIdentifier }
-
-    /**
      * Get the first asset ID for preview purposes
      * Prefers public assets over private assets
      */
-    val previewAssetId: String?
-        get() = publicAssetIds.firstOrNull() ?: assetIds.firstOrNull()
+    val previewAsset: AssetOutputDTO?
+        get() = assets.firstOrNull { it.isPublic == true } ?: assets.firstOrNull()
+
+    val roundedPricing: String
+        get() = String.format(Locale.getDefault(), "%.2f", pricing)
+
+
 }
 
 /**
@@ -90,7 +84,7 @@ fun CollectionOutputDTO.toCollection(): CollectionModel {
         name = name,
         description = description,
         isSystemCollection = isSystemCollection,
-        isArchived = isArchived,
+        isArchived = isArchived ?: false,
         assetCount = assetCount,
         visibility = visibility,
         pricing = pricing,

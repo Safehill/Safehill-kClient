@@ -12,7 +12,7 @@ data class CollectionOutputDTO(
     val name: String,
     val description: String,
     val isSystemCollection: Boolean,
-    val isArchived: Boolean,
+    val isArchived: Boolean?,
     val assetCount: Int,
     val visibility: CollectionVisibility,
     val pricing: Double,
