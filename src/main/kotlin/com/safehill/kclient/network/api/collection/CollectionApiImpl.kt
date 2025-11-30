@@ -44,7 +44,7 @@ class CollectionApiImpl(
 
     override suspend fun retrieveCollection(id: String): CollectionOutputDTO {
         return postRequestForResponse(
-            endPoint = "collections/$id",
+            endPoint = "collections/retrieve/$id",
             request = null
         )
     }
