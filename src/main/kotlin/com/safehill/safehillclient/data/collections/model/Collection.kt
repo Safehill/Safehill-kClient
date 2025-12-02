@@ -3,6 +3,7 @@ package com.safehill.safehillclient.data.collections.model
 import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.dtos.collections.CollectionOutputDTO
 import com.safehill.kclient.models.dtos.collections.CollectionVisibility
+import com.safehill.kclient.models.users.UserIdentifier
 import java.time.Instant
 import java.util.Locale
 
@@ -21,7 +22,7 @@ data class CollectionModel(
     val visibility: CollectionVisibility,
     val pricing: Double,
     val lastUpdated: Instant,
-    val createdBy: String,
+    val createdBy: UserIdentifier,
     val assets: List<AssetOutputDTO>
 ) {
 
