@@ -1,11 +1,11 @@
 package com.safehill.safehillclient.data.collections.model
 
 import com.safehill.kclient.models.dtos.AssetOutputDTO
-import com.safehill.kclient.models.dtos.collections.CollectionOutputDTO
 import com.safehill.kclient.models.dtos.collections.CollectionVisibility
 import com.safehill.kclient.models.users.UserIdentifier
 import java.time.Instant
 import java.util.Locale
+
 
 /**
  * Domain model for a Collection.
@@ -23,7 +23,8 @@ data class CollectionModel(
     val pricing: Double,
     val lastUpdated: Instant,
     val createdBy: UserIdentifier,
-    val assets: List<AssetOutputDTO>
+    val assets: List<AssetOutputDTO>,
+    val access: CollectionAccess
 ) {
 
     /**
@@ -76,24 +77,10 @@ data class CollectionModel(
 
 }
 
-fun CollectionOutputDTO.toCollection(): CollectionModel {
-    return CollectionModel(
-        id = id,
-        name = name,
-        description = description,
-        isSystemCollection = isSystemCollection,
-        isArchived = isArchived ?: false,
-        assetCount = assetCount,
-        visibility = visibility,
-        pricing = pricing,
-        lastUpdated = lastUpdated,
-        createdBy = createdBy,
-        assets = assets
-    )
-}
 
 fun randomCollectionGenerator(): CollectionModel {
     val assets = mutableListOf<AssetOutputDTO>()
+    val pricing = 19.99
     return CollectionModel(
         id = "coll_${System.currentTimeMillis()}",
         name = "Fake Collection",
@@ -102,9 +89,10 @@ fun randomCollectionGenerator(): CollectionModel {
         isArchived = false,
         assetCount = assets.size,
         visibility = CollectionVisibility.PUBLIC,
-        pricing = 19.99,
+        pricing = pricing,
         lastUpdated = Instant.now(),
         createdBy = "user_123",
-        assets = assets
+        assets = assets,
+        access = CollectionAccess.Unknown
     )
 }

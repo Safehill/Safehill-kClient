@@ -19,8 +19,10 @@ import com.safehill.kclient.network.ServerProxy
 import com.safehill.kclient.util.runCatchingSafe
 import com.safehill.kclient.util.safeApiCall
 import com.safehill.safehillclient.SafehillClient
+import com.safehill.safehillclient.data.collections.mappers.toCollection
+import com.safehill.safehillclient.data.collections.mappers.toCollectionAccess
+import com.safehill.safehillclient.data.collections.model.CollectionAccess
 import com.safehill.safehillclient.data.collections.model.CollectionModel
-import com.safehill.safehillclient.data.collections.model.toCollection
 import com.safehill.safehillclient.manager.dependencies.UserObserver
 import com.safehill.safehillclient.module.config.ClientOptions
 import com.safehill.safehillclient.utils.api.dispatchers.SdkDispatchers
@@ -38,9 +40,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class CollectionsRepository(
+    clientOptions: ClientOptions,
     private val serverProxy: ServerProxy,
     private val sdkDispatchers: SdkDispatchers,
-    private val clientOptions: ClientOptions
 ) : UserObserver {
 
     private val userScope = clientOptions.userScope
@@ -79,9 +81,7 @@ class CollectionsRepository(
         }
     }.stateIn(clientOptions.clientScope, SharingStarted.Eagerly, emptyList())
 
-    /**
-     * Refresh all collections from the server
-     */
+
     suspend fun refreshCollections(): Result<Unit> {
         return runCatchingSafe {
             coroutineScope {
@@ -115,7 +115,8 @@ class CollectionsRepository(
         }
 
         topPicksResult.onSuccess { dtos ->
-            _topPicks.update { dtos.map { it.toCollection() } }
+            val collections = dtos.map { it.toCollection() }
+            _topPicks.update { collections }
         }.onFailure { error ->
             safehillLogger.error("Failed to fetch top picks. $error")
             throw error
@@ -124,40 +125,43 @@ class CollectionsRepository(
 
 
     /**
-     * Get a single collection by ID
+     * Get a single collection by ID.
      * Emits cached data first (if available), then fetches from API
      */
     fun getCollection(id: String): Flow<Result<CollectionModel>> = flow {
-        // First, emit cached collection if it exists in either allCollections or topPicks
-        val cachedCollection = _allCollections.value.find { it.id == id }
-            ?: _topPicks.value.find { it.id == id }
+        val cachedCollection = findCollectionInCache(id)
 
+        // First, emit cached collection if it exists in either allCollections or topPicks
         if (cachedCollection != null) {
             emit(Result.success(cachedCollection))
         }
 
         val apiResult = safeApiCall {
-            serverProxy.remoteServer.retrieveCollection(id).toCollection()
+            getCollectionWithPurchaseStatus(collectionID = id)
+                .getOrThrow().also {
+                    updateCollectionInCache(it)
+                }
         }
-
-        apiResult
-            .onSuccess { updatedCollection ->
-                // Update cache
-                updateCollectionInCache(updatedCollection)
-            }
-
         emit(apiResult)
-
     }
 
-    /**
-     * Track when a user accesses a collection
-     */
+    private fun findCollectionInCache(id: String): CollectionModel? {
+        return _allCollections
+            .value
+            .find { it.id == id } ?: _topPicks.value.find { it.id == id }
+    }
+
+    private suspend fun getCollectionWithPurchaseStatus(collectionID: String): Result<CollectionModel> {
+        return runCatchingSafe {
+            val dto = serverProxy.remoteServer.retrieveCollection(collectionID)
+            val access = getCollectionAccess(dto.id).getOrThrow()
+            dto.toCollection(access = access)
+        }
+    }
+
     suspend fun trackCollectionAccess(id: String): Result<Unit> {
-        return withContext(sdkDispatchers.io) {
-            safeApiCall {
-                serverProxy.remoteServer.trackCollectionAccess(id)
-            }
+        return safeApiCall {
+            serverProxy.remoteServer.trackCollectionAccess(id)
         }
     }
 
@@ -364,23 +368,26 @@ class CollectionsRepository(
         }
     }
 
-    /**
-     * Refresh a specific collection
-     */
+
+    private suspend fun getCollectionAccess(collectionId: String): Result<CollectionAccess> {
+        return safeApiCall {
+            serverProxy
+                .remoteServer
+                .checkCollectionAccess(collectionId).toCollectionAccess()
+        }
+    }
+
+
     private fun refreshCollection(id: String) {
         userScope.launch {
-            val result = safeApiCall {
-                serverProxy.remoteServer.retrieveCollection(id).toCollection()
-            }
+            val result = getCollectionWithPurchaseStatus(collectionID = id)
             result.onSuccess { updatedCollection ->
                 updateCollectionInCache(updatedCollection)
             }
         }
     }
 
-    /**
-     * Update a collection in all caches
-     */
+
     private fun updateCollectionInCache(collection: CollectionModel) {
         // Update in allCollections (owned/accessed will be derived automatically)
         _allCollections.update { collections ->
@@ -393,9 +400,6 @@ class CollectionsRepository(
         }
     }
 
-    /**
-     * Remove a collection from all caches
-     */
     private fun removeCollectionFromCache(id: String) {
         // Remove from allCollections (owned/accessed will be derived automatically)
         _allCollections.update { it.filter { collection -> collection.id != id } }
@@ -404,7 +408,9 @@ class CollectionsRepository(
 
     override suspend fun userLoggedIn(user: LocalUser) {
         _currentUserId.update { user.identifier }
-        refreshCollections()
+        userScope.launch {
+            refreshCollections()
+        }
     }
 
     override fun userLoggedOut() {
