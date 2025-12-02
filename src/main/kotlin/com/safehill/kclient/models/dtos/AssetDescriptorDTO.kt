@@ -14,7 +14,7 @@ import java.time.Instant
 data class AssetDescriptorDTO(
     @Serializable(with = InstantSerializer::class) val creationDate: Instant,
     val globalIdentifier: String,
-    val localIdentifier: String,
+    val localIdentifier: String?,
     val sharingInfo: SharingInfoDTO,
     val uploadState: String
 )
@@ -44,7 +44,9 @@ data class GroupInfoDTO(
 fun AssetDescriptorDTO.toAssetDescriptor(): AssetDescriptor {
     return AssetDescriptor(
         globalIdentifier = globalIdentifier,
-        localIdentifier = localIdentifier,
+        // The current implementation depend upon localIdentifier not being null.
+        // Setting localIdentifier to empty works, but a refactor is needed to handle this cleanly.
+        localIdentifier = localIdentifier.orEmpty(),
         creationDate = creationDate,
         uploadState = UploadState.entries.first { it.toString() == uploadState },
         sharingInfo = SharingInfo(
