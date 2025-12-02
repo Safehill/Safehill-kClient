@@ -25,11 +25,13 @@ import com.safehill.safehillclient.manager.dependencies.UserObserver
 import com.safehill.safehillclient.module.config.ClientOptions
 import com.safehill.safehillclient.utils.api.dispatchers.SdkDispatchers
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -123,13 +125,29 @@ class CollectionsRepository(
 
     /**
      * Get a single collection by ID
+     * Emits cached data first (if available), then fetches from API
      */
-    suspend fun getCollection(id: String): Result<CollectionModel> {
-        return withContext(sdkDispatchers.io) {
-            safeApiCall {
-                serverProxy.remoteServer.retrieveCollection(id).toCollection()
-            }
+    fun getCollection(id: String): Flow<Result<CollectionModel>> = flow {
+        // First, emit cached collection if it exists in either allCollections or topPicks
+        val cachedCollection = _allCollections.value.find { it.id == id }
+            ?: _topPicks.value.find { it.id == id }
+
+        if (cachedCollection != null) {
+            emit(Result.success(cachedCollection))
         }
+
+        val apiResult = safeApiCall {
+            serverProxy.remoteServer.retrieveCollection(id).toCollection()
+        }
+
+        apiResult
+            .onSuccess { updatedCollection ->
+                // Update cache
+                updateCollectionInCache(updatedCollection)
+            }
+
+        emit(apiResult)
+
     }
 
     /**
