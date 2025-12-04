@@ -84,13 +84,18 @@ class CollectionsRepository(
 
     suspend fun refreshCollections(): Result<Unit> {
         return runCatchingSafe {
-            coroutineScope {
-                launch {
-                    refreshAllCollections()
+            try {
+                _loading.update { true }
+                coroutineScope {
+                    launch {
+                        refreshAllCollections()
+                    }
+                    launch {
+                        refreshTopPicks()
+                    }
                 }
-                launch {
-                    refreshTopPicks()
-                }
+            } finally {
+                _loading.update { false }
             }
         }
     }
