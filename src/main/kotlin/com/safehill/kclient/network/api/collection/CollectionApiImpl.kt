@@ -154,7 +154,7 @@ class CollectionApiImpl(
     ): AccessCheckResultDTO {
         return fireRequest(
             requestMethod = RequestMethod.Get(emptyList()),
-            endPoint = "collections/$collectionId/access",
+            endPoint = "collections/check-access/$collectionId",
             request = null
         )
     }

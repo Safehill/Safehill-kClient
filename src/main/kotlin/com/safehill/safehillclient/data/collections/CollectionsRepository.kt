@@ -373,7 +373,8 @@ class CollectionsRepository(
         return safeApiCall {
             serverProxy
                 .remoteServer
-                .checkCollectionAccess(collectionId).toCollectionAccess()
+                .checkCollectionAccess(collectionId)
+                .toCollectionAccess()
         }
     }
 
