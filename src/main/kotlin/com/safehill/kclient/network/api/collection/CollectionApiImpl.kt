@@ -51,7 +51,7 @@ class CollectionApiImpl(
 
     override suspend fun trackCollectionAccess(id: String) {
         postRequest(
-            endPoint = "collections/$id/track-access",
+            endPoint = "collections/track-access/$id",
             request = null
         )
     }
