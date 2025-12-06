@@ -1,12 +1,15 @@
 package com.safehill.kclient.models.dtos
 
+import com.safehill.kclient.models.assets.AssetCollectionInfo
 import com.safehill.kclient.models.assets.AssetDescriptor
 import com.safehill.kclient.models.assets.GroupId
 import com.safehill.kclient.models.assets.GroupInfo
 import com.safehill.kclient.models.assets.SharingInfo
 import com.safehill.kclient.models.assets.UploadState
+import com.safehill.kclient.models.dtos.collections.CollectionVisibility
 import com.safehill.kclient.models.serde.InstantSerializer
 import com.safehill.kclient.models.users.UserIdentifier
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.time.Instant
 
@@ -23,7 +26,8 @@ data class AssetDescriptorDTO(
 data class SharingInfoDTO(
     val groupInfoById: Map<GroupId, GroupInfoDTO>,
     val sharedByUserIdentifier: String,
-    val groupIdsByRecipientUserIdentifier: Map<UserIdentifier, List<GroupId>>
+    val groupIdsByRecipientUserIdentifier: Map<UserIdentifier, List<GroupId>>,
+    val collectionInfoById: Map<String, AssetCollectionInfoDTO>
 )
 
 @Serializable
@@ -40,6 +44,30 @@ data class GroupInfoDTO(
     /// Whether or not the share group was created from a thread (namely is a photo message)
     val createdFromThreadId: String?
 )
+
+
+@Serializable
+data class AssetCollectionInfoDTO(
+    val collectionId: String,
+    val collectionName: String,
+    val visibility: CollectionVisibility,
+    val accessType: AssetCollectionAccessType,
+    /// ISO8601 formatted datetime, representing when the asset was added to this collection
+    @Serializable(with = InstantSerializer::class)
+    val addedAt: Instant
+)
+
+@Serializable
+enum class AssetCollectionAccessType {
+    @SerialName("granted")
+    GRANTED,
+
+    @SerialName("accessed")
+    ACCESSED,
+
+    @SerialName("payment")
+    PAYMENT
+}
 
 fun AssetDescriptorDTO.toAssetDescriptor(): AssetDescriptor {
     return AssetDescriptor(
@@ -60,6 +88,17 @@ fun AssetDescriptorDTO.toAssetDescriptor(): AssetDescriptor {
                         createdBy = this.createdBy,
                         permissions = this.permissions ?: SharingOption.Confidential,
                         createdFromThreadId = this.createdFromThreadId
+                    )
+                }
+            },
+            collectionInfoById = sharingInfo.collectionInfoById.mapValues {
+                with(it.value) {
+                    AssetCollectionInfo(
+                        collectionId = this.collectionId,
+                        collectionName = this.collectionName,
+                        visibility = this.visibility,
+                        accessType = this.accessType,
+                        addedAt = this.addedAt
                     )
                 }
             }

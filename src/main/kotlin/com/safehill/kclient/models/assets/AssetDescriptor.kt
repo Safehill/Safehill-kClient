@@ -1,11 +1,12 @@
 package com.safehill.kclient.models.assets
 
+import com.safehill.kclient.models.dtos.AssetCollectionAccessType
 import com.safehill.kclient.models.dtos.SharingOption
+import com.safehill.kclient.models.dtos.collections.CollectionVisibility
 import com.safehill.kclient.models.users.UserIdentifier
 import java.time.Instant
 
 typealias GroupId = String
-
 
 data class AssetDescriptor(
     override val globalIdentifier: AssetGlobalIdentifier,
@@ -20,7 +21,8 @@ data class AssetDescriptor(
 data class SharingInfo(
     val sharedByUserIdentifier: UserIdentifier,
     val groupIdsByRecipientUserIdentifier: Map<UserIdentifier, List<GroupId>>,
-    val groupInfoById: Map<GroupId, GroupInfo>
+    val groupInfoById: Map<GroupId, GroupInfo>,
+    val collectionInfoById: Map<String, AssetCollectionInfo>
 )
 
 data class GroupInfo(
@@ -29,6 +31,14 @@ data class GroupInfo(
     val createdBy: UserIdentifier,
     val permissions: SharingOption,
     val createdFromThreadId: String?
+)
+
+data class AssetCollectionInfo(
+    val collectionId: String,
+    val collectionName: String,
+    val visibility: CollectionVisibility,
+    val accessType: AssetCollectionAccessType,
+    val addedAt: Instant
 )
 
 enum class UploadState {
