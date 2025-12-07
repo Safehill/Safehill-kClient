@@ -14,8 +14,11 @@ import com.safehill.kclient.models.dtos.collections.IAPReceiptValidationRequestD
 import com.safehill.kclient.models.dtos.collections.IAPReceiptValidationResponseDTO
 import com.safehill.kclient.models.dtos.collections.PriceRangeDTO
 import com.safehill.kclient.models.dtos.collections.SearchScope
+import com.safehill.kclient.models.dtos.websockets.CollectionChanged
 import com.safehill.kclient.models.users.LocalUser
 import com.safehill.kclient.network.ServerProxy
+import com.safehill.kclient.network.WebSocketApi
+import com.safehill.kclient.util.isSafehillHttpNotFound
 import com.safehill.kclient.util.runCatchingSafe
 import com.safehill.kclient.util.safeApiCall
 import com.safehill.safehillclient.SafehillClient
@@ -33,6 +36,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -41,6 +45,7 @@ import kotlinx.coroutines.withContext
 
 class CollectionsRepository(
     clientOptions: ClientOptions,
+    private val webSocketApi: WebSocketApi,
     private val serverProxy: ServerProxy,
     private val sdkDispatchers: SdkDispatchers,
 ) : UserObserver {
@@ -387,9 +392,19 @@ class CollectionsRepository(
     private fun refreshCollection(id: String) {
         userScope.launch {
             val result = getCollectionWithPurchaseStatus(collectionID = id)
-            result.onSuccess { updatedCollection ->
-                updateCollectionInCache(updatedCollection)
-            }
+            result
+                .onSuccess { collection ->
+                    if (collection.isArchived) {
+                        removeCollectionFromCache(id)
+                    } else {
+                        updateCollectionInCache(collection)
+                    }
+                }
+                .onFailure { error ->
+                    if (error.isSafehillHttpNotFound()) {
+                        removeCollectionFromCache(id)
+                    }
+                }
         }
     }
 
@@ -407,15 +422,25 @@ class CollectionsRepository(
     }
 
     private fun removeCollectionFromCache(id: String) {
-        // Remove from allCollections (owned/accessed will be derived automatically)
-        _allCollections.update { it.filter { collection -> collection.id != id } }
-        _topPicks.update { it.filter { collection -> collection.id != id } }
+        _allCollections.update { it.filterNot { collection -> collection.id == id } }
+        _topPicks.update { it.filterNot { collection -> collection.id == id } }
     }
 
     override suspend fun userLoggedIn(user: LocalUser) {
         _currentUserId.update { user.identifier }
+        startListeningToCollectionSocketEvents()
         userScope.launch {
             refreshCollections()
+        }
+    }
+
+    private fun startListeningToCollectionSocketEvents() {
+        userScope.launch {
+            webSocketApi.socketMessages
+                .filterIsInstance<CollectionChanged>()
+                .collect { collectionChanged ->
+                    refreshCollection(collectionChanged.collectionId)
+                }
         }
     }
 

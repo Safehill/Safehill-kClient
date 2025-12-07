@@ -83,7 +83,8 @@ class RepositoriesFactory(
         return CollectionsRepository(
             serverProxy = networkModule.serverProxy,
             sdkDispatchers = clientOptions.sdkDispatchers,
-            clientOptions = clientOptions
+            clientOptions = clientOptions,
+            webSocketApi = networkModule.webSocketApi
         )
     }
 }
