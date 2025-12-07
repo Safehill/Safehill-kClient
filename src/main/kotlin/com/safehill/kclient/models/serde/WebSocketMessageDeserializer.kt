@@ -1,6 +1,7 @@
 package com.safehill.kclient.models.serde
 
 import com.safehill.kclient.models.dtos.websockets.AssetDescriptorsChanged
+import com.safehill.kclient.models.dtos.websockets.CollectionChanged
 import com.safehill.kclient.models.dtos.websockets.ConnectionAck
 import com.safehill.kclient.models.dtos.websockets.NewConnectionRequest
 import com.safehill.kclient.models.dtos.websockets.ReactionChange
@@ -55,7 +56,8 @@ object WebSocketMessageDeserializer : DeserializationStrategy<WebSocketMessage> 
             MessageType.ASSETS_SHARE,
             MessageType.CONNECTION_REQUEST,
             MessageType.THREAD_UPDATE,
-            MessageType.USER_CONVERSION_MANIFEST -> {
+            MessageType.USER_CONVERSION_MANIFEST,
+            MessageType.COLLECTION_CHANGED -> {
                 this.content
             }
 
@@ -133,6 +135,9 @@ enum class MessageType(
     ),
     THREAD_USER_CONVERTED(
         "thread-user-converted", ThreadUserConverted.serializer()
+    ),
+    COLLECTION_CHANGED(
+        "collection-changed", CollectionChanged.serializer()
     )
 }
 

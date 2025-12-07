@@ -26,3 +26,8 @@ data class AssetDescriptorsChanged(
 ) : WebSocketMessage
 
 data object UnknownMessage : WebSocketMessage
+
+@Serializable
+data class CollectionChanged(
+    val collectionId: String
+) : WebSocketMessage
