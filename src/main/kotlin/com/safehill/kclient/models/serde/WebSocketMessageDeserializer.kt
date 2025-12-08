@@ -137,7 +137,7 @@ enum class MessageType(
         "thread-user-converted", ThreadUserConverted.serializer()
     ),
     COLLECTION_CHANGED(
-        "collection-changed", CollectionChanged.serializer()
+        "collections-changed", CollectionChanged.serializer()
     )
 }
 
