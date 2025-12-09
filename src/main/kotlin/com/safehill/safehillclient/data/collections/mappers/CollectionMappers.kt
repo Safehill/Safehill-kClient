@@ -7,7 +7,7 @@ import com.safehill.safehillclient.data.collections.model.CollectionAccess
 import com.safehill.safehillclient.data.collections.model.CollectionModel
 
 fun CollectionOutputDTO.toCollection(
-    access: CollectionAccess = CollectionAccess.Unknown
+    access: CollectionAccess
 ): CollectionModel {
     return CollectionModel(
         id = id,

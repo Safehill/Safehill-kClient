@@ -1,6 +1,5 @@
 package com.safehill.safehillclient.data.collections
 
-import com.safehill.kclient.models.dtos.collections.AccessCheckResultDTO
 import com.safehill.kclient.models.dtos.collections.CheckoutSessionDTO
 import com.safehill.kclient.models.dtos.collections.CollectionAssetAddRequestDTO
 import com.safehill.kclient.models.dtos.collections.CollectionAssetAddResultDTO
@@ -8,6 +7,7 @@ import com.safehill.kclient.models.dtos.collections.CollectionAssetCopyRequestDT
 import com.safehill.kclient.models.dtos.collections.CollectionAssetCopyResultDTO
 import com.safehill.kclient.models.dtos.collections.CollectionChangeVisibilityRequestDTO
 import com.safehill.kclient.models.dtos.collections.CollectionChangeVisibilityResultDTO
+import com.safehill.kclient.models.dtos.collections.CollectionOutputDTO
 import com.safehill.kclient.models.dtos.collections.CollectionVisibility
 import com.safehill.kclient.models.dtos.collections.CreateCheckoutSessionRequestDTO
 import com.safehill.kclient.models.dtos.collections.IAPReceiptValidationRequestDTO
@@ -29,15 +29,14 @@ import com.safehill.safehillclient.data.collections.model.CollectionModel
 import com.safehill.safehillclient.manager.dependencies.UserObserver
 import com.safehill.safehillclient.module.config.ClientOptions
 import com.safehill.safehillclient.utils.api.dispatchers.SdkDispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -58,107 +57,107 @@ class CollectionsRepository(
 
     private val _currentUserId = MutableStateFlow<String?>(null)
 
-    private val _allCollections = MutableStateFlow<List<CollectionModel>>(emptyList())
-    val allCollections: StateFlow<List<CollectionModel>> = _allCollections.asStateFlow()
+    private val _allCollections = MutableStateFlow<Map<String, CollectionModel>>(emptyMap())
+    val allCollections = _allCollections.asStateFlow()
 
-    private val _topPicks = MutableStateFlow<List<CollectionModel>>(emptyList())
-    val topPicks: StateFlow<List<CollectionModel>> = _topPicks.asStateFlow()
+    private val _topPickIds = MutableStateFlow<Set<String>>(emptySet())
+
+    private val _ownedAndAccessedCollectionIds = MutableStateFlow<Set<String>>(emptySet())
+
+
+    val topPicks: StateFlow<List<CollectionModel>> = combine(
+        _allCollections,
+        _topPickIds
+    ) { collections, topPickIds ->
+        topPickIds.mapNotNull { collections[it] }
+    }.stateIn(clientOptions.clientScope, SharingStarted.Eagerly, emptyList())
 
     val ownedCollections: StateFlow<List<CollectionModel>> = combine(
-        allCollections,
+        _allCollections,
+        _ownedAndAccessedCollectionIds,
         _currentUserId
-    ) { collections, userId ->
-        if (userId == null) {
-            emptyList()
-        } else {
-            collections.filter { it.isOwnedBy(userId) }
-        }
+    ) { collections, ownedAndAccessedIds, userId ->
+        userId?.let { userId ->
+            ownedAndAccessedIds
+                .mapNotNull { collections[it] }
+                .filter { it.isOwnedBy(userId) }
+        } ?: emptyList()
     }.stateIn(clientOptions.clientScope, SharingStarted.Eagerly, emptyList())
 
     val accessedCollections: StateFlow<List<CollectionModel>> = combine(
-        allCollections,
+        _allCollections,
+        _ownedAndAccessedCollectionIds,
         _currentUserId
-    ) { collections, userId ->
-        if (userId == null) {
-            emptyList()
-        } else {
-            collections.filter { !it.isOwnedBy(userId) }
-        }
+    ) { collections, ownedAndAccessedIds, userId ->
+        userId?.let { userId ->
+            ownedAndAccessedIds
+                .mapNotNull { collections[it] }
+                .filterNot { it.isOwnedBy(userId) }
+        } ?: emptyList()
     }.stateIn(clientOptions.clientScope, SharingStarted.Eagerly, emptyList())
 
 
     suspend fun refreshCollections(): Result<Unit> {
         return runCatchingSafe {
-            try {
-                _loading.update { true }
-                coroutineScope {
-                    launch {
-                        refreshAllCollections()
+            withLoading {
+                val (ownedAndAccessedCollections, topPickCollections) = coroutineScope {
+                    val ownedAndAccessedDeferred = async {
+                        fetchOwnedAndAccessedCollections()
                     }
-                    launch {
-                        refreshTopPicks()
+                    val topPicksDeferred = async {
+                        fetchTopPicks()
                     }
+
+                    ownedAndAccessedDeferred.await() to topPicksDeferred.await()
                 }
-            } finally {
-                _loading.update { false }
+
+                val allCollectionsMap = (ownedAndAccessedCollections + topPickCollections)
+
+                _ownedAndAccessedCollectionIds.update { ownedAndAccessedCollections.keys }
+                _topPickIds.update { topPickCollections.keys }
+                _allCollections.update { allCollectionsMap }
             }
         }
     }
 
-    private suspend fun refreshAllCollections() {
+    private suspend fun fetchOwnedAndAccessedCollections(): Map<String, CollectionModel> {
         val allResult = safeApiCall {
             serverProxy.remoteServer.retrieveCollections()
         }
 
-        allResult.onSuccess { dtos ->
-            val collections = dtos.map { it.toCollection() }
-            _allCollections.update { collections }
-        }.onFailure { error ->
-            safehillLogger.error("Failed to fetch collections. $error")
+        return allResult.getOrElse { error ->
+            safehillLogger.error("Failed to fetch owned and accessed collections. $error")
             throw error
+        }.associate { dto ->
+            val collection = dto.toCollection()
+            collection.id to collection
         }
     }
 
-    private suspend fun refreshTopPicks() {
+    private suspend fun fetchTopPicks(): Map<String, CollectionModel> {
         val topPicksResult = safeApiCall {
             serverProxy.remoteServer.topPickCollections()
         }
 
-        topPicksResult.onSuccess { dtos ->
-            val collections = dtos.map { it.toCollection() }
-            _topPicks.update { collections }
-        }.onFailure { error ->
+        return topPicksResult.getOrElse { error ->
             safehillLogger.error("Failed to fetch top picks. $error")
             throw error
+        }.associate { dto ->
+            val collection = dto.toCollection()
+            collection.id to collection
         }
     }
 
-
-    /**
-     * Get a single collection by ID.
-     * Emits cached data first (if available), then fetches from API
-     */
-    fun getCollection(id: String): Flow<Result<CollectionModel>> = flow {
-        val cachedCollection = findCollectionInCache(id)
-
-        // First, emit cached collection if it exists in either allCollections or topPicks
-        if (cachedCollection != null) {
-            emit(Result.success(cachedCollection))
-        }
-
-        val apiResult = safeApiCall {
-            getCollectionWithPurchaseStatus(collectionID = id)
-                .getOrThrow().also {
-                    updateCollectionInCache(it)
-                }
-        }
-        emit(apiResult)
+    private fun CollectionOutputDTO.toCollection(): CollectionModel {
+        val existingCollection = _allCollections.value[this.id]
+        return this.toCollection(
+            existingCollection?.access ?: CollectionAccess.Unknown
+        )
     }
+
 
     private fun findCollectionInCache(id: String): CollectionModel? {
-        return _allCollections
-            .value
-            .find { it.id == id } ?: _topPicks.value.find { it.id == id }
+        return _allCollections.value[id]
     }
 
     private suspend fun getCollectionWithPurchaseStatus(collectionID: String): Result<CollectionModel> {
@@ -196,52 +195,6 @@ class CollectionsRepository(
         }
     }
 
-    /**
-     * Create a new collection
-     */
-    suspend fun createCollection(
-        name: String,
-        description: String
-    ): Result<CollectionModel> {
-        return withContext(sdkDispatchers.io) {
-            safeApiCall {
-                serverProxy.remoteServer.createCollection(
-                    name = name,
-                    description = description
-                ).toCollection()
-            }.also { result ->
-                result.onSuccess { collection ->
-                    // Add to all collections (owned/accessed will be derived automatically)
-                    _allCollections.update { it + collection }
-                }
-            }
-        }
-    }
-
-    /**
-     * Update a collection
-     */
-    suspend fun updateCollection(
-        id: String,
-        name: String? = null,
-        description: String? = null,
-        pricing: Double? = null
-    ): Result<CollectionModel> {
-        return withContext(sdkDispatchers.io) {
-            safeApiCall {
-                serverProxy.remoteServer.updateCollection(
-                    id = id,
-                    name = name,
-                    description = description,
-                    pricing = pricing
-                ).toCollection()
-            }.also { result ->
-                result.onSuccess { updatedCollection ->
-                    updateCollectionInCache(updatedCollection)
-                }
-            }
-        }
-    }
 
     /**
      * Archive a collection
@@ -255,6 +208,15 @@ class CollectionsRepository(
                     removeCollectionFromCache(id)
                 }
             }
+        }
+    }
+
+    private suspend fun <T> withLoading(block: suspend () -> T): T {
+        return try {
+            _loading.update { true }
+            block()
+        } finally {
+            _loading.update { false }
         }
     }
 
@@ -331,19 +293,6 @@ class CollectionsRepository(
     }
 
     /**
-     * Check if user has access to a collection
-     */
-    suspend fun checkCollectionAccess(
-        collectionId: String
-    ): Result<AccessCheckResultDTO> {
-        return withContext(sdkDispatchers.io) {
-            safeApiCall {
-                serverProxy.remoteServer.checkCollectionAccess(collectionId)
-            }
-        }
-    }
-
-    /**
      * Create a checkout session for purchasing collection access
      */
     suspend fun createCheckoutSession(
@@ -389,41 +338,32 @@ class CollectionsRepository(
     }
 
 
-    private fun refreshCollection(id: String) {
-        userScope.launch {
-            val result = getCollectionWithPurchaseStatus(collectionID = id)
-            result
-                .onSuccess { collection ->
-                    if (collection.isArchived) {
-                        removeCollectionFromCache(id)
-                    } else {
-                        updateCollectionInCache(collection)
-                    }
-                }
-                .onFailure { error ->
-                    if (error.isSafehillHttpNotFound()) {
-                        removeCollectionFromCache(id)
-                    }
-                }
+    suspend fun refreshCollection(id: String): Result<CollectionModel> {
+        val result = getCollectionWithPurchaseStatus(collectionID = id)
+        result.onSuccess { collectionModel ->
+            if (collectionModel.isArchived) {
+                removeCollectionFromCache(id)
+            } else {
+                updateCollectionInCache(collectionModel)
+            }
+        }.onFailure {
+            if (it.isSafehillHttpNotFound()) {
+                removeCollectionFromCache(id)
+            }
         }
+        return result
+
     }
 
 
     private fun updateCollectionInCache(collection: CollectionModel) {
-        // Update in allCollections (owned/accessed will be derived automatically)
-        _allCollections.update { collections ->
-            collections.map { if (it.id == collection.id) collection else it }
-        }
-
-        // Update in topPicks if present
-        _topPicks.update { collections ->
-            collections.map { if (it.id == collection.id) collection else it }
-        }
+        _allCollections.update { it + (collection.id to collection) }
     }
 
     private fun removeCollectionFromCache(id: String) {
-        _allCollections.update { it.filterNot { collection -> collection.id == id } }
-        _topPicks.update { it.filterNot { collection -> collection.id == id } }
+        _allCollections.update { it - id }
+        _topPickIds.update { it - id }
+        _ownedAndAccessedCollectionIds.update { it - id }
     }
 
     override suspend fun userLoggedIn(user: LocalUser) {
@@ -446,8 +386,9 @@ class CollectionsRepository(
 
     override fun userLoggedOut() {
         _currentUserId.update { null }
-        _allCollections.update { emptyList() }
-        _topPicks.update { emptyList() }
+        _allCollections.update { mapOf() }
+        _topPickIds.update { setOf() }
+        _ownedAndAccessedCollectionIds.update { setOf() }
     }
 }
 
