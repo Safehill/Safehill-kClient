@@ -64,6 +64,9 @@ data class CollectionModel(
         return createdBy == userId
     }
 
+    val canAccess: Boolean
+        get() = isFree || access == CollectionAccess.Granted
+
     /**
      * Get the first asset ID for preview purposes
      * Prefers public assets over private assets
