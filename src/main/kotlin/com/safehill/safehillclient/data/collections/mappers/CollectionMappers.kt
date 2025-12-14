@@ -26,6 +26,22 @@ fun CollectionOutputDTO.toCollection(
 }
 
 
+fun CollectionModel.toDto(): CollectionOutputDTO {
+    return CollectionOutputDTO(
+        id = id,
+        name = name,
+        description = description,
+        isSystemCollection = isSystemCollection,
+        isArchived = isArchived,
+        assetCount = assetCount,
+        visibility = visibility,
+        pricing = pricing,
+        lastUpdated = lastUpdated,
+        createdBy = createdBy,
+        assets = assets
+    )
+}
+
 fun AccessCheckResultDTO.toCollectionAccess(): CollectionAccess {
     return when (status) {
         AccessStatus.GRANTED -> CollectionAccess.Granted

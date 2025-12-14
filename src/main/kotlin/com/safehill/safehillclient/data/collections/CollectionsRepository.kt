@@ -328,7 +328,7 @@ class CollectionsRepository(
     }
 
 
-    private suspend fun getCollectionAccess(collectionId: String): Result<CollectionAccess> {
+    suspend fun getCollectionAccess(collectionId: String): Result<CollectionAccess> {
         return safeApiCall {
             serverProxy
                 .remoteServer
