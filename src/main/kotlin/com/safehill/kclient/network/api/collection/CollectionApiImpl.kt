@@ -164,7 +164,7 @@ class CollectionApiImpl(
         request: CreateCheckoutSessionRequestDTO
     ): CheckoutSessionDTO {
         return postRequestForResponse(
-            endPoint = "collections/$collectionId/checkout",
+            endPoint = "collections/checkout-session/$collectionId",
             request = request
         )
     }
