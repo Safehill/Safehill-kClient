@@ -1,6 +1,7 @@
 package com.safehill.safehillclient.data.collections
 
 import com.safehill.kclient.models.dtos.collections.CheckoutSessionDTO
+import com.safehill.kclient.models.dtos.collections.CheckoutSessionUIMode
 import com.safehill.kclient.models.dtos.collections.CollectionAssetAddRequestDTO
 import com.safehill.kclient.models.dtos.collections.CollectionAssetAddResultDTO
 import com.safehill.kclient.models.dtos.collections.CollectionAssetCopyRequestDTO
@@ -297,11 +298,15 @@ class CollectionsRepository(
      */
     suspend fun createCheckoutSession(
         collectionId: String,
-        request: CreateCheckoutSessionRequestDTO
     ): Result<CheckoutSessionDTO> {
         return withContext(sdkDispatchers.io) {
             safeApiCall {
-                serverProxy.remoteServer.createCheckoutSession(collectionId, request)
+                serverProxy.remoteServer.createCheckoutSession(
+                    collectionId,
+                    CreateCheckoutSessionRequestDTO(
+                        uiMode = CheckoutSessionUIMode.HOSTED,
+                    )
+                )
             }
         }
     }
