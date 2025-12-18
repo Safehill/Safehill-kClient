@@ -2,12 +2,6 @@ package com.safehill.safehillclient.data.collections
 
 import com.safehill.kclient.models.dtos.collections.CheckoutSessionDTO
 import com.safehill.kclient.models.dtos.collections.CheckoutSessionUIMode
-import com.safehill.kclient.models.dtos.collections.CollectionAssetAddRequestDTO
-import com.safehill.kclient.models.dtos.collections.CollectionAssetAddResultDTO
-import com.safehill.kclient.models.dtos.collections.CollectionAssetCopyRequestDTO
-import com.safehill.kclient.models.dtos.collections.CollectionAssetCopyResultDTO
-import com.safehill.kclient.models.dtos.collections.CollectionChangeVisibilityRequestDTO
-import com.safehill.kclient.models.dtos.collections.CollectionChangeVisibilityResultDTO
 import com.safehill.kclient.models.dtos.collections.CollectionOutputDTO
 import com.safehill.kclient.models.dtos.collections.CollectionVisibility
 import com.safehill.kclient.models.dtos.collections.CreateCheckoutSessionRequestDTO
@@ -197,17 +191,13 @@ class CollectionsRepository(
     }
 
 
-    /**
-     * Archive a collection
-     */
-    suspend fun archiveCollection(id: String): Result<Unit> {
-        return withContext(sdkDispatchers.io) {
-            safeApiCall {
-                serverProxy.remoteServer.archiveCollection(id)
-            }.also { result ->
-                result.onSuccess {
-                    removeCollectionFromCache(id)
-                }
+    private fun updateCollectionAccessInCache(id: String, access: CollectionAccess) {
+        _allCollections.update {
+            val existing = it[id]
+            if (existing != null) {
+                it + (id to existing.copy(access = access))
+            } else {
+                it
             }
         }
     }
@@ -218,78 +208,6 @@ class CollectionsRepository(
             block()
         } finally {
             _loading.update { false }
-        }
-    }
-
-    /**
-     * Delete a collection
-     */
-    suspend fun deleteCollection(id: String): Result<Unit> {
-        return withContext(sdkDispatchers.io) {
-            safeApiCall {
-                serverProxy.remoteServer.deleteCollection(id)
-            }.also { result ->
-                result.onSuccess {
-                    removeCollectionFromCache(id)
-                }
-            }
-        }
-    }
-
-    /**
-     * Add assets to a collection
-     */
-    suspend fun addAssetsToCollection(
-        id: String,
-        request: CollectionAssetAddRequestDTO
-    ): Result<CollectionAssetAddResultDTO> {
-        return withContext(sdkDispatchers.io) {
-            safeApiCall {
-                serverProxy.remoteServer.addAssetsToCollection(id, request)
-            }.also { result ->
-                result.onSuccess {
-                    // Refresh the collection to get updated asset count
-                    refreshCollection(id)
-                }
-            }
-        }
-    }
-
-    /**
-     * Copy assets between collections
-     */
-    suspend fun copyAssets(
-        request: CollectionAssetCopyRequestDTO
-    ): Result<CollectionAssetCopyResultDTO> {
-        return withContext(sdkDispatchers.io) {
-            safeApiCall {
-                serverProxy.remoteServer.copyAssets(request)
-            }.also { result ->
-                result.onSuccess {
-                    // Refresh both collections
-                    refreshCollection(request.sourceCollectionId)
-                    refreshCollection(request.targetCollectionId)
-                }
-            }
-        }
-    }
-
-    /**
-     * Change collection visibility
-     */
-    suspend fun changeCollectionVisibility(
-        id: String,
-        request: CollectionChangeVisibilityRequestDTO
-    ): Result<CollectionChangeVisibilityResultDTO> {
-        return withContext(sdkDispatchers.io) {
-            safeApiCall {
-                serverProxy.remoteServer.changeCollectionVisibility(id, request)
-            }.also { result ->
-                result.onSuccess {
-                    // Refresh the collection
-                    refreshCollection(id)
-                }
-            }
         }
     }
 
@@ -339,6 +257,9 @@ class CollectionsRepository(
                 .remoteServer
                 .checkCollectionAccess(collectionId)
                 .toCollectionAccess()
+                .also { collectionAccess ->
+                    updateCollectionAccessInCache(collectionId, collectionAccess)
+                }
         }
     }
 
@@ -357,7 +278,6 @@ class CollectionsRepository(
             }
         }
         return result
-
     }
 
 
