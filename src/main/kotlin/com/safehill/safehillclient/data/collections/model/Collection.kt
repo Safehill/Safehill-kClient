@@ -2,7 +2,9 @@ package com.safehill.safehillclient.data.collections.model
 
 import com.safehill.kclient.models.dtos.AssetOutputDTO
 import com.safehill.kclient.models.dtos.collections.CollectionVisibility
+import com.safehill.kclient.models.serde.InstantSerializer
 import com.safehill.kclient.models.users.UserIdentifier
+import kotlinx.serialization.Serializable
 import java.time.Instant
 import java.util.Locale
 
@@ -12,6 +14,7 @@ import java.util.Locale
  * Didn't use Collection because it was conflicting
  * with the already existing [kotlin.collections.Collection] on numerous imports
  */
+@Serializable
 data class CollectionModel(
     val id: String,
     val name: String,
@@ -21,6 +24,7 @@ data class CollectionModel(
     val assetCount: Int,
     val visibility: CollectionVisibility,
     val pricing: Double,
+    @Serializable(with = InstantSerializer::class)
     val lastUpdated: Instant,
     val createdBy: UserIdentifier,
     val assets: List<AssetOutputDTO>,
