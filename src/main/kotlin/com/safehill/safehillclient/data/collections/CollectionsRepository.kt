@@ -5,8 +5,6 @@ import com.safehill.kclient.models.dtos.collections.CheckoutSessionUIMode
 import com.safehill.kclient.models.dtos.collections.CollectionOutputDTO
 import com.safehill.kclient.models.dtos.collections.CollectionVisibility
 import com.safehill.kclient.models.dtos.collections.CreateCheckoutSessionRequestDTO
-import com.safehill.kclient.models.dtos.collections.IAPReceiptValidationRequestDTO
-import com.safehill.kclient.models.dtos.collections.IAPReceiptValidationResponseDTO
 import com.safehill.kclient.models.dtos.collections.PriceRangeDTO
 import com.safehill.kclient.models.dtos.collections.SearchScope
 import com.safehill.kclient.models.dtos.websockets.CollectionChanged
@@ -225,27 +223,6 @@ class CollectionsRepository(
                         uiMode = CheckoutSessionUIMode.HOSTED,
                     )
                 )
-            }
-        }
-    }
-
-    /**
-     * Validate an in-app purchase receipt
-     */
-    suspend fun validateIAPReceipt(
-        collectionId: String,
-        request: IAPReceiptValidationRequestDTO
-    ): Result<IAPReceiptValidationResponseDTO> {
-        return withContext(sdkDispatchers.io) {
-            safeApiCall {
-                serverProxy.remoteServer.validateIAPReceipt(collectionId, request)
-            }.also { result ->
-                result.onSuccess { response ->
-                    if (response.success) {
-                        // Refresh collections to reflect payment
-                        refreshCollection(collectionId)
-                    }
-                }
             }
         }
     }
