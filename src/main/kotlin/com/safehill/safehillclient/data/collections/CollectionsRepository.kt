@@ -240,6 +240,25 @@ class CollectionsRepository(
         }
     }
 
+    /**
+     * Verifies a Google Play purchase with the server.
+     *
+     * The server will:
+     * 1. Verify the purchase with Google Play Developer API
+     * 2. Acknowledge the purchase
+     * 3. Grant collection access to the user
+     *
+     * TODO: Implement actual API call
+     */
+    suspend fun verifyGooglePlayPurchase(
+        collectionId: String,
+        purchaseToken: String,
+        productId: String
+    ): Result<Unit> {
+        safehillLogger.debug("Verifying Google Play purchase - collectionId: $collectionId, productId: $productId")
+        // TODO: Implement actual API call
+        return Result.success(Unit)
+    }
 
     suspend fun refreshCollection(id: String): Result<CollectionModel> {
         val result = getCollectionWithPurchaseStatus(collectionID = id)
