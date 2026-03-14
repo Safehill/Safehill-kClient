@@ -11,6 +11,7 @@ import com.safehill.kclient.models.dtos.collections.CollectionChangeVisibilityRe
 import com.safehill.kclient.models.dtos.collections.CollectionOutputDTO
 import com.safehill.kclient.models.dtos.collections.CollectionVisibility
 import com.safehill.kclient.models.dtos.collections.CreateCheckoutSessionRequestDTO
+import com.safehill.kclient.models.dtos.collections.GooglePlayValidationRequestDTO
 import com.safehill.kclient.models.dtos.collections.IAPReceiptValidationRequestDTO
 import com.safehill.kclient.models.dtos.collections.IAPReceiptValidationResponseDTO
 import com.safehill.kclient.models.dtos.collections.PriceRangeDTO
@@ -140,4 +141,14 @@ interface CollectionApi {
         collectionId: String,
         request: IAPReceiptValidationRequestDTO
     ): IAPReceiptValidationResponseDTO
+
+    /// Validate a Google Play purchase for a collection
+    /// - Parameters:
+    ///   - collectionId: the collection identifier
+    ///   - request: the Google Play validation request containing purchaseToken and productId
+    /// - Returns: Validation response with success status
+    suspend fun validateGooglePlayPurchase(
+        collectionId: String,
+        request: GooglePlayValidationRequestDTO
+    )
 }

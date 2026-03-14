@@ -14,6 +14,8 @@ import com.safehill.kclient.models.dtos.collections.CollectionSearchDTO
 import com.safehill.kclient.models.dtos.collections.CollectionUpdateDTO
 import com.safehill.kclient.models.dtos.collections.CollectionVisibility
 import com.safehill.kclient.models.dtos.collections.CreateCheckoutSessionRequestDTO
+import com.safehill.kclient.models.dtos.collections.GooglePlayValidationRequestDTO
+import com.safehill.kclient.models.dtos.collections.GooglePlayValidationResponseDTO
 import com.safehill.kclient.models.dtos.collections.IAPReceiptValidationRequestDTO
 import com.safehill.kclient.models.dtos.collections.IAPReceiptValidationResponseDTO
 import com.safehill.kclient.models.dtos.collections.PriceRangeDTO
@@ -177,5 +179,19 @@ class CollectionApiImpl(
             endPoint = "collections/$collectionId/validate-receipt",
             request = request
         )
+    }
+
+    override suspend fun validateGooglePlayPurchase(
+        collectionId: String,
+        request: GooglePlayValidationRequestDTO
+    ) {
+        val response =
+            postRequestForResponse<GooglePlayValidationRequestDTO, GooglePlayValidationResponseDTO>(
+                endPoint = "collections/validate-google-play/$collectionId",
+                request = request
+            )
+        if (!response.success) {
+            throw Exception(response.message)
+        }
     }
 }

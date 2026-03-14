@@ -5,6 +5,7 @@ import com.safehill.kclient.models.dtos.collections.CheckoutSessionUIMode
 import com.safehill.kclient.models.dtos.collections.CollectionOutputDTO
 import com.safehill.kclient.models.dtos.collections.CollectionVisibility
 import com.safehill.kclient.models.dtos.collections.CreateCheckoutSessionRequestDTO
+import com.safehill.kclient.models.dtos.collections.GooglePlayValidationRequestDTO
 import com.safehill.kclient.models.dtos.collections.PriceRangeDTO
 import com.safehill.kclient.models.dtos.collections.SearchScope
 import com.safehill.kclient.models.dtos.websockets.CollectionChanged
@@ -240,24 +241,21 @@ class CollectionsRepository(
         }
     }
 
-    /**
-     * Verifies a Google Play purchase with the server.
-     *
-     * The server will:
-     * 1. Verify the purchase with Google Play Developer API
-     * 2. Acknowledge the purchase
-     * 3. Grant collection access to the user
-     *
-     * TODO: Implement actual API call
-     */
     suspend fun verifyGooglePlayPurchase(
         collectionId: String,
         purchaseToken: String,
         productId: String
     ): Result<Unit> {
-        safehillLogger.debug("Verifying Google Play purchase - collectionId: $collectionId, productId: $productId")
-        // TODO: Implement actual API call
-        return Result.success(Unit)
+        return safeApiCall {
+            serverProxy.remoteServer.validateGooglePlayPurchase(
+                collectionId = collectionId,
+                request = GooglePlayValidationRequestDTO(
+                    purchaseToken = purchaseToken,
+                    productId = productId
+                )
+            )
+        }
+
     }
 
     suspend fun refreshCollection(id: String): Result<CollectionModel> {
